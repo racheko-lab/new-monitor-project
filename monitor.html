@@ -26,6 +26,7 @@
             --live-glow: rgba(244,63,94,0.13);
             --blue: #3b82f6;
             --warn: #f59e0b;
+            --green: #22c55e;
             --ease: cubic-bezier(0.4,0,0.2,1);
             --ease-out: cubic-bezier(0.16,1,0.3,1);
             --r: 16px;
@@ -67,6 +68,58 @@
             color: var(--text);
             line-height: 1.1;
         }
+
+        /* ===== Refresh Status Bar ===== */
+        .refresh-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            background: var(--surface);
+            border-radius: var(--r-sm);
+            margin-bottom: 20px;
+            font-size: 0.8125rem;
+        }
+
+        .refresh-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            transition: all 0.3s var(--ease);
+        }
+        .refresh-dot.healthy { background: var(--green); box-shadow: 0 0 7px var(--green); animation: pulse-green 2.5s ease-in-out infinite; }
+        .refresh-dot.stale { background: var(--warn); box-shadow: 0 0 7px var(--warn); animation: pulse-warn 1.5s ease-in-out infinite; }
+        .refresh-dot.dead { background: var(--live); box-shadow: 0 0 7px var(--live); }
+
+        @keyframes pulse-green { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes pulse-warn { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+        .refresh-text { color: var(--text-2); flex: 1; }
+        .refresh-text .r-time {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text);
+            font-weight: 500;
+        }
+        .refresh-text .r-status { margin-left: 6px; font-weight: 500; }
+        .refresh-text .r-status.healthy { color: var(--green); }
+        .refresh-text .r-status.stale { color: var(--warn); }
+        .refresh-text .r-status.dead { color: var(--live); }
+
+        .refresh-btn {
+            width: 30px; height: 30px;
+            border-radius: var(--r-xs);
+            border: none; background: none;
+            color: var(--text-4);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s var(--ease);
+            flex-shrink: 0;
+        }
+        .refresh-btn:hover { background: var(--surface-2); color: var(--text-2); }
+        .refresh-btn:active { transform: scale(0.92); }
+        .refresh-btn svg { width: 14px; height: 14px; }
+        .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .add-btn {
             width: 40px; height: 40px;
@@ -560,6 +613,17 @@
             </button>
         </header>
 
+        <div class="refresh-bar">
+            <span class="refresh-dot dead" id="r-dot"></span>
+            <div class="refresh-text">
+                <span class="r-time" id="r-time">—</span>
+                <span class="r-status dead" id="r-status">加载中</span>
+            </div>
+            <button class="refresh-btn" onclick="manualRefresh(this)" title="手动刷新">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+            </button>
+        </div>
+
         <nav class="seg-ctrl">
             <button class="seg active" id="tab-live" onclick="switchTab('live')">直播<span class="seg-n" id="live-n"></span></button>
             <button class="seg" id="tab-posts" onclick="switchTab('posts')">作品<span class="seg-n" id="posts-n"></span></button>
@@ -671,6 +735,54 @@
         }
 
         function fmtDur(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h?`${h}h ${m}m`:(m?`${m}m`:'0m'); }
+        function fmtAgo(iso) {
+            if(!iso) return '—';
+            const df = Date.now() - new Date(iso).getTime();
+            if(df<60000) return '刚刚';
+            if(df<3600000) return Math.floor(df/60000)+'分钟前';
+            if(df<86400000) return Math.floor(df/3600000)+'小时前';
+            return Math.floor(df/86400000)+'天前';
+        }
+        async function fetchCommitTime(file) {
+            try {
+                const r = await fetch(`https://api.github.com/repos/${REPO}/commits?path=${file}&per_page=1`, {
+                    headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store'
+                });
+                if (!r.ok) return null;
+                const d = await r.json();
+                return d[0]?.commit?.committer?.date || null;
+            } catch { return null; }
+        }
+        function setRefreshState(state, timeStr) {
+            const dot = document.getElementById('r-dot');
+            const st = document.getElementById('r-status');
+            const t = document.getElementById('r-time');
+            const cfg = {
+                healthy: { dot:'healthy', cls:'healthy', status:'运行正常' },
+                stale: { dot:'stale', cls:'stale', status:'可能异常' },
+                dead: { dot:'dead', cls:'dead', status:'已停止' }
+            }[state] || { dot:'dead', cls:'dead', status:'未知' };
+            dot.className = 'refresh-dot ' + cfg.dot;
+            st.textContent = cfg.status;
+            st.className = 'r-status ' + cfg.cls;
+            t.textContent = timeStr || '—';
+        }
+        async function updateRefreshStatus() {
+            const ct = await fetchCommitTime('status.json');
+            if (!ct) { setRefreshState('dead', '—'); return; }
+            const mins = (Date.now() - new Date(ct).getTime()) / 60000;
+            if (mins < 15) setRefreshState('healthy', fmtAgo(ct));
+            else if (mins < 60) setRefreshState('stale', fmtAgo(ct));
+            else setRefreshState('dead', fmtAgo(ct));
+        }
+        function manualRefresh(btn) {
+            btn.classList.add('spinning');
+            loadData().finally(() => {
+                updateRefreshStatus().finally(() => {
+                    setTimeout(() => btn.classList.remove('spinning'), 300);
+                });
+            });
+        }
         function fmtTime(iso) {
             if(!iso) return '';
             const d=new Date(iso), n=new Date(), df=n-d;
@@ -927,7 +1039,9 @@
         });
 
         loadData();
+        updateRefreshStatus();
         setInterval(loadData, 300000);
+        setInterval(updateRefreshStatus, 60000);
     </script>
 </body>
 </html>
