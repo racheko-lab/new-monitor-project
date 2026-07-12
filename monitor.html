@@ -1170,8 +1170,8 @@
                         if (d.code === 0 && d.data && d.data.uid) {
                             const uResp = await fetch(`https://api.live.bilibili.com/live_user/v1/Master/info?uid=${d.data.uid}`);
                             const uData = await uResp.json();
-                            if (uData.code === 0 && uData.data && uData.data.information) {
-                                name = uData.data.information.uname || id;
+                            if (uData.code === 0 && uData.data && uData.data.info) {
+                                name = uData.data.info.uname || id;
                             }
                         }
                     }
