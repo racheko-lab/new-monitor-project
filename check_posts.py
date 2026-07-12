@@ -205,6 +205,11 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
         url_list = cover_obj.get("url_list") or []
         if url_list:
             cover = url_list[0]
+        # 作者头像（用于前端卡片展示）
+        author = post.get("author", {}) or {}
+        avatar_obj = author.get("avatar_thumb") or author.get("avatar_medium") or {}
+        avatar_urls = avatar_obj.get("url_list") or []
+        author_avatar = avatar_urls[0] if avatar_urls else None
         post_url = f"https://www.douyin.com/video/{aweme_id}"
         # 移动端 API 无 create_time，用 aweme_id 数值大小近似排序（snowflake ID 时间递增）
         sort_key = int(create_time) if create_time else int(aweme_id)
@@ -216,6 +221,7 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
             "views": int(views),
             "likes": int(likes),
             "cover": cover,
+            "avatar": author_avatar,
             "url": post_url,
             "time": time_str or datetime.now().isoformat(),
             "sort_key": sort_key,

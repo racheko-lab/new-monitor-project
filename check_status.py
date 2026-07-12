@@ -82,7 +82,7 @@ def add_history(message: str, event_type: str = "status"):
     save_history(history)
 
 
-def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str]]:
+def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str], Optional[str]]:
     try:
         resp = requests.get(BILIBILI_API.format(room_id), headers=HEADERS, timeout=10)
         data = resp.json()
@@ -93,6 +93,7 @@ def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int], Opt
             viewers = info.get("online")
             uid = info.get("uid")
             uname = None
+            avatar = None
             if uid:
                 try:
                     u_resp = requests.get(
@@ -100,16 +101,18 @@ def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int], Opt
                         headers=HEADERS, timeout=10)
                     u_data = u_resp.json()
                     if u_data.get("code") == 0:
-                        uname = u_data.get("data", {}).get("info", {}).get("uname")
+                        uinfo = u_data.get("data", {}).get("info", {})
+                        uname = uinfo.get("uname")
+                        avatar = uinfo.get("face")
                 except Exception:
                     pass
-            return status, title, viewers, uname
-        return "error", None, None, None
+            return status, title, viewers, uname, avatar
+        return "error", None, None, None, None
     except Exception:
-        return "error", None, None, None
+        return "error", None, None, None, None
 
 
-def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str]]:
+def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str], Optional[str]]:
     """检测抖音直播状态。
 
     抖音新版页面使用 RSC（__pace_f）格式存储数据。
@@ -134,7 +137,8 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
                 title = room_info.get("title")
                 viewers = room_info.get("userCount")
                 uname = room_info.get("owner", {}).get("nickname")
-                return status, title, viewers, uname
+                avatar = room_info.get("owner", {}).get("avatar_thumb", {}).get("url_list", [None])[0]
+                return status, title, viewers, uname, avatar
             except Exception:
                 pass
 
@@ -162,7 +166,7 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
                     break
 
         if not room_block:
-            return "error", None, None, None
+            return "error", None, None, None, None
 
         # 解析字段
         room_id_match = re.search(r'"roomId":"([^"]*)"', room_block)
@@ -172,9 +176,11 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
         count_match = re.search(r'"user_count"\s*:\s*(\d+)', room_block)
         if not count_match:
             count_match = re.search(r'"watching_count"\s*:\s*(\d+)', room_block)
+        avatar_match = re.search(r'"avatar_thumb":\{[^}]*"url_list":\["([^"]+)"', room_block)
 
         real_room_id = room_id_match.group(1) if room_id_match else ""
         stream_val = stream_match.group(1) if stream_match else "null"
+        avatar = avatar_match.group(1) if avatar_match else None
 
         # 昵称（修复 latin1 → utf-8 编码）
         uname = None
@@ -210,20 +216,20 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
             status = "offline"
         # 4. 都没有 → 房间无效
         else:
-            return "error", None, None, None
+            return "error", None, None, None, None
 
-        return status, title, viewers, uname
+        return status, title, viewers, uname, avatar
     except Exception as e:
         print(f"抖音检测异常 {room_id}: {e}")
-        return "error", None, None, None
+        return "error", None, None, None, None
 
 
-def get_status(platform: str, room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str]]:
+def get_status(platform: str, room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str], Optional[str]]:
     if platform == "bilibili":
         return check_bilibili(room_id)
     elif platform == "douyin":
         return check_douyin(room_id)
-    return "error", None, None, None
+    return "error", None, None, None, None
 
 
 def get_status_key(platform: str, room_id: str) -> str:
@@ -265,7 +271,7 @@ def check_all() -> Tuple[List[Dict], List[str]]:
         name = room["name"]
         key = get_status_key(platform, room_id)
 
-        status, title, viewers, uname = get_status(platform, room_id)
+        status, title, viewers, uname, avatar = get_status(platform, room_id)
         is_live = status == "live"
 
         # 自动获取真实昵称：若 rooms.json 里 name 还是房间号/ID，则用获取到的 uname 替换
@@ -304,6 +310,7 @@ def check_all() -> Tuple[List[Dict], List[str]]:
             "id": room_id,
             "name": name,
             "uname": uname or name,
+            "avatar": avatar,
             "status": status,
             "title": title,
             "viewers": viewers,
