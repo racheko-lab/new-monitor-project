@@ -165,11 +165,11 @@
             border-color: rgba(239, 68, 68, 0.25);
         }
 
-        /* 直播卡片缩略图 */
+        /* 直播卡片头像 */
         .thumb {
             width: 44px;
             height: 44px;
-            border-radius: 10px;
+            border-radius: 50%;
             flex-shrink: 0;
             display: flex;
             align-items: center;
@@ -177,66 +177,75 @@
             font-size: 1.1rem;
             background: var(--bg);
             border: 1px solid var(--border);
+            overflow: hidden;
         }
 
         .thumb.live {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger);
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
         }
 
-        /* 作品卡片封面 */
-        .cover {
-            width: 64px;
-            height: 80px;
-            border-radius: 8px;
-            flex-shrink: 0;
+        .thumb img {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
+        }
+
+        /* 作品卡片头像（可点击观看） */
+        .avatar-wrap {
+            position: relative;
+            display: block;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            overflow: hidden;
             background: var(--bg);
+            border: 1px solid var(--border);
+        }
+
+        .avatar-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             transition: transform 0.2s;
         }
 
-        .cover-wrap {
-            position: relative;
-            flex-shrink: 0;
-        }
-
-        .cover-wrap::after {
+        .avatar-wrap::after {
             content: '';
             position: absolute;
             inset: 0;
-            border-radius: 8px;
-            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            background: rgba(0,0,0,0.55);
             opacity: 0;
             transition: opacity 0.15s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
-        .cover-wrap::before {
+        .avatar-wrap::before {
             content: '▶';
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             color: #fff;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             opacity: 0;
             transition: opacity 0.15s;
             z-index: 1;
+            padding-left: 2px;
         }
 
-        .cover-wrap:hover::after, .cover-wrap:hover::before { opacity: 1; }
-        .cover-wrap:hover .cover { transform: scale(0.97); }
+        .avatar-wrap:hover::after, .avatar-wrap:hover::before { opacity: 1; }
+        .avatar-wrap:hover img { transform: scale(1.08); }
 
-        .cover-placeholder {
-            width: 64px;
-            height: 80px;
-            border-radius: 8px;
+        .avatar-placeholder {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             background: var(--bg);
             border: 1px solid var(--border);
             opacity: 0.4;
@@ -776,11 +785,12 @@
                 const url = platformUrl(room.platform, room.id);
                 const title = escapeHtml(room.title || (room.status === 'live' ? '正在直播' : (room.status === 'pending' ? '等待检测' : '—')));
                 const thumbIcon = room.status === 'live' ? '🔴' : (room.platform === 'bilibili' ? '📺' : '🎬');
+                const thumbHtml = room.avatar ? `<img src="${room.avatar}" alt="${name}" referrerpolicy="no-referrer">` : thumbIcon;
                 const viewers = room.viewers ? formatNumber(room.viewers) : '—';
                 const dur = formatDuration(room.duration || 0);
                 return `
                     <div class="row ${room.status === 'live' ? 'live' : ''}" onclick="window.open('${url}', '_blank')">
-                        <div class="thumb ${room.status === 'live' ? 'live' : ''}">${thumbIcon}</div>
+                        <div class="thumb ${room.status === 'live' ? 'live' : ''}">${thumbHtml}</div>
                         <div class="body">
                             <div class="row-head">
                                 <span class="name">${name}</span>
@@ -816,19 +826,19 @@
                 const name = escapeHtml(room.name || room.id);
                 const title = escapeHtml(latest?.title || '暂无作品');
                 const timeStr = latest?.time ? formatTime(latest.time) : '';
-                const cover = latest?.cover;
+                const avatar = latest?.avatar;
                 const postUrl = latest?.url || '#';
 
-                let coverHtml;
-                if (cover) {
-                    coverHtml = `<a href="${postUrl}" target="_blank" rel="noopener" class="cover-wrap"><img src="${cover}" class="cover" loading="lazy"></a>`;
+                let avatarHtml;
+                if (avatar) {
+                    avatarHtml = `<a href="${postUrl}" target="_blank" rel="noopener" class="avatar-wrap"><img src="${avatar}" loading="lazy" referrerpolicy="no-referrer"></a>`;
                 } else {
-                    coverHtml = `<div class="cover-placeholder">${st.status === 'error' ? '⚠️' : '📹'}</div>`;
+                    avatarHtml = `<div class="avatar-placeholder">${st.status === 'error' ? '⚠️' : '📹'}</div>`;
                 }
 
                 return `
                     <div class="row">
-                        ${coverHtml}
+                        ${avatarHtml}
                         <div class="body">
                             <div class="row-head">
                                 <span class="name">${name}</span>
