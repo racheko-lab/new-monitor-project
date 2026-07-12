@@ -171,7 +171,13 @@ def fetch_sec_uid_from_live(room_id: str) -> Tuple[Optional[str], Optional[str]]
 
 
 def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
-    """将抖音 API 返回的 aweme 对象转换为前端可用的 post 结构。"""
+    """将抖音 API 返回的 aweme 对象转换为前端可用的 post 结构。
+
+    兼容 PC 端和移动端两种 API 响应：
+    - PC 端（douyin.com/aweme/v1/web/aweme/post）：有 create_time、statistics.play_count
+    - 移动端（m.douyin.com/web/api/v2/aweme/post）：无 create_time，statistics 只有 digg_count
+      用 aweme_id 作为排序键（抖音 aweme_id 是 snowflake ID，时间递增）
+    """
     try:
         aweme_id = post.get("aweme_id")
         if not aweme_id:
@@ -194,6 +200,8 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
         if url_list:
             cover = url_list[0]
         post_url = f"https://www.douyin.com/video/{aweme_id}"
+        # 移动端 API 无 create_time，用 aweme_id 数值大小近似排序（snowflake ID 时间递增）
+        sort_key = int(create_time) if create_time else int(aweme_id)
         return {
             "id": str(aweme_id),
             "platform": "douyin",
@@ -204,6 +212,7 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
             "cover": cover,
             "url": post_url,
             "time": time_str or datetime.now().isoformat(),
+            "sort_key": sort_key,
         }
     except Exception:
         return None
@@ -215,11 +224,10 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
     status 为 'ok' / 'no_data' / 'error'。
 
-    针对 GitHub Actions 环境优化：
-    - 多次重试（首次访问常被风控拦截，cookie 建立后第二次能成功）
-    - 完整 stealth 反检测脚本
-    - 首页等待时间足够长，确保 cookie/ttwid 建立
-    - 直接访问 douyin.com/user 而非通过 live.douyin.com 跳转
+    方案：移动端 m.douyin.com/share/user/{sec_uid}
+    - 移动端 API 同步更及时，新作品立即可见（PC 端 douyin.com 有 24h+ 延迟）
+    - 反爬较弱，无需 a_bogus 签名
+    - 拦截 /web/api/v2/aweme/post/ 接口响应获取作品列表
     """
     if not PLAYWRIGHT_AVAILABLE:
         return None, "error"
@@ -234,40 +242,29 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 '--disable-blink-features=AutomationControlled',
                 '--no-sandbox',
                 '--disable-dev-shm-usage',
-                '--disable-features=IsolateOrigins,site-per-process',
-                '--disable-site-isolation-trials',
             ],
         )
+        # 模拟 iPhone Safari 移动端
         context = browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                       '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            viewport={'width': 1512, 'height': 982},
+            user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
+                       'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+            viewport={'width': 390, 'height': 844},
             locale='zh-CN',
             timezone_id='Asia/Shanghai',
-            extra_http_headers={'Accept-Language': 'zh-CN,zh;q=0.9'},
+            is_mobile=True,
+            has_touch=True,
         )
-        # 完整 stealth 反检测脚本
-        context.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-            Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
-            Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN','zh','en']});
-            Object.defineProperty(navigator, 'platform', {get: () => 'Win32'});
-            window.chrome = {runtime: {}, app: {}, csi: () => {}, loadTimes: () => {}};
-            const originalQuery = window.navigator.permissions.query;
-            window.navigator.permissions.query = (parameters) => (
-                parameters.name === 'notifications'
-                    ? Promise.resolve({state: Notification.permission})
-                    : originalQuery(parameters)
-            );
-        """)
+        context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
         page = context.new_page()
 
         def on_response(resp):
-            if 'aweme/v1/web/aweme/post' in resp.url and len(captured_awemes) < max_posts:
+            # 拦截移动端作品 API：m.douyin.com/web/api/v2/aweme/post/
+            if ('aweme/post' in resp.url or 'aweme/v1/web/aweme/post' in resp.url) and len(captured_awemes) < max_posts:
                 try:
                     data = resp.json()
-                    if data.get("status_code") == 0:
-                        aweme_list = data.get("aweme_list", []) or []
+                    # 移动端 status_code 可能是 0 或不存在
+                    aweme_list = data.get("aweme_list") or data.get("awemes") or []
+                    if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
                         for a in aweme_list:
                             if len(captured_awemes) < max_posts:
                                 captured_awemes.append(a)
@@ -278,20 +275,12 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
         page.on('response', on_response)
 
         try:
-            # Step 1: 访问首页拿 cookie（关键：等待 ttwid/msToken 等反爬 cookie 建立）
-            print("  访问 douyin.com 首页获取 cookie...")
-            page.goto('https://www.douyin.com/', wait_until='domcontentloaded', timeout=30000)
-            page.wait_for_timeout(4000)
-            cookies = context.cookies()
-            cookie_names = [c['name'] for c in cookies]
-            print(f"  获取 cookie: {len(cookies)} 个 ({', '.join(cookie_names[:8])})")
-
-            # Step 2: 访问用户主页（最多重试 3 次）
-            user_url = f'https://www.douyin.com/user/{sec_uid}'
-            for attempt in range(3):
+            # 直接访问移动端用户主页（移动端反爬较弱，无需先访问首页）
+            user_url = f'https://m.douyin.com/share/user/{sec_uid}'
+            for attempt in range(2):
                 if captured_awemes:
                     break
-                print(f"  访问用户主页 (尝试 {attempt+1}/3)...")
+                print(f"  访问移动端用户主页 (尝试 {attempt+1}/2)...")
                 try:
                     page.goto(user_url, wait_until='domcontentloaded', timeout=45000)
                 except PlaywrightTimeoutError:
@@ -299,8 +288,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 except Exception as e:
                     print(f"  页面加载异常: {e}")
 
-                # 等待作品 API 触发（最多 15 秒）
-                for _ in range(15):
+                # 等待作品 API 触发
+                for _ in range(10):
                     if captured_awemes:
                         break
                     page.wait_for_timeout(1000)
@@ -308,16 +297,11 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 # 滚动触发加载
                 if not captured_awemes:
                     for _ in range(3):
-                        page.mouse.wheel(0, 1500)
+                        page.mouse.wheel(0, 1000)
                         page.wait_for_timeout(1500)
 
                 if not captured_awemes:
-                    title = page.title()
-                    print(f"  本次未捕获，页面标题: {title}")
-                    # 检查是否是验证码页
-                    content = page.content()
-                    if '验证' in content or 'captcha' in content.lower() or 'verify' in content.lower():
-                        print("  检测到验证码页面，重试中...")
+                    print(f"  本次未捕获，页面标题: {page.title()}")
                     page.wait_for_timeout(2000)
         except Exception as e:
             print(f"  Playwright 抓取异常: {e}")
@@ -336,8 +320,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             parsed_posts.append(parsed)
             seen_ids.add(parsed["id"])
 
-    # 按时间倒序
-    parsed_posts.sort(key=lambda x: x.get("time", ""), reverse=True)
+    # 按 sort_key 倒序（create_time 或 aweme_id 数值）
+    parsed_posts.sort(key=lambda x: x.get("sort_key", 0), reverse=True)
     return parsed_posts, "ok"
 
 
@@ -464,14 +448,14 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
     save_posts_status(posts_status)
     save_posts_rooms(rooms)
 
-    # 新作品合并到 posts.json（历史归档）
+    # 新作品合并到 posts.json（历史归档），按 sort_key 倒序
     if all_new_posts:
         existing = load_posts()
         existing_ids = {p.get("id") for p in existing if p.get("id")}
         for p in all_new_posts:
             if p.get("id") not in existing_ids:
                 existing.append(p)
-        existing.sort(key=lambda x: x.get("time", ""), reverse=True)
+        existing.sort(key=lambda x: x.get("sort_key", 0), reverse=True)
         save_posts(existing[:POSTS_MAX])
 
     return all_notifications, all_new_posts
