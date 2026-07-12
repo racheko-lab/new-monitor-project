@@ -10,32 +10,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #08080b;
-            --surface: #0e0e13;
-            --surface-hi: #16161d;
-            --surface-active: #1c1c25;
+            --bg: #08080a;
+            --surface: #101014;
+            --surface-2: #18181f;
+            --surface-3: #20202a;
             --divider: rgba(255,255,255,0.05);
-            --border: rgba(255,255,255,0.08);
-            --border-hi: rgba(255,255,255,0.14);
+            --border: rgba(255,255,255,0.07);
+            --border-2: rgba(255,255,255,0.12);
             --text: #fafafa;
-            --text-2: #9ca3af;
-            --text-3: #6b7280;
-            --text-4: #374151;
-            --live: #ef4444;
-            --live-soft: rgba(239,68,68,0.08);
-            --live-glow: rgba(239,68,68,0.12);
-            --new: #3b82f6;
-            --new-soft: rgba(59,130,246,0.08);
+            --text-2: #a0a0ab;
+            --text-3: #6b6b76;
+            --text-4: #3a3a44;
+            --live: #f43f5e;
+            --live-soft: rgba(244,63,94,0.07);
+            --live-glow: rgba(244,63,94,0.13);
+            --blue: #3b82f6;
             --warn: #f59e0b;
             --ease: cubic-bezier(0.4,0,0.2,1);
             --ease-out: cubic-bezier(0.16,1,0.3,1);
-            --r: 14px;
-            --r-sm: 10px;
-            --r-xs: 7px;
+            --r: 16px;
+            --r-sm: 11px;
+            --r-xs: 8px;
         }
 
         *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
-
         html { font-size: 15px; -webkit-text-size-adjust: 100%; }
 
         body {
@@ -51,47 +49,76 @@
         .app {
             max-width: 680px;
             margin: 0 auto;
-            padding: 52px 24px 96px;
+            padding: 48px 24px 96px;
         }
 
-        /* ===== Header ===== */
-        .header {
+        /* ===== Header Zone ===== */
+        .hdr {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+
+        .hdr-left { min-width: 0; }
+
+        .hdr-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            color: var(--text);
+            line-height: 1.1;
+        }
+
+        .hdr-sub {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 36px;
+            gap: 8px;
+            margin-top: 8px;
+            font-size: 0.8125rem;
+            color: var(--text-3);
         }
 
-        .header-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: -0.035em;
-            color: var(--text);
+        .hdr-sub .dot-live {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--live);
+            box-shadow: 0 0 8px var(--live);
+            animation: pulse 2.5s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        .hdr-sub .dot-live.off { background: var(--text-4); box-shadow: none; animation: none; }
+
+        .hdr-sub .num {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            color: var(--text-2);
         }
 
-        .icon-btn {
-            width: 38px;
-            height: 38px;
+        .hdr-sub .sep { color: var(--text-4); }
+
+        .add-btn {
+            width: 40px; height: 40px;
             border-radius: var(--r-sm);
             border: 1px solid var(--border);
             background: var(--surface);
             color: var(--text-2);
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.18s var(--ease);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s var(--ease);
+            flex-shrink: 0;
         }
-        .icon-btn:hover {
-            background: var(--surface-hi);
+        .add-btn:hover {
+            background: var(--surface-2);
             color: var(--text);
-            border-color: var(--border-hi);
+            border-color: var(--border-2);
+            transform: translateY(-1px);
         }
-        .icon-btn:active { transform: scale(0.97); }
-        .icon-btn svg { width: 15px; height: 15px; }
+        .add-btn:active { transform: translateY(0) scale(0.97); }
+        .add-btn svg { width: 16px; height: 16px; }
 
-        /* ===== Segmented Control ===== */
-        .segmented {
+        /* ===== Segmented ===== */
+        .seg-ctrl {
             display: flex;
             gap: 2px;
             padding: 3px;
@@ -102,7 +129,7 @@
 
         .seg {
             flex: 1;
-            padding: 8px 12px;
+            padding: 9px 12px;
             font-size: 0.8125rem;
             font-weight: 500;
             color: var(--text-3);
@@ -113,33 +140,29 @@
             transition: all 0.2s var(--ease);
             font-family: inherit;
             letter-spacing: -0.01em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
         }
         .seg:hover { color: var(--text-2); }
         .seg.active {
             color: var(--text);
-            background: var(--surface-hi);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+            background: var(--surface-2);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
-        .seg-count {
+        .seg-n {
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.6875rem;
             color: var(--text-4);
             font-weight: 500;
         }
-        .seg.active .seg-count { color: var(--text-3); }
+        .seg.active .seg-n { color: var(--text-3); }
 
         /* ===== Chips ===== */
         .chips {
             display: flex;
             gap: 4px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
-
         .chip {
             padding: 6px 14px;
             border-radius: 8px;
@@ -153,23 +176,57 @@
             font-family: inherit;
         }
         .chip:hover { color: var(--text-2); background: var(--surface); }
-        .chip.active {
-            color: var(--text);
-            background: var(--surface-hi);
-        }
+        .chip.active { color: var(--text); background: var(--surface-2); }
 
-        /* ===== Panel Transition ===== */
+        /* ===== Panel ===== */
         .panel { display: none; }
         .panel.active {
             display: block;
-            animation: panelIn 0.28s var(--ease-out);
+            animation: panelIn 0.32s var(--ease-out);
         }
         @keyframes panelIn {
-            from { opacity: 0; transform: translateY(6px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ===== Surface (no border, depth via bg) ===== */
+        /* ===== Section Group ===== */
+        .group { margin-bottom: 28px; }
+        .group:last-child { margin-bottom: 0; }
+
+        .group-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 4px 10px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--text-3);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .group-label .g-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .group-label .g-dot.live { background: var(--live); box-shadow: 0 0 6px var(--live); }
+        .group-label .g-dot.offline { background: var(--text-4); }
+        .group-label .g-dot.pending { background: var(--blue); }
+
+        .group-label .g-count {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-4);
+            font-weight: 400;
+        }
+
+        .group-label .g-line {
+            flex: 1;
+            height: 1px;
+            background: var(--divider);
+        }
+
+        /* ===== Surface ===== */
         .surface {
             background: var(--surface);
             border-radius: var(--r);
@@ -181,80 +238,68 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            padding: 16px 20px;
+            padding: 16px 18px;
             cursor: pointer;
             transition: background 0.15s var(--ease);
             position: relative;
         }
         .row + .row { border-top: 1px solid var(--divider); }
-        .row:hover { background: var(--surface-hi); }
+        .row:hover { background: var(--surface-2); }
         .row:hover .row-del { opacity: 1; }
 
         .row.is-live {
-            background: linear-gradient(90deg, var(--live-soft) 0%, transparent 40%);
+            background: linear-gradient(90deg, var(--live-soft) 0%, transparent 35%);
         }
         .row.is-live:hover {
-            background: linear-gradient(90deg, var(--live-glow) 0%, var(--surface-hi) 40%);
+            background: linear-gradient(90deg, var(--live-glow) 0%, var(--surface-2) 35%);
         }
 
         /* Avatar */
-        .avatar {
-            width: 42px;
-            height: 42px;
+        .av {
+            width: 44px; height: 44px;
             border-radius: 50%;
             flex-shrink: 0;
             overflow: hidden;
-            background: var(--surface-hi);
+            background: var(--surface-2);
             position: relative;
         }
-        .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .av img { width: 100%; height: 100%; object-fit: cover; }
+        .av.is-live {
+            box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--live);
         }
-        .avatar.is-live {
-            box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--live);
-        }
-        .avatar-fb {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9375rem;
-            font-weight: 600;
+        .av-fb {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9375rem; font-weight: 600;
             color: var(--text-3);
         }
 
         /* Avatar link (posts) */
         .av-link {
             display: block;
-            width: 42px;
-            height: 42px;
+            width: 44px; height: 44px;
             border-radius: 50%;
             flex-shrink: 0;
             overflow: hidden;
-            background: var(--surface-hi);
+            background: var(--surface-2);
             position: relative;
         }
         .av-link img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: filter 0.2s var(--ease), transform 0.25s var(--ease-out);
+            width: 100%; height: 100%; object-fit: cover;
+            transition: filter 0.2s var(--ease), transform 0.28s var(--ease-out);
         }
-        .av-link:hover img { filter: brightness(0.55); transform: scale(1.06); }
+        .av-link:hover img { filter: brightness(0.5); transform: scale(1.08); }
         .av-link .play {
             position: absolute;
-            top: 50%; left: 52%;
+            top: 50%; left: 53%;
             transform: translate(-50%,-50%);
             width: 0; height: 0;
-            border-left: 9px solid #fff;
-            border-top: 6px solid transparent;
-            border-bottom: 6px solid transparent;
+            border-left: 10px solid #fff;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
             opacity: 0;
             transition: opacity 0.2s var(--ease);
-            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+            filter: drop-shadow(0 1px 4px rgba(0,0,0,0.6));
         }
         .av-link:hover .play { opacity: 1; }
 
@@ -292,7 +337,7 @@
             margin-left: auto;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             font-size: 0.6875rem;
             font-weight: 600;
             flex-shrink: 0;
@@ -301,23 +346,22 @@
         }
         .status.live { color: var(--live); }
         .status.offline { color: var(--text-4); }
-        .status.pending { color: var(--new); }
+        .status.pending { color: var(--blue); }
         .status.error { color: var(--warn); }
 
         .sd {
-            width: 6px;
-            height: 6px;
+            width: 6px; height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
         }
         .sd.live { background: var(--live); box-shadow: 0 0 7px var(--live); animation: pulse 2s ease-in-out infinite; }
         .sd.offline { background: var(--text-4); }
-        .sd.pending { background: var(--new); }
+        .sd.pending { background: var(--blue); }
         .sd.error { background: var(--warn); }
 
         @keyframes pulse {
             0%,100% { opacity: 1; }
-            50% { opacity: 0.35; }
+            50% { opacity: 0.3; }
         }
 
         .row-sub {
@@ -332,7 +376,7 @@
         .row-meta {
             display: flex;
             gap: 14px;
-            margin-top: 4px;
+            margin-top: 5px;
             font-size: 0.6875rem;
             color: var(--text-3);
         }
@@ -343,17 +387,14 @@
 
         /* Delete */
         .row-del {
-            width: 30px;
-            height: 30px;
+            width: 30px; height: 30px;
             border-radius: var(--r-xs);
             border: none;
             background: none;
             color: var(--text-4);
             cursor: pointer;
             flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             opacity: 0;
             transition: all 0.15s var(--ease);
         }
@@ -367,10 +408,10 @@
         .tl-item {
             display: flex;
             gap: 14px;
-            padding: 13px 20px;
+            padding: 13px 18px;
             transition: background 0.15s var(--ease);
         }
-        .tl-item:hover { background: var(--surface-hi); }
+        .tl-item:hover { background: var(--surface-2); }
         .tl-item + .tl-item { border-top: 1px solid var(--divider); }
 
         .tl-time {
@@ -383,15 +424,14 @@
         }
 
         .tl-dot {
-            width: 7px;
-            height: 7px;
+            width: 7px; height: 7px;
             border-radius: 50%;
             flex-shrink: 0;
             margin-top: 5px;
         }
         .tl-dot.live_start { background: var(--live); box-shadow: 0 0 5px var(--live); }
         .tl-dot.live_end { background: var(--text-4); }
-        .tl-dot.new_post { background: var(--new); box-shadow: 0 0 5px var(--new); }
+        .tl-dot.new_post { background: var(--blue); box-shadow: 0 0 5px var(--blue); }
         .tl-dot.error { background: var(--warn); }
 
         .tl-text {
@@ -404,11 +444,10 @@
         /* ===== Empty ===== */
         .empty {
             text-align: center;
-            padding: 72px 20px;
+            padding: 64px 20px;
         }
         .empty svg {
-            width: 28px;
-            height: 28px;
+            width: 28px; height: 28px;
             color: var(--text-4);
             margin: 0 auto 14px;
             display: block;
@@ -423,8 +462,8 @@
             position: fixed;
             inset: 0;
             background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -432,12 +471,9 @@
             padding: 20px;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.25s var(--ease), visibility 0.25s var(--ease);
+            transition: opacity 0.28s var(--ease), visibility 0.28s var(--ease);
         }
-        .overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
+        .overlay.show { opacity: 1; visibility: visible; }
 
         .modal {
             background: var(--surface);
@@ -446,13 +482,11 @@
             padding: 28px;
             width: 100%;
             max-width: 380px;
-            transform: scale(0.96) translateY(8px);
-            transition: transform 0.3s var(--ease-out);
-            box-shadow: 0 20px 50px -12px rgba(0,0,0,0.5);
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.32s var(--ease-out);
+            box-shadow: 0 24px 56px -12px rgba(0,0,0,0.55);
         }
-        .overlay.show .modal {
-            transform: scale(1) translateY(0);
-        }
+        .overlay.show .modal { transform: scale(1) translateY(0); }
 
         .modal-title {
             font-size: 1.0625rem;
@@ -482,8 +516,8 @@
             transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
         }
         .field input:focus, .field select:focus {
-            border-color: var(--border-hi);
-            background: var(--surface-hi);
+            border-color: var(--border-2);
+            background: var(--surface-2);
         }
         .field input::placeholder { color: var(--text-4); }
         .field select:disabled { opacity: 0.4; }
@@ -518,15 +552,15 @@
             border-color: var(--border);
         }
         .btn-ghost:hover {
-            background: var(--surface-hi);
+            background: var(--surface-2);
             color: var(--text);
-            border-color: var(--border-hi);
+            border-color: var(--border-2);
         }
 
         .btn-danger {
             background: var(--live-soft);
             color: var(--live);
-            border-color: rgba(239,68,68,0.15);
+            border-color: rgba(244,63,94,0.15);
         }
         .btn-danger:hover { background: var(--live-glow); }
 
@@ -536,8 +570,8 @@
             bottom: 32px;
             left: 50%;
             transform: translateX(-50%) translateY(16px);
-            background: var(--surface-active);
-            border: 1px solid var(--border-hi);
+            background: var(--surface-3);
+            border: 1px solid var(--border-2);
             color: var(--text);
             padding: 11px 20px;
             border-radius: var(--r-sm);
@@ -546,8 +580,8 @@
             z-index: 200;
             opacity: 0;
             pointer-events: none;
-            transition: all 0.3s var(--ease-out);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+            transition: all 0.32s var(--ease-out);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.4);
         }
         .toast.show {
             opacity: 1;
@@ -556,29 +590,39 @@
 
         @media (max-width: 640px) {
             .app { padding: 32px 16px 80px; }
-            .header { margin-bottom: 28px; }
-            .header-title { font-size: 1.35rem; }
-            .segmented { margin-bottom: 22px; }
+            .hdr { margin-bottom: 26px; }
+            .hdr-title { font-size: 1.45rem; }
+            .seg-ctrl { margin-bottom: 22px; }
             .row { padding: 14px 16px; gap: 12px; }
-            .avatar, .av-link { width: 38px; height: 38px; }
+            .av, .av-link { width: 40px; height: 40px; }
             .row-del { opacity: 1; }
             .tl-item { padding: 12px 16px; }
-            .empty { padding: 56px 20px; }
+            .empty { padding: 52px 20px; }
         }
     </style>
 </head>
 <body>
     <div class="app">
-        <header class="header">
-            <h1 class="header-title">Monitor</h1>
-            <button class="icon-btn" onclick="showAddModal()" aria-label="添加">
+        <header class="hdr">
+            <div class="hdr-left">
+                <h1 class="hdr-title">Monitor</h1>
+                <div class="hdr-sub">
+                    <span class="dot-live off" id="hdr-dot"></span>
+                    <span class="num" id="hdr-live">0</span><span>直播中</span>
+                    <span class="sep">·</span>
+                    <span class="num" id="hdr-total">0</span><span>监控</span>
+                    <span class="sep">·</span>
+                    <span id="hdr-update">—</span>
+                </div>
+            </div>
+            <button class="add-btn" onclick="showAddModal()" aria-label="添加">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             </button>
         </header>
 
-        <nav class="segmented">
-            <button class="seg active" id="tab-live" onclick="switchTab('live')">直播<span class="seg-count" id="live-n"></span></button>
-            <button class="seg" id="tab-posts" onclick="switchTab('posts')">作品<span class="seg-count" id="posts-n"></span></button>
+        <nav class="seg-ctrl">
+            <button class="seg active" id="tab-live" onclick="switchTab('live')">直播<span class="seg-n" id="live-n"></span></button>
+            <button class="seg" id="tab-posts" onclick="switchTab('posts')">作品<span class="seg-n" id="posts-n"></span></button>
             <button class="seg" id="tab-history" onclick="switchTab('history')">历史</button>
         </nav>
 
@@ -587,11 +631,11 @@
                 <button class="chip active" data-f="all" onclick="setFilter('all')">全部</button>
                 <button class="chip" data-f="live" onclick="setFilter('live')">直播中</button>
             </div>
-            <div class="surface" id="live-surface"></div>
+            <div id="live-groups"></div>
         </section>
 
         <section id="posts-section" class="panel">
-            <div class="surface" id="posts-surface"></div>
+            <div id="posts-groups"></div>
         </section>
 
         <section id="history-section" class="panel">
@@ -723,54 +767,97 @@
         const TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5 0V4a1 1 0 011-1h2a1 1 0 011 1v2"/></svg>';
         const EMPTY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="9"/></svg>';
 
+        function rowHtml(r) {
+            const st = {live:'LIVE',offline:'OFFLINE',error:'ERROR',pending:'CHECKING'}[r.status];
+            const nm = esc(r.uname || r.name);
+            const ttl = esc(r.title || (r.status==='live'?'正在直播':r.status==='pending'?'检测中':'—'));
+            const av = r.avatar
+                ? `<img src="${r.avatar}" alt="${nm}" referrerpolicy="no-referrer">`
+                : `<div class="av-fb">${esc((nm||'?')[0])}</div>`;
+            const v = r.viewers ? fmtNum(r.viewers) : '—';
+            const d = fmtDur(r.duration||0);
+            const isLive = r.status === 'live';
+            return `<div class="row${isLive?' is-live':''}" onclick="window.open('${pUrl(r.platform,r.id)}','_blank')">
+                <div class="av${isLive?' is-live':''}">${av}</div>
+                <div class="row-body">
+                    <div class="row-head">
+                        <span class="row-name">${nm}</span>
+                        <span class="tag">${r.platform==='bilibili'?'BILI':'DY'}</span>
+                        <span class="status ${r.status}"><span class="sd ${r.status}"></span>${st}</span>
+                    </div>
+                    <div class="row-sub">${ttl}</div>
+                    <div class="row-meta"><span>${v} 观看</span><span>${d}</span></div>
+                </div>
+                <button class="row-del" onclick="event.stopPropagation();askDel('${r.platform}','${r.id}')">${TRASH_SVG}</button>
+            </div>`;
+        }
+
+        function groupHtml(label, dotClass, items) {
+            if (!items.length) return '';
+            return `<div class="group">
+                <div class="group-label">
+                    <span class="g-dot ${dotClass}"></span>
+                    <span>${label}</span>
+                    <span class="g-count">${items.length}</span>
+                    <span class="g-line"></span>
+                </div>
+                <div class="surface">${items.map(rowHtml).join('')}</div>
+            </div>`;
+        }
+
         function renderRooms() {
-            const el = document.getElementById('live-surface');
+            const el = document.getElementById('live-groups');
             let arr = rooms.map(r => {
                 const k = `${r.platform}_${r.id}`, s = status[k];
                 return s ? {...s, name: r.name || s.name} : {...r, status:'pending', title:null, viewers:null, duration:0};
             });
             arr.sort((a,b) => ({live:0,pending:1,error:2,offline:3}[a.status]??9) - ({live:0,pending:1,error:2,offline:3}[b.status]??9));
+
             const liveN = arr.filter(r => r.status === 'live').length;
             document.getElementById('live-n').textContent = arr.length ? `${liveN}/${arr.length}` : '';
-            if (filter !== 'all') arr = arr.filter(r => r.status === filter);
+
+            // Update header summary
+            const hdrDot = document.getElementById('hdr-dot');
+            hdrDot.className = 'dot-live' + (liveN > 0 ? '' : ' off');
+            document.getElementById('hdr-live').textContent = liveN;
+            document.getElementById('hdr-total').textContent = arr.length;
+            const now = new Date();
+            document.getElementById('hdr-update').textContent = arr.length ? `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} 更新` : '—';
+
+            if (filter === 'live') arr = arr.filter(r => r.status === 'live');
             if (!arr.length) { el.innerHTML = emptyHtml('暂无监控对象'); return; }
-            el.innerHTML = arr.map(r => {
-                const st = {live:'LIVE',offline:'OFFLINE',error:'ERROR',pending:'CHECKING'}[r.status];
-                const nm = esc(r.uname || r.name);
-                const ttl = esc(r.title || (r.status==='live'?'正在直播':r.status==='pending'?'检测中':'—'));
-                const av = r.avatar
-                    ? `<img src="${r.avatar}" alt="${nm}" referrerpolicy="no-referrer">`
-                    : `<div class="avatar-fb">${esc((nm||'?')[0])}</div>`;
-                const v = r.viewers ? fmtNum(r.viewers) : '—';
-                const d = fmtDur(r.duration||0);
-                const isLive = r.status === 'live';
-                return `<div class="row${isLive?' is-live':''}" onclick="window.open('${pUrl(r.platform,r.id)}','_blank')">
-                    <div class="avatar${isLive?' is-live':''}">${av}</div>
-                    <div class="row-body">
-                        <div class="row-head">
-                            <span class="row-name">${nm}</span>
-                            <span class="tag">${r.platform==='bilibili'?'BILI':'DY'}</span>
-                            <span class="status ${r.status}"><span class="sd ${r.status}"></span>${st}</span>
-                        </div>
-                        <div class="row-sub">${ttl}</div>
-                        <div class="row-meta"><span>${v} 观看</span><span>${d}</span></div>
-                    </div>
-                    <button class="row-del" onclick="event.stopPropagation();askDel('${r.platform}','${r.id}')">${TRASH_SVG}</button>
-                </div>`;
-            }).join('');
+
+            const liveItems = arr.filter(r => r.status === 'live');
+            const pendingItems = arr.filter(r => r.status === 'pending' || r.status === 'error');
+            const offlineItems = arr.filter(r => r.status === 'offline');
+
+            el.innerHTML =
+                groupHtml('直播中', 'live', liveItems) +
+                groupHtml('检测中', 'pending', pendingItems) +
+                groupHtml('离线', 'offline', offlineItems);
         }
 
         function renderPosts() {
-            const el = document.getElementById('posts-surface');
+            const el = document.getElementById('posts-groups');
             document.getElementById('posts-n').textContent = prooms.length ? `${prooms.length}` : '';
             if (!prooms.length) { el.innerHTML = emptyHtml('暂无监控账号'); return; }
-            el.innerHTML = prooms.map(r => {
+
+            const withPost = prooms.filter(r => {
+                const st = pstatus[`${r.platform}_${r.id}`] || {};
+                return st.latest_post;
+            });
+            const noPost = prooms.filter(r => {
+                const st = pstatus[`${r.platform}_${r.id}`] || {};
+                return !st.latest_post;
+            });
+
+            function postRowHtml(r) {
                 const st = pstatus[`${r.platform}_${r.id}`] || {}, lp = st.latest_post;
                 const nm = esc(r.name||r.id), ttl = esc(lp?.title||'暂无作品'), ts = lp?.time ? fmtTime(lp.time) : '';
                 const av = st.avatar || lp?.avatar, url = lp?.url || '#';
                 const avH = av
                     ? `<a href="${url}" target="_blank" rel="noopener" class="av-link"><img src="${av}" referrerpolicy="no-referrer" alt="${nm}"><span class="play"></span></a>`
-                    : `<div class="avatar"><div class="avatar-fb">${esc((nm||'?')[0])}</div></div>`;
+                    : `<div class="av"><div class="av-fb">${esc((nm||'?')[0])}</div></div>`;
                 return `<div class="row">
                     ${avH}
                     <div class="row-body">
@@ -783,7 +870,32 @@
                     </div>
                     <button class="row-del" onclick="askDel('${r.platform}','${r.id}','posts')">${TRASH_SVG}</button>
                 </div>`;
-            }).join('');
+            }
+
+            let html = '';
+            if (withPost.length) {
+                html += `<div class="group">
+                    <div class="group-label">
+                        <span class="g-dot pending"></span>
+                        <span>最新作品</span>
+                        <span class="g-count">${withPost.length}</span>
+                        <span class="g-line"></span>
+                    </div>
+                    <div class="surface">${withPost.map(postRowHtml).join('')}</div>
+                </div>`;
+            }
+            if (noPost.length) {
+                html += `<div class="group">
+                    <div class="group-label">
+                        <span class="g-dot offline"></span>
+                        <span>等待数据</span>
+                        <span class="g-count">${noPost.length}</span>
+                        <span class="g-line"></span>
+                    </div>
+                    <div class="surface">${noPost.map(postRowHtml).join('')}</div>
+                </div>`;
+            }
+            el.innerHTML = html;
         }
 
         function renderHistory(h) {
@@ -798,7 +910,7 @@
         }
 
         function emptyHtml(t) {
-            return `<div class="empty">${EMPTY_SVG}<div class="empty-text">${t}</div></div>`;
+            return `<div class="surface"><div class="empty">${EMPTY_SVG}<div class="empty-text">${t}</div></div></div>`;
         }
 
         async function loadData() {
