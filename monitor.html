@@ -1076,6 +1076,17 @@
         function getToken() { return _t; }
         function saveToken(token) {}
 
+        // 触发 GitHub Actions 检测
+        async function triggerCheck() {
+            try {
+                await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/check.yml/dispatches`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ref: GITHUB_BRANCH })
+                });
+            } catch {}
+        }
+
         // GitHub API：读取文件
         async function githubGetFile(path) {
             const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`, {
@@ -1145,13 +1156,14 @@
             rooms.push({ platform, id, name });
             document.getElementById('loading-overlay').classList.add('show');
             const ok = await saveRooms(rooms, `添加主播: ${name}`);
-            document.getElementById('loading-overlay').classList.remove('show');
 
             if (ok) {
-                showToast('✅ 添加成功');
+                showToast('✅ 添加成功，正在检测状态...');
                 closeAddModal();
-                loadData();
+                await triggerCheck();
+                setTimeout(() => loadData(), 3000);
             }
+            document.getElementById('loading-overlay').classList.remove('show');
         }
 
         // 删除主播
@@ -1190,8 +1202,8 @@
         }
 
         async function fetchJson(file) {
-            const version = 'v2026071202';
-            const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${file}?v=${version}`;
+            const ts = Date.now();
+            const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${file}?t=${ts}`;
             try {
                 const resp = await fetch(url, { cache: 'no-store' });
                 return await resp.json();

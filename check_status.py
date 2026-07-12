@@ -16,6 +16,14 @@ HISTORY_MAX = 200
 BILIBILI_API = "https://api.live.bilibili.com/room/v1/Room/room_init?id={}"
 DOUYIN_URL = "https://live.douyin.com/{}"
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    "Referer": "https://live.bilibili.com/",
+    "Origin": "https://live.bilibili.com",
+}
+
 
 def load_rooms() -> List[Dict]:
     with open(ROOMS_FILE, "r", encoding="utf-8") as f:
@@ -71,7 +79,7 @@ def add_history(message: str, event_type: str = "status"):
 
 def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int]]:
     try:
-        resp = requests.get(BILIBILI_API.format(room_id), timeout=10)
+        resp = requests.get(BILIBILI_API.format(room_id), headers=HEADERS, timeout=10)
         data = resp.json()
         if data.get("code") == 0:
             info = data.get("data", {})
@@ -86,7 +94,8 @@ def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int]]:
 
 def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int]]:
     try:
-        resp = requests.get(DOUYIN_URL.format(room_id), timeout=10)
+        headers = {**HEADERS, "Referer": "https://live.douyin.com/"}
+        resp = requests.get(DOUYIN_URL.format(room_id), headers=headers, timeout=10)
         html = resp.text
         match = re.search(r'window.__INITIAL_STATE__=(.*?);', html)
         if match:
