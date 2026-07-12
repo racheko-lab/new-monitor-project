@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>直播监控中心</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -1255,6 +1258,24 @@
         }
 
         async function fetchJson(file) {
+            // 优先用 GitHub Contents API：带 token 无 CDN 缓存，保证拿到最新数据
+            const token = getToken();
+            if (token) {
+                try {
+                    const resp = await fetch(
+                        `https://api.github.com/repos/${GITHUB_REPO}/contents/${file}?ref=${GITHUB_BRANCH}`,
+                        { headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }, cache: 'no-store' }
+                    );
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        const content = decodeURIComponent(escape(atob(data.content)));
+                        return JSON.parse(content);
+                    }
+                } catch (e) {
+                    // 回退到 raw URL
+                }
+            }
+            // 回退：raw URL + 时间戳
             const ts = Date.now();
             const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${file}?t=${ts}`;
             try {

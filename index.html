@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0; url=monitor.html">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>直播监控</title>
 </head>
 <body>
     <script>
-        window.location.href = 'monitor.html';
+        // 加时间戳版本号，强制浏览器每次都拿最新的 monitor.html，避免缓存导致功能不生效
+        window.location.href = 'monitor.html?v=' + Date.now();
     </script>
 </body>
 </html>
