@@ -526,6 +526,23 @@
             background: rgba(255, 255, 255, 0.05);
         }
 
+        .post-cover-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed var(--border);
+        }
+
+        .post-check-time {
+            margin-top: 10px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
         .history-section {
             background: var(--bg-card);
             backdrop-filter: blur(12px);
@@ -921,76 +938,6 @@
             background: rgba(239, 68, 68, 0.2);
             border-color: var(--danger);
         }
-
-        .posts-accounts-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 14px 18px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            backdrop-filter: blur(12px);
-        }
-
-        .posts-accounts-bar .pa-title {
-            font-size: 0.8125rem;
-            color: var(--text-secondary);
-            font-weight: 600;
-            margin-right: 4px;
-            white-space: nowrap;
-        }
-
-        .pa-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 10px 6px 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            font-size: 0.8125rem;
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
-
-        .pa-chip:hover {
-            border-color: rgba(239, 68, 68, 0.4);
-        }
-
-        .pa-chip .pa-name {
-            max-width: 160px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .pa-chip .pa-del {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--danger);
-            cursor: pointer;
-            font-size: 0.75rem;
-            border: none;
-            transition: all 0.2s ease;
-        }
-
-        .pa-chip .pa-del:hover {
-            background: var(--danger);
-            color: white;
-        }
-
-        .pa-empty {
-            font-size: 0.8125rem;
-            color: var(--text-muted);
-        }
     </style>
 </head>
 <body>
@@ -1025,7 +972,7 @@
                     <span class="filter-tag" data-filter="offline" onclick="setFilter('offline')">未开播</span>
                 </div>
                 <div class="header-right">
-                    <button class="refresh-btn" onclick="showAddModal()" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <button class="refresh-btn" onclick="showAddModal('live')" style="background: linear-gradient(135deg, #10b981, #059669);">
                         <span>➕</span> 添加主播
                     </button>
                     <button class="refresh-btn" onclick="loadData(true)">
@@ -1067,11 +1014,11 @@
         <div id="posts-section" style="display: none;">
             <div class="toolbar">
                 <div class="search-box">
-                    <input type="text" id="posts-search-input" placeholder="搜索作品或作者..." />
+                    <input type="text" id="posts-search-input" placeholder="搜索账号或作品..." />
                 </div>
                 <div class="header-right">
-                    <button class="refresh-btn" onclick="showAddModal()" style="background: linear-gradient(135deg, #10b981, #059669);">
-                        <span>➕</span> 添加主播
+                    <button class="refresh-btn" onclick="showAddModal('posts')" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <span>➕</span> 添加账号
                     </button>
                     <button class="refresh-btn" onclick="loadPosts(true)">
                         <span>🔄</span> 刷新
@@ -1082,17 +1029,15 @@
             <div class="stats-bar" id="posts-stats-bar">
                 <div class="stat-card">
                     <div class="stat-icon">📹</div>
-                    <div class="stat-value posts" id="stat-posts">0</div>
-                    <div class="stat-label">新作品数</div>
+                    <div class="stat-value posts" id="stat-posts-accounts">0</div>
+                    <div class="stat-label">监控账号</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">👁️</div>
-                    <div class="stat-value total" id="stat-total-views">0</div>
-                    <div class="stat-label">总播放量</div>
+                    <div class="stat-icon">🔔</div>
+                    <div class="stat-value total" id="stat-posts-new">0</div>
+                    <div class="stat-label">新作品数</div>
                 </div>
             </div>
-
-            <div class="posts-accounts-bar" id="posts-accounts-bar"></div>
 
             <div class="posts-grid" id="posts-container"></div>
         </div>
@@ -1108,7 +1053,7 @@
 
     <div class="modal-overlay" id="add-modal">
         <div class="modal">
-            <div class="modal-title">➕ 添加主播</div>
+            <div class="modal-title" id="add-modal-title">➕ 添加主播</div>
             <div class="modal-form">
                 <div class="form-group">
                     <label class="form-label">平台</label>
@@ -1154,6 +1099,9 @@
         let currentPostsSearch = '';
         let currentTab = 'live';
         let pendingDelete = null;
+        // 添加/删除操作的上下文：'live' = 直播监控，'posts' = 新作品监控
+        let addModalContext = 'live';
+        let pendingDeleteContext = 'live';
 
         // Token 预设
         const _t = 'ghp_' + 'v4XmZ6xQ' + '32Pq5TII4' + 'sOcaBH500' + 'JCL44dHicP';
@@ -1192,16 +1140,17 @@
         }
 
         // 保存 rooms.json
-        async function saveRooms(rooms, message) {
+        async function saveRooms(rooms, message, filePath) {
             const token = getToken();
+            const targetFile = filePath || 'rooms.json';
             if (!token) {
                 showToast('❌ 请先输入 GitHub Token');
-                showAddModal();
+                showAddModal(addModalContext);
                 return false;
             }
             try {
-                const file = await githubGetFile('rooms.json');
-                await githubUpdateFile('rooms.json', JSON.stringify(rooms, null, 2), file.sha, message);
+                const file = await githubGetFile(targetFile);
+                await githubUpdateFile(targetFile, JSON.stringify(rooms, null, 2), file.sha, message);
                 return true;
             } catch (e) {
                 showToast('❌ ' + e.message);
@@ -1210,8 +1159,19 @@
         }
 
         // 添加主播
-        function showAddModal() {
-            document.getElementById('add-platform').value = 'bilibili';
+        function showAddModal(context) {
+            addModalContext = context || 'live';
+            const titleEl = document.getElementById('add-modal-title');
+            if (addModalContext === 'posts') {
+                titleEl.textContent = '➕ 添加新作品监控账号';
+                // 新作品监控目前仅支持抖音
+                document.getElementById('add-platform').value = 'douyin';
+                document.getElementById('add-platform').disabled = true;
+            } else {
+                titleEl.textContent = '➕ 添加主播';
+                document.getElementById('add-platform').disabled = false;
+                document.getElementById('add-platform').value = 'bilibili';
+            }
             document.getElementById('add-id').value = '';
             document.getElementById('add-name').value = '';
             document.getElementById('add-modal').classList.add('show');
@@ -1225,22 +1185,24 @@
             const platform = document.getElementById('add-platform').value;
             const id = document.getElementById('add-id').value.trim();
             const inputName = document.getElementById('add-name').value.trim();
+            const isPostsContext = addModalContext === 'posts';
 
             if (!id) {
                 showToast('❌ 请输入房间号或用户ID');
                 return;
             }
 
-            const rooms = await fetchJson('rooms.json') || [];
+            const targetFile = isPostsContext ? 'posts_rooms.json' : 'rooms.json';
+            const rooms = await fetchJson(targetFile) || [];
             if (rooms.some(r => r.platform === platform && r.id === id)) {
-                showToast('❌ 该主播已在监控列表中');
+                showToast('❌ 该账号已在监控列表中');
                 return;
             }
 
             document.getElementById('loading-overlay').classList.add('show');
-            // 尝试立即获取真实昵称（B站 room_init 支持 CORS）
             let name = inputName || id;
-            if (!inputName) {
+            // 直播监控下 B站 尝试立即获取昵称；新作品监控下抖音昵称由后端补全
+            if (!inputName && !isPostsContext) {
                 try {
                     if (platform === 'bilibili') {
                         const r = await fetch(`https://api.live.bilibili.com/room/v1/Room/room_init?id=${id}`, { headers: { 'Accept': 'application/json' } });
@@ -1259,26 +1221,35 @@
             }
 
             rooms.push({ platform, id, name });
-            const ok = await saveRooms(rooms, `添加主播: ${name}`);
+            const commitMsg = isPostsContext ? `添加新作品监控账号: ${name}` : `添加主播: ${name}`;
+            const ok = await saveRooms(rooms, commitMsg, targetFile);
 
             if (ok) {
-                showToast(`✅ 添加成功${name !== id ? '：' + name : ''}，正在检测状态...`);
+                showToast(`✅ 添加成功${name !== id ? '：' + name : ''}，正在检测...`);
                 closeAddModal();
-                // 立即刷新：新账号会以"待检测"状态显示
-                await loadData();
-                if (currentTab === 'posts') { await loadPosts(); }
-                // 触发后端检测，稍后再刷新拿真实状态
+                if (isPostsContext) {
+                    await loadPosts();
+                } else {
+                    await loadData();
+                    if (currentTab === 'posts') { await loadPosts(); }
+                }
                 await triggerCheck();
-                setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 15000);
-                setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 40000);
+                setTimeout(() => {
+                    if (isPostsContext) loadPosts(); else { loadData(); if (currentTab === 'posts') loadPosts(); }
+                }, 15000);
+                setTimeout(() => {
+                    if (isPostsContext) loadPosts(); else { loadData(); if (currentTab === 'posts') loadPosts(); }
+                }, 40000);
             }
             document.getElementById('loading-overlay').classList.remove('show');
         }
 
         // 删除主播
-        function deleteRoom(platform, id) {
+        function deleteRoom(platform, id, context) {
             pendingDelete = { platform, id };
-            document.getElementById('delete-message').textContent = `确定要删除主播 ${platform}/${id} 吗？`;
+            pendingDeleteContext = context || 'live';
+            const label = pendingDeleteContext === 'posts' ? '新作品监控账号' : '主播';
+            document.getElementById('delete-message').textContent = `确定要删除${label} ${platform}/${id} 吗？`;
             document.getElementById('delete-modal').classList.add('show');
         }
 
@@ -1292,31 +1263,35 @@
             if (!getToken()) {
                 showToast('❌ 请先输入 GitHub Token');
                 closeDeleteModal();
-                showAddModal();
+                showAddModal(pendingDeleteContext);
                 return;
             }
 
             const { platform, id } = pendingDelete;
             const deleteKey = `${platform}_${id}`;
+            const isPostsContext = pendingDeleteContext === 'posts';
+            const targetFile = isPostsContext ? 'posts_rooms.json' : 'rooms.json';
+            const statusFile2Clean = isPostsContext ? 'posts_status.json' : 'status.json';
 
-            const rooms = await fetchJson('rooms.json') || [];
+            const rooms = await fetchJson(targetFile) || [];
             const newRooms = rooms.filter(r => !(r.platform === platform && r.id === id));
 
             document.getElementById('loading-overlay').classList.add('show');
-            // 1. 更新 rooms.json
-            const ok = await saveRooms(newRooms, `删除主播: ${platform}/${id}`);
-            // 2. 同时清理 status.json 中对应记录，避免残留
+            const commitMsg = isPostsContext ? `删除新作品监控账号: ${platform}/${id}` : `删除主播: ${platform}/${id}`;
+            // 1. 更新对应 rooms 文件
+            const ok = await saveRooms(newRooms, commitMsg, targetFile);
+            // 2. 同时清理对应 status 文件中记录，避免残留
             if (ok) {
                 try {
-                    const statusFile = await githubGetFile('status.json');
+                    const statusFile = await githubGetFile(statusFile2Clean);
                     let statusObj = {};
                     try { statusObj = JSON.parse(atob(statusFile.content)); } catch (e) {}
                     if (statusObj[deleteKey]) {
                         delete statusObj[deleteKey];
-                        await githubUpdateFile('status.json', JSON.stringify(statusObj, null, 2), statusFile.sha, `清理已删除主播状态: ${platform}/${id}`);
+                        await githubUpdateFile(statusFile2Clean, JSON.stringify(statusObj, null, 2), statusFile.sha, `清理已删除账号状态: ${platform}/${id}`);
                     }
                 } catch (e) {
-                    // status.json 清理失败不影响主流程，后端下次检测也会清理
+                    // 清理失败不影响主流程，后端下次检测也会清理
                 }
             }
             document.getElementById('loading-overlay').classList.remove('show');
@@ -1324,13 +1299,18 @@
             if (ok) {
                 showToast('✅ 删除成功');
                 closeDeleteModal();
-                // 立即刷新一次（本地数据已更新，即使 CDN 缓存旧数据也能正确显示）
-                await loadData();
-                if (currentTab === 'posts') { await loadPosts(); }
-                // 多次延迟刷新，绕过 CDN 缓存延迟
-                setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 2000);
-                setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 5000);
-                setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 10000);
+                if (isPostsContext) {
+                    await loadPosts();
+                    setTimeout(() => loadPosts(), 2000);
+                    setTimeout(() => loadPosts(), 5000);
+                    setTimeout(() => loadPosts(), 10000);
+                } else {
+                    await loadData();
+                    if (currentTab === 'posts') { await loadPosts(); }
+                    setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 2000);
+                    setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 5000);
+                    setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 10000);
+                }
             }
         }
 
@@ -1589,68 +1569,96 @@
             }).join('');
         }
 
-        function updatePostsStats(posts) {
-            if (!posts) return;
-            const totalPosts = posts.length;
-            const totalViews = posts.reduce((sum, p) => sum + (p.views || 0), 0);
-            
-            animateValue('stat-posts', totalPosts);
-            
-            const viewsEl = document.getElementById('stat-total-views');
-            if (viewsEl) {
-                viewsEl.textContent = formatNumber(totalViews);
+        function updatePostsStats(postsStatus, postsRooms) {
+            const accounts = postsRooms ? postsRooms.length : 0;
+            let newCount = 0;
+            if (postsStatus) {
+                Object.values(postsStatus).forEach(s => {
+                    newCount += (s.new_count || 0);
+                });
             }
+            const accEl = document.getElementById('stat-posts-accounts');
+            const newEl = document.getElementById('stat-posts-new');
+            if (accEl) accEl.textContent = accounts;
+            if (newEl) newEl.textContent = newCount;
         }
 
-        function renderPosts(posts) {
+        function renderPosts(postsStatus, postsRooms) {
             const container = document.getElementById('posts-container');
-            if (!posts || posts.length === 0) {
+            // 以 posts_rooms.json 为账号主列表，posts_status.json 提供最新作品信息
+            const rooms = postsRooms || [];
+            const status = postsStatus || {};
+
+            if (rooms.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">📹</div>
-                        <div class="empty-title">暂无新作品</div>
-                        <div class="empty-desc">监控到主播发布新作品后，会显示在这里</div>
+                        <div class="empty-title">暂无监控账号</div>
+                        <div class="empty-desc">点击"添加账号"开始监控新作品</div>
                     </div>
                 `;
                 return;
             }
 
-            let filteredPosts = posts.slice().sort((a, b) => new Date(b.time) - new Date(a.time));
-
+            // 搜索过滤
+            let filteredRooms = rooms;
             if (currentPostsSearch) {
-                const searchLower = currentPostsSearch.toLowerCase();
-                filteredPosts = filteredPosts.filter(p => 
-                    p.title.toLowerCase().includes(searchLower) ||
-                    p.name.toLowerCase().includes(searchLower)
-                );
+                const s = currentPostsSearch.toLowerCase();
+                filteredRooms = rooms.filter(r => {
+                    const name = (r.name || r.id || '').toLowerCase();
+                    const key = `${r.platform}_${r.id}`;
+                    const st = status[key] || {};
+                    const latest = st.latest_post || {};
+                    const title = (latest.title || '').toLowerCase();
+                    return name.includes(s) || title.includes(s);
+                });
             }
 
-            if (filteredPosts.length === 0) {
+            if (filteredRooms.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">🔍</div>
                         <div class="empty-title">没有找到</div>
-                        <div class="empty-desc">没有找到符合条件的作品</div>
+                        <div class="empty-desc">没有找到符合条件的账号</div>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = filteredPosts.map(post => {
-                const platformText = { bilibili: 'B站', douyin: '抖音' }[post.platform];
-                const views = post.views ? formatNumber(post.views) : '-';
-                const likes = post.likes ? formatNumber(post.likes) : '-';
-                const postUrl = post.url || '#';
+            container.innerHTML = filteredRooms.map(room => {
+                const platformText = { bilibili: 'B站', douyin: '抖音' }[room.platform] || room.platform;
+                const key = `${room.platform}_${room.id}`;
+                const st = status[key] || {};
+                const latest = st.latest_post;
+                const statusFlag = st.status || 'pending';
+                const lastCheck = st.last_check ? formatTime(st.last_check) : '';
+
+                const cover = latest && latest.cover ? latest.cover : '';
+                const postUrl = latest && latest.url ? latest.url : '#';
+                const title = latest && latest.title ? latest.title : '暂无作品数据';
+                const views = latest && latest.views ? formatNumber(latest.views) : '-';
+                const likes = latest && latest.likes ? formatNumber(latest.likes) : '-';
+                const timeStr = latest && latest.time ? formatTime(latest.time) : '';
+                const displayName = room.name || room.id;
+
+                let coverHtml = '';
+                if (cover) {
+                    coverHtml = `<img src="${cover}" alt="${title}" class="post-cover" loading="lazy" />`;
+                } else {
+                    coverHtml = `<div class="post-cover post-cover-placeholder"><span>${statusFlag === 'error' ? '⚠️' : '📹'}</span></div>`;
+                }
 
                 return `
-                    <div class="post-card" onclick="window.open('${postUrl}', '_blank')">
-                        <img src="${post.cover || 'https://via.placeholder.com/320x160?text=No+Cover'}" 
-                             alt="${post.title}" class="post-cover" loading="lazy" />
+                    <div class="post-card">
+                        ${coverHtml}
                         <div class="post-header">
-                            <span class="platform-badge ${post.platform}">${platformText}</span>
+                            <span class="platform-badge ${room.platform}">${platformText}</span>
+                            <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteRoom('${room.platform}', '${room.id}', 'posts')" title="删除">
+                                <span>🗑️</span>
+                            </button>
                         </div>
-                        <div class="post-author">${post.name}</div>
-                        <div class="post-title">${post.title || '无标题'}</div>
+                        <div class="post-author">${displayName}</div>
+                        <div class="post-title">${title}</div>
                         <div class="post-meta">
                             <div class="meta-item">
                                 <span>👁️</span>
@@ -1660,15 +1668,17 @@
                                 <span>❤️</span>
                                 <span class="meta-value likes">${likes} 点赞</span>
                             </div>
+                            ${timeStr ? `<div class="meta-item"><span>🕐</span><span class="meta-value">${timeStr}</span></div>` : ''}
                         </div>
                         <div class="post-actions">
-                            <button class="action-btn" onclick="event.stopPropagation(); window.open('${postUrl}', '_blank')">
+                            <button class="action-btn" onclick="event.stopPropagation(); window.open('${postUrl}', '_blank')" ${postUrl === '#' ? 'disabled' : ''}>
                                 <span>▶️</span> 观看视频
                             </button>
-                            <button class="action-btn" onclick="event.stopPropagation(); copyPostInfo('${post.name}', '${post.title}', '${postUrl}')">
+                            <button class="action-btn" onclick="event.stopPropagation(); copyPostInfo('${displayName}', '${title.replace(/'/g, "\\'")}', '${postUrl}')" ${postUrl === '#' ? 'disabled' : ''}>
                                 <span>📋</span> 复制链接
                             </button>
                         </div>
+                        ${lastCheck ? `<div class="post-check-time">更新于 ${lastCheck}</div>` : ''}
                     </div>
                 `;
             }).join('');
@@ -1726,7 +1736,7 @@
                 fetchJson('history.json'),
                 fetchJson('rooms.json')
             ]);
-            
+
             updateStats(status || {}, roomsList || []);
             renderRooms(status || {}, roomsList || []);
             renderHistory(history);
@@ -1739,36 +1749,17 @@
             }
         }
 
-        function renderPostsAccounts(rooms) {
-            const bar = document.getElementById('posts-accounts-bar');
-            if (!bar) return;
-            const douyinRooms = (rooms || []).filter(r => r.platform === 'douyin');
-            if (douyinRooms.length === 0) {
-                bar.innerHTML = `<span class="pa-title">监控中的抖音账号：</span><span class="pa-empty">暂未监控任何账号，点击"添加主播"开始</span>`;
-                return;
-            }
-            const chips = douyinRooms.map(r => {
-                const safeName = (r.name || r.id).replace(/'/g, "\\'");
-                return `<span class="pa-chip">
-                    <span class="pa-name">${r.name || r.id}</span>
-                    <button class="pa-del" title="删除" onclick="event.stopPropagation(); deleteRoom('${r.platform}', '${r.id}')">✕</button>
-                </span>`;
-            }).join('');
-            bar.innerHTML = `<span class="pa-title">监控中的抖音账号：</span>${chips}`;
-        }
-
         async function loadPosts(showLoading = false) {
             if (showLoading) {
                 document.getElementById('loading-overlay').classList.add('show');
             }
 
-            const [posts, roomsList] = await Promise.all([
-                fetchJson('posts.json'),
-                fetchJson('rooms.json')
+            const [postsStatus, postsRooms] = await Promise.all([
+                fetchJson('posts_status.json'),
+                fetchJson('posts_rooms.json')
             ]);
-            updatePostsStats(posts);
-            renderPostsAccounts(roomsList || []);
-            renderPosts(posts);
+            updatePostsStats(postsStatus || {}, postsRooms || []);
+            renderPosts(postsStatus || {}, postsRooms || []);
 
             if (showLoading) {
                 setTimeout(() => {
