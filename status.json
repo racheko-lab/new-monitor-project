@@ -1,25 +1,4 @@
 {
-  "bilibili_252149372": {
-    "platform": "bilibili",
-    "id": "252149372",
-    "name": "252149372",
-    "status": "error",
-    "title": null,
-    "viewers": null,
-    "last_check": "2026-07-12T12:16:34.606517",
-    "duration": 0
-  },
-  "bilibili_84074": {
-    "platform": "bilibili",
-    "id": "84074",
-    "name": "炫神_",
-    "uname": "炫神_",
-    "status": "offline",
-    "title": null,
-    "viewers": null,
-    "last_check": "2026-07-12T12:32:23.949111",
-    "duration": 0
-  },
   "bilibili_22230707": {
     "platform": "bilibili",
     "id": "22230707",
