@@ -1217,17 +1217,40 @@
                 return;
             }
 
+            const { platform, id } = pendingDelete;
+            const deleteKey = `${platform}_${id}`;
+
             const rooms = await fetchJson('rooms.json') || [];
-            const newRooms = rooms.filter(r => !(r.platform === pendingDelete.platform && r.id === pendingDelete.id));
+            const newRooms = rooms.filter(r => !(r.platform === platform && r.id === id));
 
             document.getElementById('loading-overlay').classList.add('show');
-            const ok = await saveRooms(newRooms, `删除主播: ${pendingDelete.platform}/${pendingDelete.id}`);
+            // 1. 更新 rooms.json
+            const ok = await saveRooms(newRooms, `删除主播: ${platform}/${id}`);
+            // 2. 同时清理 status.json 中对应记录，避免残留
+            if (ok) {
+                try {
+                    const statusFile = await githubGetFile('status.json');
+                    let statusObj = {};
+                    try { statusObj = JSON.parse(atob(statusFile.content)); } catch (e) {}
+                    if (statusObj[deleteKey]) {
+                        delete statusObj[deleteKey];
+                        await githubUpdateFile('status.json', JSON.stringify(statusObj, null, 2), statusFile.sha, `清理已删除主播状态: ${platform}/${id}`);
+                    }
+                } catch (e) {
+                    // status.json 清理失败不影响主流程，后端下次检测也会清理
+                }
+            }
             document.getElementById('loading-overlay').classList.remove('show');
 
             if (ok) {
                 showToast('✅ 删除成功');
                 closeDeleteModal();
-                loadData();
+                // 立即刷新一次（本地数据已更新，即使 CDN 缓存旧数据也能正确显示）
+                await loadData();
+                // 多次延迟刷新，绕过 CDN 缓存延迟
+                setTimeout(() => loadData(), 2000);
+                setTimeout(() => loadData(), 5000);
+                setTimeout(() => loadData(), 10000);
             }
         }
 
