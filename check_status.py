@@ -229,7 +229,24 @@ def check_all() -> Tuple[List[Dict], List[str]]:
     return current_status, notifications
 
 
+def cleanup_status() -> bool:
+    """清理 status.json 中不在 rooms.json 里的残留记录（已删除的主播）。
+    返回是否有改动。"""
+    rooms = load_rooms()
+    status = load_status()
+    valid_keys = {get_status_key(r["platform"], r["id"]) for r in rooms}
+    dirty = False
+    for key in list(status.keys()):
+        if key not in valid_keys:
+            del status[key]
+            dirty = True
+    if dirty:
+        save_status(status)
+    return dirty
+
+
 if __name__ == "__main__":
     status, notifications = check_all()
+    cleanup_status()
     for msg in notifications:
         print(msg)
