@@ -100,7 +100,7 @@ def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int], Opt
                         headers=HEADERS, timeout=10)
                     u_data = u_resp.json()
                     if u_data.get("code") == 0:
-                        uname = u_data.get("data", {}).get("information", {}).get("uname")
+                        uname = u_data.get("data", {}).get("info", {}).get("uname")
                 except Exception:
                     pass
             return status, title, viewers, uname
