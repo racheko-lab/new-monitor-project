@@ -113,10 +113,11 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
     """检测抖音直播状态。
 
     抖音新版页面使用 RSC（__pace_f）格式存储数据。
-    判断逻辑：
-    - web_stream_url 不是 null → 直播中
-    - web_stream_url 是 null 但 roomId 非空 → 未直播
-    - roomId 为空 → 房间无效
+    判断逻辑（优先级从高到低）：
+    1. web_stream_url 不是 null → 直播中（普通直播，有拉流地址）
+    2. HTML 含"该直播类型或玩法电脑端暂未支持" → 直播中（特殊类型：电脑横屏/手游等，PC端不支持但确实在直播）
+    3. 有 roomId 或 nickname → 未直播
+    4. 都没有 → 房间无效
     """
     try:
         headers = {**HEADERS, "Referer": "https://live.douyin.com/"}
@@ -138,7 +139,6 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
                 pass
 
         # 新版：解析 __pace_f 数据块
-        # 找到包含该房间 web_rid 的数据块（排除广告占位块）
         pace_blocks = re.findall(r'self\.__pace_f\.push\(\[1,"(.*?)"\]\)', html, re.DOTALL)
         target_rid_marker = f'"web_rid":"{room_id}"'
         room_block = None
@@ -152,7 +152,6 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
                 break
 
         if not room_block:
-            # 再尝试：找所有含 roomId 非空的块
             for block in pace_blocks:
                 try:
                     unescaped = block.encode().decode('unicode_escape')
@@ -177,17 +176,6 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
         real_room_id = room_id_match.group(1) if room_id_match else ""
         stream_val = stream_match.group(1) if stream_match else "null"
 
-        # 判断直播状态：web_stream_url 非 null 即为直播中
-        if stream_val and stream_val != "null":
-            status = "live"
-        elif real_room_id:
-            status = "offline"
-        elif nick_match and nick_match.group(1) != "$undefined":
-            # roomId 为空但有昵称，说明主播存在但未开播
-            status = "offline"
-        else:
-            return "error", None, None, None
-
         # 昵称（修复 latin1 → utf-8 编码）
         uname = None
         if nick_match and nick_match.group(1) != "$undefined":
@@ -205,6 +193,24 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
                 title = title_match.group(1)
 
         viewers = int(count_match.group(1)) if count_match else None
+
+        # 判断直播状态
+        # 1. web_stream_url 非 null → 直播中（普通直播）
+        if stream_val and stream_val != "null":
+            status = "live"
+        # 2. HTML 含"暂未支持" → 直播中（特殊类型：电脑横屏/手游等，PC端不支持但确实在直播）
+        elif "该直播类型或玩法电脑端暂未支持" in html or "暂未支持" in html:
+            status = "live"
+            if not title:
+                title = "电脑端不支持的直播类型"
+        # 3. 有 roomId 或 nickname → 未直播
+        elif real_room_id:
+            status = "offline"
+        elif uname:
+            status = "offline"
+        # 4. 都没有 → 房间无效
+        else:
+            return "error", None, None, None
 
         return status, title, viewers, uname
     except Exception as e:
