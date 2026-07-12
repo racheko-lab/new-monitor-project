@@ -8,7 +8,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-12T20:37:29.562748",
+    "last_check": "2026-07-12T23:37:47.285742",
     "duration": 0
   },
   "bilibili_3381141": {
@@ -17,22 +17,22 @@
     "name": "sak药",
     "uname": "sak药",
     "avatar": "https://i2.hdslb.com/bfs/face/f5ef1f7f5edf657eb4892a297236e31edeae3603.jpg",
-    "status": "live",
+    "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-12T20:37:30.618703",
-    "duration": 3504
+    "last_check": "2026-07-12T23:37:48.128853",
+    "duration": 12810
   },
   "douyin_ludamobiubiu": {
     "platform": "douyin",
     "id": "ludamobiubiu",
     "name": "鲁大魔",
     "uname": "鲁大魔",
-    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1538749da661a0405c0aef5f0123b769.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1538749da661a0405c0aef5f0123b769.jpeg?from=3067671334",
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-12T20:37:31.968341",
+    "last_check": "2026-07-12T23:37:49.910463",
     "duration": 859
   },
   "douyin_misssiir": {
@@ -44,7 +44,7 @@
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-12T20:37:32.954114",
+    "last_check": "2026-07-12T23:37:51.826738",
     "duration": 883
   }
 }
