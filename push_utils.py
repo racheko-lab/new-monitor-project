@@ -7,8 +7,13 @@ import requests
 
 
 def load_config() -> Dict:
-    config_str = os.environ.get("MONITOR_CONFIG", "{}")
-    return json.loads(config_str)
+    config_str = os.environ.get("MONITOR_CONFIG", "") or ""
+    if not config_str.strip():
+        return {}
+    try:
+        return json.loads(config_str)
+    except Exception:
+        return {}
 
 
 def push_bark(config: Dict, title: str, content: str):

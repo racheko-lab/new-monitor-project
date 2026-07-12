@@ -398,6 +398,11 @@
             background: var(--warning); 
             box-shadow: 0 0 8px var(--warning);
         }
+        .status-dot.pending {
+            background: var(--info);
+            box-shadow: 0 0 8px var(--info);
+            animation: pulse-ring 2s infinite;
+        }
 
         @keyframes pulse-ring {
             0% { transform: scale(1); opacity: 1; }
@@ -415,6 +420,7 @@
         .status-text.live { color: var(--danger); }
         .status-text.offline { color: var(--text-muted); }
         .status-text.error { color: var(--warning); }
+        .status-text.pending { color: var(--info); }
 
         .platform-badge {
             padding: 5px 12px;
@@ -1160,8 +1166,12 @@
             if (ok) {
                 showToast('✅ 添加成功，正在检测状态...');
                 closeAddModal();
+                // 立即刷新：新账号会以"待检测"状态显示
+                await loadData();
+                // 触发后端检测，稍后再刷新一次拿真实状态
                 await triggerCheck();
-                setTimeout(() => loadData(), 3000);
+                setTimeout(() => loadData(), 15000);
+                setTimeout(() => loadData(), 40000);
             }
             document.getElementById('loading-overlay').classList.remove('show');
         }
@@ -1300,12 +1310,15 @@
             }, 2000);
         }
 
-        function updateStats(status) {
-            if (!status) return;
-            const rooms = Object.values(status);
+        function updateStats(status, roomsList) {
+            if (!status) status = {};
+            // 合并：以 roomsList 为准，status 提供状态信息
+            const rooms = (roomsList || []).map(r => {
+                const key = `${r.platform}_${r.id}`;
+                return status[key] || { ...r, status: 'pending', title: null, viewers: null, duration: 0 };
+            });
             const liveCount = rooms.filter(r => r.status === 'live').length;
             const offlineCount = rooms.filter(r => r.status === 'offline').length;
-            const totalDuration = rooms.reduce((sum, r) => sum + (r.duration || 0), 0);
 
             animateValue('stat-live', liveCount);
             animateValue('stat-offline', offlineCount);
@@ -1313,6 +1326,7 @@
             
             const durationEl = document.getElementById('stat-duration');
             if (durationEl) {
+                const totalDuration = rooms.reduce((sum, r) => sum + (r.duration || 0), 0);
                 durationEl.textContent = formatDuration(totalDuration);
             }
         }
@@ -1346,22 +1360,26 @@
             return '#';
         }
 
-        function renderRooms(status) {
+        function renderRooms(status, roomsList) {
             const container = document.getElementById('rooms-container');
-            if (!status) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">🔌</div>
-                        <div class="empty-title">加载失败</div>
-                        <div class="empty-desc">无法获取监控数据，请检查网络连接</div>
-                    </div>
-                `;
-                return;
+            if (!status) status = {};
+
+            // 合并：以 roomsList（监控列表）为准，附加 status 中的状态信息
+            // 这样新添加但尚未检测的账号也会显示为"待检测"
+            let rooms;
+            if (roomsList && roomsList.length > 0) {
+                rooms = roomsList.map(r => {
+                    const key = `${r.platform}_${r.id}`;
+                    const s = status[key];
+                    return s ? { ...s, name: r.name || s.name } : { ...r, status: 'pending', title: null, viewers: null, duration: 0 };
+                });
+            } else {
+                rooms = Object.values(status);
             }
 
-            let rooms = Object.values(status).sort((a, b) => {
-                const order = { live: 0, error: 1, offline: 2 };
-                return order[a.status] - order[b.status];
+            rooms.sort((a, b) => {
+                const order = { live: 0, pending: 1, error: 2, offline: 3 };
+                return (order[a.status] ?? 9) - (order[b.status] ?? 9);
             });
 
             if (currentFilter !== 'all') {
@@ -1380,8 +1398,8 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">📭</div>
-                        <div class="empty-title">暂无数据</div>
-                        <div class="empty-desc">没有找到符合条件的主播</div>
+                        <div class="empty-title">暂无监控对象</div>
+                        <div class="empty-desc">点击右上角"添加主播"开始监控</div>
                     </div>
                 `;
                 return;
@@ -1389,7 +1407,7 @@
 
             container.innerHTML = rooms.map(room => {
                 const statusClass = room.status;
-                const statusText = { live: '直播中', offline: '未开播', error: '检测失败' }[room.status];
+                const statusText = { live: '直播中', offline: '未开播', error: '检测失败', pending: '待检测' }[room.status];
                 const platformText = { bilibili: 'B站', douyin: '抖音' }[room.platform];
                 const duration = formatDuration(room.duration || 0);
                 const viewers = room.viewers ? formatNumber(room.viewers) : '-';
@@ -1405,7 +1423,7 @@
                             <span class="platform-badge ${room.platform}">${platformText}</span>
                         </div>
                         <div class="room-name">${room.name}</div>
-                        <div class="room-title">${room.title || (room.status === 'live' ? '正在直播...' : '暂无直播信息')}</div>
+                        <div class="room-title">${room.title || (room.status === 'live' ? '正在直播...' : (room.status === 'pending' ? '等待首次检测...' : '暂无直播信息'))}</div>
                         <div class="room-meta">
                             <div class="meta-item">
                                 <span>👁️</span>
@@ -1561,13 +1579,14 @@
                 document.getElementById('loading-overlay').classList.add('show');
             }
 
-            const [status, history] = await Promise.all([
+            const [status, history, roomsList] = await Promise.all([
                 fetchJson('status.json'),
-                fetchJson('history.json')
+                fetchJson('history.json'),
+                fetchJson('rooms.json')
             ]);
             
-            updateStats(status);
-            renderRooms(status);
+            updateStats(status || {}, roomsList || []);
+            renderRooms(status || {}, roomsList || []);
             renderHistory(history);
             document.getElementById('last-update').textContent = `最后更新: ${new Date().toLocaleString('zh-CN')}`;
 

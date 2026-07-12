@@ -20,19 +20,24 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Check live status
+        id: check_live
+        continue-on-error: true
         env:
           MONITOR_CONFIG: ${{ secrets.MONITOR_CONFIG }}
         run: python monitor.py
 
       - name: Check new posts
+        id: check_posts
+        continue-on-error: true
         env:
           MONITOR_CONFIG: ${{ secrets.MONITOR_CONFIG }}
         run: python check_posts.py
 
       - name: Commit status
+        if: always()
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add status.json state.json history.json
+          git add status.json state.json history.json posts.json 2>/dev/null || true
           git diff --quiet && git diff --staged --quiet || git commit -m "Update status [skip ci]"
-          git push
+          git push || echo "push skipped (no changes or conflict)"
