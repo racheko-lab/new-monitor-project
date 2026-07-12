@@ -55,12 +55,10 @@
         /* ===== Header Zone ===== */
         .hdr {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
             margin-bottom: 32px;
         }
-
-        .hdr-left { min-width: 0; }
 
         .hdr-title {
             font-size: 1.75rem;
@@ -69,33 +67,6 @@
             color: var(--text);
             line-height: 1.1;
         }
-
-        .hdr-sub {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
-            font-size: 0.8125rem;
-            color: var(--text-3);
-        }
-
-        .hdr-sub .dot-live {
-            width: 7px; height: 7px;
-            border-radius: 50%;
-            background: var(--live);
-            box-shadow: 0 0 8px var(--live);
-            animation: pulse 2.5s ease-in-out infinite;
-            flex-shrink: 0;
-        }
-        .hdr-sub .dot-live.off { background: var(--text-4); box-shadow: none; animation: none; }
-
-        .hdr-sub .num {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 500;
-            color: var(--text-2);
-        }
-
-        .hdr-sub .sep { color: var(--text-4); }
 
         .add-btn {
             width: 40px; height: 40px;
@@ -156,27 +127,6 @@
             font-weight: 500;
         }
         .seg.active .seg-n { color: var(--text-3); }
-
-        /* ===== Chips ===== */
-        .chips {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 20px;
-        }
-        .chip {
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            background: none;
-            color: var(--text-3);
-            transition: all 0.15s var(--ease);
-            font-family: inherit;
-        }
-        .chip:hover { color: var(--text-2); background: var(--surface); }
-        .chip.active { color: var(--text); background: var(--surface-2); }
 
         /* ===== Panel ===== */
         .panel { display: none; }
@@ -604,17 +554,7 @@
 <body>
     <div class="app">
         <header class="hdr">
-            <div class="hdr-left">
-                <h1 class="hdr-title">Monitor</h1>
-                <div class="hdr-sub">
-                    <span class="dot-live off" id="hdr-dot"></span>
-                    <span class="num" id="hdr-live">0</span><span>直播中</span>
-                    <span class="sep">·</span>
-                    <span class="num" id="hdr-total">0</span><span>监控</span>
-                    <span class="sep">·</span>
-                    <span id="hdr-update">—</span>
-                </div>
-            </div>
+            <h1 class="hdr-title">Monitor</h1>
             <button class="add-btn" onclick="showAddModal()" aria-label="添加">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             </button>
@@ -627,10 +567,6 @@
         </nav>
 
         <section id="live-section" class="panel active">
-            <div class="chips">
-                <button class="chip active" data-f="all" onclick="setFilter('all')">全部</button>
-                <button class="chip" data-f="live" onclick="setFilter('live')">直播中</button>
-            </div>
             <div id="live-groups"></div>
         </section>
 
@@ -692,7 +628,7 @@
         const TK = 'ghp_' + 'v4XmZ6xQ' + '32Pq5TII4' + 'sOcaBH500' + 'JCL44dHicP';
         const tok = () => TK;
 
-        let tab = 'live', filter = 'all';
+        let tab = 'live';
         let rooms = [], status = {}, prooms = [], pstatus = [];
         let pendingDel = null, delCtx = 'live', addCtx = 'live';
 
@@ -757,12 +693,6 @@
             if (t === 'posts') loadPosts();
             if (t === 'history') loadHistory();
         }
-        function setFilter(f) {
-            filter = f;
-            document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
-            document.querySelector(`[data-f="${f}"]`).classList.add('active');
-            renderRooms();
-        }
 
         const TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5 0V4a1 1 0 011-1h2a1 1 0 011 1v2"/></svg>';
         const EMPTY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="9"/></svg>';
@@ -816,15 +746,6 @@
             const liveN = arr.filter(r => r.status === 'live').length;
             document.getElementById('live-n').textContent = arr.length ? `${liveN}/${arr.length}` : '';
 
-            // Update header summary
-            const hdrDot = document.getElementById('hdr-dot');
-            hdrDot.className = 'dot-live' + (liveN > 0 ? '' : ' off');
-            document.getElementById('hdr-live').textContent = liveN;
-            document.getElementById('hdr-total').textContent = arr.length;
-            const now = new Date();
-            document.getElementById('hdr-update').textContent = arr.length ? `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} 更新` : '—';
-
-            if (filter === 'live') arr = arr.filter(r => r.status === 'live');
             if (!arr.length) { el.innerHTML = emptyHtml('暂无监控对象'); return; }
 
             const liveItems = arr.filter(r => r.status === 'live');
