@@ -771,8 +771,8 @@
             const ct = await fetchCommitTime('status.json');
             if (!ct) { setRefreshState('dead', '—'); return; }
             const mins = (Date.now() - new Date(ct).getTime()) / 60000;
-            if (mins < 15) setRefreshState('healthy', fmtAgo(ct));
-            else if (mins < 60) setRefreshState('stale', fmtAgo(ct));
+            if (mins < 30) setRefreshState('healthy', fmtAgo(ct));
+            else if (mins < 120) setRefreshState('stale', fmtAgo(ct));
             else setRefreshState('dead', fmtAgo(ct));
         }
         function manualRefresh(btn) {
