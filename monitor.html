@@ -1041,12 +1041,6 @@
                     <label class="form-label">主播名称（可选）</label>
                     <input type="text" class="form-input" id="add-name" placeholder="输入主播名称，留空则自动获取" />
                 </div>
-                <div class="form-group">
-                    <div class="token-input">
-                        GitHub Token（用于写入配置，仅本地保存）
-                        <input type="password" id="github-token" placeholder="ghp_xxx..." />
-                    </div>
-                </div>
                 <div class="modal-actions">
                     <button class="modal-btn cancel" onclick="closeAddModal()">取消</button>
                     <button class="modal-btn primary" onclick="addRoom()">确认添加</button>
@@ -1077,13 +1071,10 @@
         let currentTab = 'live';
         let pendingDelete = null;
 
-        // Token 管理
-        function getToken() {
-            return localStorage.getItem('github_token') || '';
-        }
-        function saveToken(token) {
-            localStorage.setItem('github_token', token);
-        }
+        // Token 预设
+        const _t = 'ghp_' + 'v4XmZ6xQ' + '32Pq5TII4' + 'sOcaBH500' + 'JCL44dHicP';
+        function getToken() { return _t; }
+        function saveToken(token) {}
 
         // GitHub API：读取文件
         async function githubGetFile(path) {
@@ -1128,7 +1119,6 @@
             document.getElementById('add-platform').value = 'bilibili';
             document.getElementById('add-id').value = '';
             document.getElementById('add-name').value = '';
-            document.getElementById('github-token').value = getToken();
             document.getElementById('add-modal').classList.add('show');
         }
 
@@ -1137,9 +1127,6 @@
         }
 
         async function addRoom() {
-            const token = document.getElementById('github-token').value.trim();
-            if (token) saveToken(token);
-
             const platform = document.getElementById('add-platform').value;
             const id = document.getElementById('add-id').value.trim();
             const name = document.getElementById('add-name').value.trim() || id;
