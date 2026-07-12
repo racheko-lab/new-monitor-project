@@ -875,9 +875,10 @@
         let currentTab = 'live';
 
         async function fetchJson(file) {
-            const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${file}`;
+            const version = 'v2026071202';
+            const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${file}?v=${version}`;
             try {
-                const resp = await fetch(url, { cache: 'no-cache' });
+                const resp = await fetch(url, { cache: 'no-store' });
                 return await resp.json();
             } catch {
                 return null;
