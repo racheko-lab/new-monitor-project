@@ -7,7 +7,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-12T16:45:54.788471",
+    "last_check": "2026-07-12T17:00:37.523397",
     "duration": 0
   },
   "bilibili_3381141": {
@@ -18,7 +18,7 @@
     "status": "live",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-12T16:45:55.896465",
+    "last_check": "2026-07-12T17:00:38.421135",
     "duration": 0
   },
   "douyin_ludamobiubiu": {
@@ -26,10 +26,10 @@
     "id": "ludamobiubiu",
     "name": "鲁大魔",
     "uname": "鲁大魔",
-    "status": "offline",
+    "status": "live",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-12T16:45:57.866588",
+    "last_check": "2026-07-12T17:00:40.313276",
     "duration": 0
   },
   "douyin_misssiir": {
@@ -40,7 +40,7 @@
     "status": "live",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-12T16:45:59.310039",
+    "last_check": "2026-07-12T17:00:42.382374",
     "duration": 0
   }
 }
