@@ -517,13 +517,43 @@
             color: var(--primary-light);
         }
 
+        .post-cover-link {
+            display: block;
+            margin-bottom: 14px;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .post-cover-link::after {
+            content: '▶️';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.6rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+        }
+
+        .post-cover-link:hover::after {
+            opacity: 0.95;
+        }
+
         .post-cover {
             width: 100%;
-            height: 160px;
-            border-radius: 14px;
+            height: 200px;
+            display: block;
             object-fit: cover;
-            margin-bottom: 14px;
             background: rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .post-cover-link:hover .post-cover {
+            transform: scale(1.04);
         }
 
         .post-cover-placeholder {
@@ -1636,14 +1666,12 @@
                 const cover = latest && latest.cover ? latest.cover : '';
                 const postUrl = latest && latest.url ? latest.url : '#';
                 const title = latest && latest.title ? latest.title : '暂无作品数据';
-                const views = latest && latest.views ? formatNumber(latest.views) : '-';
-                const likes = latest && latest.likes ? formatNumber(latest.likes) : '-';
                 const timeStr = latest && latest.time ? formatTime(latest.time) : '';
                 const displayName = room.name || room.id;
 
                 let coverHtml = '';
                 if (cover) {
-                    coverHtml = `<img src="${cover}" alt="${title}" class="post-cover" loading="lazy" />`;
+                    coverHtml = `<a href="${postUrl}" target="_blank" rel="noopener" class="post-cover-link"><img src="${cover}" alt="${title}" class="post-cover" loading="lazy" /></a>`;
                 } else {
                     coverHtml = `<div class="post-cover post-cover-placeholder"><span>${statusFlag === 'error' ? '⚠️' : '📹'}</span></div>`;
                 }
@@ -1660,37 +1688,12 @@
                         <div class="post-author">${displayName}</div>
                         <div class="post-title">${title}</div>
                         <div class="post-meta">
-                            <div class="meta-item">
-                                <span>👁️</span>
-                                <span class="meta-value views">${views} 播放</span>
-                            </div>
-                            <div class="meta-item">
-                                <span>❤️</span>
-                                <span class="meta-value likes">${likes} 点赞</span>
-                            </div>
                             ${timeStr ? `<div class="meta-item"><span>🕐</span><span class="meta-value">${timeStr}</span></div>` : ''}
-                        </div>
-                        <div class="post-actions">
-                            <button class="action-btn" onclick="event.stopPropagation(); window.open('${postUrl}', '_blank')" ${postUrl === '#' ? 'disabled' : ''}>
-                                <span>▶️</span> 观看视频
-                            </button>
-                            <button class="action-btn" onclick="event.stopPropagation(); copyPostInfo('${displayName}', '${title.replace(/'/g, "\\'")}', '${postUrl}')" ${postUrl === '#' ? 'disabled' : ''}>
-                                <span>📋</span> 复制链接
-                            </button>
                         </div>
                         ${lastCheck ? `<div class="post-check-time">更新于 ${lastCheck}</div>` : ''}
                     </div>
                 `;
             }).join('');
-        }
-
-        function copyPostInfo(name, title, url) {
-            const text = `${name} - ${title}\n${url}`;
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('✅ 已复制到剪贴板');
-            }).catch(() => {
-                showToast('❌ 复制失败');
-            });
         }
 
         function renderHistory(history) {
