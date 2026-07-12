@@ -7,7 +7,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-12T16:28:38.979790",
+    "last_check": "2026-07-12T16:29:57.580924",
     "duration": 0
   },
   "bilibili_3381141": {
@@ -18,7 +18,18 @@
     "status": "live",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-12T16:28:39.708968",
+    "last_check": "2026-07-12T16:29:58.508211",
+    "duration": 0
+  },
+  "douyin_ludamobiubiu": {
+    "platform": "douyin",
+    "id": "ludamobiubiu",
+    "name": "ludamobiubiu",
+    "uname": "ludamobiubiu",
+    "status": "error",
+    "title": null,
+    "viewers": null,
+    "last_check": "2026-07-12T16:30:02.442057",
     "duration": 0
   }
 }
