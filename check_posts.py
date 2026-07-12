@@ -23,6 +23,12 @@ try:
 except ImportError:
     PLAYWRIGHT_AVAILABLE = False
 
+try:
+    from push_utils import push_notifications
+    PUSH_AVAILABLE = True
+except ImportError:
+    PUSH_AVAILABLE = False
+
 POSTS_ROOMS_FILE = "posts_rooms.json"
 POSTS_STATUS_FILE = "posts_status.json"
 STATE_FILE = "state.json"
@@ -468,3 +474,10 @@ if __name__ == "__main__":
     for msg in notifications:
         print(msg)
     print(f"检测完成，新作品 {len(new_posts)} 条")
+    # 通过 Bark 等渠道推送新作品通知
+    if notifications and PUSH_AVAILABLE:
+        try:
+            push_notifications(notifications, title="新作品监控")
+            print(f"已推送 {len(notifications)} 条通知")
+        except Exception as e:
+            print(f"推送通知失败（不影响数据更新）: {e}")
