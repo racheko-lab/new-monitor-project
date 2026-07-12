@@ -110,21 +110,105 @@ def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int], Opt
 
 
 def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str]]:
+    """检测抖音直播状态。
+
+    抖音新版页面使用 RSC（__pace_f）格式存储数据。
+    判断逻辑：
+    - web_stream_url 不是 null → 直播中
+    - web_stream_url 是 null 但 roomId 非空 → 未直播
+    - roomId 为空 → 房间无效
+    """
     try:
         headers = {**HEADERS, "Referer": "https://live.douyin.com/"}
-        resp = requests.get(DOUYIN_URL.format(room_id), headers=headers, timeout=10)
+        resp = requests.get(DOUYIN_URL.format(room_id), headers=headers, timeout=15)
         html = resp.text
+
+        # 兼容旧版 __INITIAL_STATE__（已弃用，保留兜底）
         match = re.search(r'window.__INITIAL_STATE__=(.*?);', html)
         if match:
-            data = json.loads(match.group(1))
-            room_info = data.get("room", {}).get("roomInfo", {})
-            status = "live" if room_info.get("roomStatus") == 2 else "offline"
-            title = room_info.get("title")
-            viewers = room_info.get("userCount")
-            uname = room_info.get("owner", {}).get("nickname")
-            return status, title, viewers, uname
-        return "error", None, None, None
-    except Exception:
+            try:
+                data = json.loads(match.group(1))
+                room_info = data.get("room", {}).get("roomInfo", {})
+                status = "live" if room_info.get("roomStatus") == 2 else "offline"
+                title = room_info.get("title")
+                viewers = room_info.get("userCount")
+                uname = room_info.get("owner", {}).get("nickname")
+                return status, title, viewers, uname
+            except Exception:
+                pass
+
+        # 新版：解析 __pace_f 数据块
+        # 找到包含该房间 web_rid 的数据块（排除广告占位块）
+        pace_blocks = re.findall(r'self\.__pace_f\.push\(\[1,"(.*?)"\]\)', html, re.DOTALL)
+        target_rid_marker = f'"web_rid":"{room_id}"'
+        room_block = None
+        for block in pace_blocks:
+            try:
+                unescaped = block.encode().decode('unicode_escape')
+            except Exception:
+                unescaped = block
+            if target_rid_marker in unescaped and '"广告投放"' not in unescaped.split(target_rid_marker)[0][-200:]:
+                room_block = unescaped
+                break
+
+        if not room_block:
+            # 再尝试：找所有含 roomId 非空的块
+            for block in pace_blocks:
+                try:
+                    unescaped = block.encode().decode('unicode_escape')
+                except Exception:
+                    unescaped = block
+                if target_rid_marker in unescaped:
+                    room_block = unescaped
+                    break
+
+        if not room_block:
+            return "error", None, None, None
+
+        # 解析字段
+        room_id_match = re.search(r'"roomId":"([^"]*)"', room_block)
+        stream_match = re.search(r'"web_stream_url"\s*:\s*(null|"[^"]*"|\{)', room_block)
+        nick_match = re.search(r'"nickname":"([^"]+)"', room_block)
+        title_match = re.search(r'"title":"([^"]+)"', room_block)
+        count_match = re.search(r'"user_count"\s*:\s*(\d+)', room_block)
+        if not count_match:
+            count_match = re.search(r'"watching_count"\s*:\s*(\d+)', room_block)
+
+        real_room_id = room_id_match.group(1) if room_id_match else ""
+        stream_val = stream_match.group(1) if stream_match else "null"
+
+        # 判断直播状态：web_stream_url 非 null 即为直播中
+        if stream_val and stream_val != "null":
+            status = "live"
+        elif real_room_id:
+            status = "offline"
+        elif nick_match and nick_match.group(1) != "$undefined":
+            # roomId 为空但有昵称，说明主播存在但未开播
+            status = "offline"
+        else:
+            return "error", None, None, None
+
+        # 昵称（修复 latin1 → utf-8 编码）
+        uname = None
+        if nick_match and nick_match.group(1) != "$undefined":
+            try:
+                uname = nick_match.group(1).encode('latin1').decode('utf-8')
+            except Exception:
+                uname = nick_match.group(1)
+
+        # 标题（排除广告占位）
+        title = None
+        if title_match and title_match.group(1) != "广告投放":
+            try:
+                title = title_match.group(1).encode('latin1').decode('utf-8')
+            except Exception:
+                title = title_match.group(1)
+
+        viewers = int(count_match.group(1)) if count_match else None
+
+        return status, title, viewers, uname
+    except Exception as e:
+        print(f"抖音检测异常 {room_id}: {e}")
         return "error", None, None, None
 
 
