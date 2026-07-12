@@ -1,1 +1,22 @@
-{}
+{
+  "bilibili_252149372": {
+    "platform": "bilibili",
+    "id": "252149372",
+    "name": "252149372",
+    "status": "error",
+    "title": null,
+    "viewers": null,
+    "last_check": "2026-07-12T12:16:34.606517",
+    "duration": 0
+  },
+  "bilibili_84074": {
+    "platform": "bilibili",
+    "id": "84074",
+    "name": "84074",
+    "status": "offline",
+    "title": null,
+    "viewers": null,
+    "last_check": "2026-07-12T12:16:35.016304",
+    "duration": 0
+  }
+}
