@@ -56,6 +56,11 @@ def save_status(status: Dict):
         json.dump(status, f, ensure_ascii=False, indent=2)
 
 
+def save_rooms(rooms: List[Dict]):
+    with open(ROOMS_FILE, "w", encoding="utf-8") as f:
+        json.dump(rooms, f, ensure_ascii=False, indent=2)
+
+
 def save_state(state: Dict):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
@@ -77,7 +82,7 @@ def add_history(message: str, event_type: str = "status"):
     save_history(history)
 
 
-def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int]]:
+def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str]]:
     try:
         resp = requests.get(BILIBILI_API.format(room_id), headers=HEADERS, timeout=10)
         data = resp.json()
@@ -86,13 +91,25 @@ def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int]]:
             status = "live" if info.get("live_status") == 1 else "offline"
             title = info.get("title")
             viewers = info.get("online")
-            return status, title, viewers
-        return "error", None, None
+            uid = info.get("uid")
+            uname = None
+            if uid:
+                try:
+                    u_resp = requests.get(
+                        f"https://api.live.bilibili.com/live_user/v1/Master/info?uid={uid}",
+                        headers=HEADERS, timeout=10)
+                    u_data = u_resp.json()
+                    if u_data.get("code") == 0:
+                        uname = u_data.get("data", {}).get("information", {}).get("uname")
+                except Exception:
+                    pass
+            return status, title, viewers, uname
+        return "error", None, None, None
     except Exception:
-        return "error", None, None
+        return "error", None, None, None
 
 
-def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int]]:
+def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str]]:
     try:
         headers = {**HEADERS, "Referer": "https://live.douyin.com/"}
         resp = requests.get(DOUYIN_URL.format(room_id), headers=headers, timeout=10)
@@ -104,18 +121,19 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int]]:
             status = "live" if room_info.get("roomStatus") == 2 else "offline"
             title = room_info.get("title")
             viewers = room_info.get("userCount")
-            return status, title, viewers
-        return "error", None, None
+            uname = room_info.get("owner", {}).get("nickname")
+            return status, title, viewers, uname
+        return "error", None, None, None
     except Exception:
-        return "error", None, None
+        return "error", None, None, None
 
 
-def get_status(platform: str, room_id: str) -> Tuple[str, Optional[str], Optional[int]]:
+def get_status(platform: str, room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str]]:
     if platform == "bilibili":
         return check_bilibili(room_id)
     elif platform == "douyin":
         return check_douyin(room_id)
-    return "error", None, None
+    return "error", None, None, None
 
 
 def get_status_key(platform: str, room_id: str) -> str:
@@ -149,6 +167,7 @@ def check_all() -> Tuple[List[Dict], List[str]]:
     current_status = load_status()
     state = load_state()
     notifications = []
+    rooms_updated = False
 
     for room in rooms:
         platform = room["platform"]
@@ -156,8 +175,14 @@ def check_all() -> Tuple[List[Dict], List[str]]:
         name = room["name"]
         key = get_status_key(platform, room_id)
 
-        status, title, viewers = get_status(platform, room_id)
+        status, title, viewers, uname = get_status(platform, room_id)
         is_live = status == "live"
+
+        # 自动获取真实昵称：若 rooms.json 里 name 还是房间号/ID，则用获取到的 uname 替换
+        if uname and (name == room_id or not name):
+            room["name"] = uname
+            name = uname
+            rooms_updated = True
 
         state = update_duration(state, platform, room_id, is_live)
 
@@ -188,6 +213,7 @@ def check_all() -> Tuple[List[Dict], List[str]]:
             "platform": platform,
             "id": room_id,
             "name": name,
+            "uname": uname or name,
             "status": status,
             "title": title,
             "viewers": viewers,
@@ -197,6 +223,8 @@ def check_all() -> Tuple[List[Dict], List[str]]:
 
     save_status(current_status)
     save_state(state)
+    if rooms_updated:
+        save_rooms(rooms)
 
     return current_status, notifications
 

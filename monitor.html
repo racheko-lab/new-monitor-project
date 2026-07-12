@@ -1146,7 +1146,7 @@
         async function addRoom() {
             const platform = document.getElementById('add-platform').value;
             const id = document.getElementById('add-id').value.trim();
-            const name = document.getElementById('add-name').value.trim() || id;
+            const inputName = document.getElementById('add-name').value.trim();
 
             if (!id) {
                 showToast('❌ 请输入房间号或用户ID');
@@ -1159,16 +1159,36 @@
                 return;
             }
 
-            rooms.push({ platform, id, name });
             document.getElementById('loading-overlay').classList.add('show');
+            // 尝试立即获取真实昵称（B站 room_init 支持 CORS）
+            let name = inputName || id;
+            if (!inputName) {
+                try {
+                    if (platform === 'bilibili') {
+                        const r = await fetch(`https://api.live.bilibili.com/room/v1/Room/room_init?id=${id}`, { headers: { 'Accept': 'application/json' } });
+                        const d = await r.json();
+                        if (d.code === 0 && d.data && d.data.uid) {
+                            const uResp = await fetch(`https://api.live.bilibili.com/live_user/v1/Master/info?uid=${d.data.uid}`);
+                            const uData = await uResp.json();
+                            if (uData.code === 0 && uData.data && uData.data.information) {
+                                name = uData.data.information.uname || id;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // CORS 或网络失败，后端检测时会自动补全
+                }
+            }
+
+            rooms.push({ platform, id, name });
             const ok = await saveRooms(rooms, `添加主播: ${name}`);
 
             if (ok) {
-                showToast('✅ 添加成功，正在检测状态...');
+                showToast(`✅ 添加成功${name !== id ? '：' + name : ''}，正在检测状态...`);
                 closeAddModal();
                 // 立即刷新：新账号会以"待检测"状态显示
                 await loadData();
-                // 触发后端检测，稍后再刷新一次拿真实状态
+                // 触发后端检测，稍后再刷新拿真实状态
                 await triggerCheck();
                 setTimeout(() => loadData(), 15000);
                 setTimeout(() => loadData(), 40000);
@@ -1409,6 +1429,7 @@
                 const statusClass = room.status;
                 const statusText = { live: '直播中', offline: '未开播', error: '检测失败', pending: '待检测' }[room.status];
                 const platformText = { bilibili: 'B站', douyin: '抖音' }[room.platform];
+                const displayName = room.uname || room.name;
                 const duration = formatDuration(room.duration || 0);
                 const viewers = room.viewers ? formatNumber(room.viewers) : '-';
                 const roomUrl = getPlatformUrl(room.platform, room.id);
@@ -1422,7 +1443,7 @@
                             </div>
                             <span class="platform-badge ${room.platform}">${platformText}</span>
                         </div>
-                        <div class="room-name">${room.name}</div>
+                        <div class="room-name">${displayName}</div>
                         <div class="room-title">${room.title || (room.status === 'live' ? '正在直播...' : (room.status === 'pending' ? '等待首次检测...' : '暂无直播信息'))}</div>
                         <div class="room-meta">
                             <div class="meta-item">
