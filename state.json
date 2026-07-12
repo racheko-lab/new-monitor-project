@@ -27,16 +27,21 @@
   "bilibili_3381141": {
     "last_live_start": "2026-07-12T16:16:32.917098",
     "duration": 0,
-    "last_live_time": "2026-07-12T17:00:38.421117"
+    "last_live_time": "2026-07-12T17:14:57.737679"
   },
   "douyin_ludamobiubiu": {
     "last_live_start": "2026-07-12T17:00:40.312899",
     "duration": 0,
-    "last_live_time": "2026-07-12T17:00:40.312899"
+    "last_live_time": "2026-07-12T17:14:59.882458"
   },
   "douyin_misssiir": {
-    "last_live_start": "2026-07-12T16:45:59.309464",
-    "duration": 0,
+    "last_live_start": null,
+    "duration": 883,
     "last_live_time": "2026-07-12T17:00:42.382358"
+  },
+  "douyin_vHan09233": {
+    "last_live_start": null,
+    "duration": 0,
+    "last_live_time": null
   }
 }

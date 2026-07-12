@@ -7,7 +7,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-12T17:00:37.523397",
+    "last_check": "2026-07-12T17:14:56.318877",
     "duration": 0
   },
   "bilibili_3381141": {
@@ -18,7 +18,7 @@
     "status": "live",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-12T17:00:38.421135",
+    "last_check": "2026-07-12T17:14:57.737691",
     "duration": 0
   },
   "douyin_ludamobiubiu": {
@@ -29,7 +29,7 @@
     "status": "live",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-12T17:00:40.313276",
+    "last_check": "2026-07-12T17:14:59.882473",
     "duration": 0
   },
   "douyin_misssiir": {
@@ -37,10 +37,21 @@
     "id": "misssiir",
     "name": "樱桃哥🍒（众包大王外卖技巧分享）",
     "uname": "樱桃哥🍒（众包大王外卖技巧分享）",
-    "status": "live",
+    "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-12T17:00:42.382374",
+    "last_check": "2026-07-12T17:15:01.185529",
+    "duration": 883
+  },
+  "douyin_vHan09233": {
+    "platform": "douyin",
+    "id": "vHan09233",
+    "name": "韩冰",
+    "uname": "韩冰",
+    "status": "offline",
+    "title": "舞蹈",
+    "viewers": null,
+    "last_check": "2026-07-12T17:15:02.478528",
     "duration": 0
   }
 }
