@@ -757,6 +757,161 @@
                 text-align: center;
             }
         }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: #1a1a2e;
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 32px;
+            width: 90%;
+            max-width: 420px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .form-input, .form-select {
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 0.9375rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .form-select option {
+            background: #1a1a2e;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            transform: translateY(-1px);
+        }
+
+        .modal-btn.cancel {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .modal-btn.cancel:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .token-input {
+            margin-top: 8px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        .token-input input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            outline: none;
+            margin-top: 4px;
+        }
+
+        .delete-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .delete-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger);
+        }
     </style>
 </head>
 <body>
@@ -791,6 +946,9 @@
                     <span class="filter-tag" data-filter="offline" onclick="setFilter('offline')">未开播</span>
                 </div>
                 <div class="header-right">
+                    <button class="refresh-btn" onclick="showAddModal()" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <span>➕</span> 添加主播
+                    </button>
                     <button class="refresh-btn" onclick="loadData(true)">
                         <span>🔄</span> 刷新
                     </button>
@@ -864,6 +1022,50 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal">
+            <div class="modal-title">➕ 添加主播</div>
+            <div class="modal-form">
+                <div class="form-group">
+                    <label class="form-label">平台</label>
+                    <select class="form-select" id="add-platform">
+                        <option value="bilibili">哔哩哔哩 (B站)</option>
+                        <option value="douyin">抖音</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">房间号 / 用户ID</label>
+                    <input type="text" class="form-input" id="add-id" placeholder="输入房间号或用户ID" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">主播名称（可选）</label>
+                    <input type="text" class="form-input" id="add-name" placeholder="输入主播名称，留空则自动获取" />
+                </div>
+                <div class="form-group">
+                    <div class="token-input">
+                        GitHub Token（用于写入配置，仅本地保存）
+                        <input type="password" id="github-token" placeholder="ghp_xxx..." />
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel" onclick="closeAddModal()">取消</button>
+                    <button class="modal-btn primary" onclick="addRoom()">确认添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal">
+            <div class="modal-title">🗑️ 确认删除</div>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;" id="delete-message">确定要删除这个主播吗？</p>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeDeleteModal()">取消</button>
+                <button class="modal-btn primary" style="background: linear-gradient(135deg, #ef4444, #dc2626);" onclick="confirmDelete()">确认删除</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const GITHUB_REPO = 'racheko-lab/new-monitor-project';
         const GITHUB_BRANCH = 'main';
@@ -873,6 +1075,132 @@
         let currentSearch = '';
         let currentPostsSearch = '';
         let currentTab = 'live';
+        let pendingDelete = null;
+
+        // Token 管理
+        function getToken() {
+            return localStorage.getItem('github_token') || '';
+        }
+        function saveToken(token) {
+            localStorage.setItem('github_token', token);
+        }
+
+        // GitHub API：读取文件
+        async function githubGetFile(path) {
+            const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`, {
+                headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github+json' }
+            });
+            if (!resp.ok) throw new Error('读取文件失败');
+            return resp.json();
+        }
+
+        // GitHub API：更新文件
+        async function githubUpdateFile(path, content, sha, message) {
+            const resp = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, content: btoa(unescape(encodeURIComponent(content))), sha, branch: GITHUB_BRANCH })
+            });
+            if (!resp.ok) throw new Error('更新文件失败');
+            return resp.json();
+        }
+
+        // 保存 rooms.json
+        async function saveRooms(rooms, message) {
+            const token = getToken();
+            if (!token) {
+                showToast('❌ 请先输入 GitHub Token');
+                showAddModal();
+                return false;
+            }
+            try {
+                const file = await githubGetFile('rooms.json');
+                await githubUpdateFile('rooms.json', JSON.stringify(rooms, null, 2), file.sha, message);
+                return true;
+            } catch (e) {
+                showToast('❌ ' + e.message);
+                return false;
+            }
+        }
+
+        // 添加主播
+        function showAddModal() {
+            document.getElementById('add-platform').value = 'bilibili';
+            document.getElementById('add-id').value = '';
+            document.getElementById('add-name').value = '';
+            document.getElementById('github-token').value = getToken();
+            document.getElementById('add-modal').classList.add('show');
+        }
+
+        function closeAddModal() {
+            document.getElementById('add-modal').classList.remove('show');
+        }
+
+        async function addRoom() {
+            const token = document.getElementById('github-token').value.trim();
+            if (token) saveToken(token);
+
+            const platform = document.getElementById('add-platform').value;
+            const id = document.getElementById('add-id').value.trim();
+            const name = document.getElementById('add-name').value.trim() || id;
+
+            if (!id) {
+                showToast('❌ 请输入房间号或用户ID');
+                return;
+            }
+
+            const rooms = await fetchJson('rooms.json') || [];
+            if (rooms.some(r => r.platform === platform && r.id === id)) {
+                showToast('❌ 该主播已在监控列表中');
+                return;
+            }
+
+            rooms.push({ platform, id, name });
+            document.getElementById('loading-overlay').classList.add('show');
+            const ok = await saveRooms(rooms, `添加主播: ${name}`);
+            document.getElementById('loading-overlay').classList.remove('show');
+
+            if (ok) {
+                showToast('✅ 添加成功');
+                closeAddModal();
+                loadData();
+            }
+        }
+
+        // 删除主播
+        function deleteRoom(platform, id) {
+            pendingDelete = { platform, id };
+            document.getElementById('delete-message').textContent = `确定要删除主播 ${platform}/${id} 吗？`;
+            document.getElementById('delete-modal').classList.add('show');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').classList.remove('show');
+            pendingDelete = null;
+        }
+
+        async function confirmDelete() {
+            if (!pendingDelete) return;
+            if (!getToken()) {
+                showToast('❌ 请先输入 GitHub Token');
+                closeDeleteModal();
+                showAddModal();
+                return;
+            }
+
+            const rooms = await fetchJson('rooms.json') || [];
+            const newRooms = rooms.filter(r => !(r.platform === pendingDelete.platform && r.id === pendingDelete.id));
+
+            document.getElementById('loading-overlay').classList.add('show');
+            const ok = await saveRooms(newRooms, `删除主播: ${pendingDelete.platform}/${pendingDelete.id}`);
+            document.getElementById('loading-overlay').classList.remove('show');
+
+            if (ok) {
+                showToast('✅ 删除成功');
+                closeDeleteModal();
+                loadData();
+            }
+        }
 
         async function fetchJson(file) {
             const version = 'v2026071202';
@@ -1092,6 +1420,9 @@
                         <div class="room-actions">
                             <button class="action-btn" onclick="event.stopPropagation(); window.open('${roomUrl}', '_blank')">
                                 <span>🔗</span> 进入直播间
+                            </button>
+                            <button class="action-btn delete-btn" onclick="event.stopPropagation(); deleteRoom('${room.platform}', '${room.id}')">
+                                <span>🗑️</span> 删除
                             </button>
                         </div>
                     </div>
