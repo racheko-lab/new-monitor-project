@@ -1,1 +1,50 @@
-{}
+{
+  "bilibili_22230707": {
+    "platform": "bilibili",
+    "id": "22230707",
+    "name": "峰哥亡命天涯",
+    "uname": "峰哥亡命天涯",
+    "avatar": "https://i2.hdslb.com/bfs/face/ae439693d6fd79a55b1b5f935ed6474ae6fba35b.jpg",
+    "status": "offline",
+    "title": null,
+    "viewers": null,
+    "last_check": "2026-07-12T20:37:29.562748",
+    "duration": 0
+  },
+  "bilibili_3381141": {
+    "platform": "bilibili",
+    "id": "3381141",
+    "name": "sak药",
+    "uname": "sak药",
+    "avatar": "https://i2.hdslb.com/bfs/face/f5ef1f7f5edf657eb4892a297236e31edeae3603.jpg",
+    "status": "live",
+    "title": null,
+    "viewers": null,
+    "last_check": "2026-07-12T20:37:30.618703",
+    "duration": 3504
+  },
+  "douyin_ludamobiubiu": {
+    "platform": "douyin",
+    "id": "ludamobiubiu",
+    "name": "鲁大魔",
+    "uname": "鲁大魔",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1538749da661a0405c0aef5f0123b769.jpeg?from=3067671334",
+    "status": "offline",
+    "title": "舞蹈",
+    "viewers": null,
+    "last_check": "2026-07-12T20:37:31.968341",
+    "duration": 859
+  },
+  "douyin_misssiir": {
+    "platform": "douyin",
+    "id": "misssiir",
+    "name": "樱桃哥🍒（众包大王外卖技巧分享）",
+    "uname": "樱桃哥🍒（众包大王外卖技巧分享）",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_d42b3d572f223c06c63c291b6b3635d9.jpeg?from=3067671334",
+    "status": "offline",
+    "title": "舞蹈",
+    "viewers": null,
+    "last_check": "2026-07-12T20:37:32.954114",
+    "duration": 883
+  }
+}

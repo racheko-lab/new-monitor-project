@@ -5,6 +5,9 @@ on:
     - cron: '*/5 * * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -17,22 +20,30 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
 
       - name: Check live status
+        id: check_live
+        continue-on-error: true
         env:
           MONITOR_CONFIG: ${{ secrets.MONITOR_CONFIG }}
         run: python monitor.py
 
       - name: Check new posts
+        id: check_posts
+        continue-on-error: true
         env:
           MONITOR_CONFIG: ${{ secrets.MONITOR_CONFIG }}
         run: python check_posts.py
 
       - name: Commit status
+        if: always()
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add status.json state.json history.json
+          git add status.json state.json history.json posts.json posts_status.json rooms.json posts_rooms.json 2>/dev/null || true
           git diff --quiet && git diff --staged --quiet || git commit -m "Update status [skip ci]"
-          git push
+          git pull --rebase origin main 2>/dev/null || true
+          git push || echo "push skipped (no changes or conflict)"

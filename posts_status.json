@@ -1,0 +1,50 @@
+{
+  "douyin_vHan09233": {
+    "platform": "douyin",
+    "id": "vHan09233",
+    "name": "韩冰",
+    "sec_uid": "MS4wLjABAAAAUXBNFnWLvl9T8ylgAbD1auR_o5FL3dF7ic0KMYN9_88",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
+    "latest_post": {
+      "id": "7661552754426943049",
+      "platform": "douyin",
+      "name": "韩冰",
+      "title": "我苦笑两声 得到一句笑的人是gay",
+      "views": 0,
+      "likes": 117088,
+      "cover": "https://p26-sign.douyinpic.com/tos-cn-i-0813c001/ooQ7taUAp62fTFemMBICdpXCfAAEQA85QmBAk0~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1783908000&x-signature=mA3KUizT7oXIbEiR4gZ4f5xIpjs%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=20260713043738B4500927A4F3BD2CB6F3",
+      "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
+      "url": "https://www.douyin.com/video/7661552754426943049",
+      "time": "2026-07-12T20:37:39.699853",
+      "sort_key": 7661552754426943049
+    },
+    "total_seen": 24,
+    "new_count": 0,
+    "last_check": "2026-07-12T20:37:33.281302",
+    "status": "ok"
+  },
+  "douyin_FengBro": {
+    "platform": "douyin",
+    "id": "FengBro",
+    "name": "峰哥亡命天涯",
+    "sec_uid": "MS4wLjABAAAAXrcPvX8QchAY5irWMAxU379DgfCBEOoztZoCcOUqi8I",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_2d6f0000113c4daec8515.jpeg?from=3067671334",
+    "latest_post": {
+      "id": "7660491790876851825",
+      "platform": "douyin",
+      "name": "峰哥亡命天涯",
+      "title": "峰哥在受首尔品尝韩牛烤肉 #韩国吃什么 #韩国美食推荐 #韩国特色美食",
+      "views": 0,
+      "likes": 73124,
+      "cover": "https://p3-sign.douyinpic.com/tos-cn-i-0813c000-ce/owLAEJsnWIAedAFPXiiIPPACHwi3KCBB1EceAi~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1783908000&x-signature=7U1nxpDLhGd06z4q38Pw36%2FJ%2FmA%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=2026071304374340F4F0078691CB2E7AC7",
+      "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_2d6f0000113c4daec8515.jpeg?from=3067671334",
+      "url": "https://www.douyin.com/video/7660491790876851825",
+      "time": "2026-07-12T20:37:44.197512",
+      "sort_key": 7660491790876851825
+    },
+    "total_seen": 15,
+    "new_count": 0,
+    "last_check": "2026-07-12T20:37:33.281302",
+    "status": "ok"
+  }
+}
