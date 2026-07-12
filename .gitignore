@@ -1,5 +1,0 @@
-*.pyc
-__pycache__/
-status.json
-history.json
-.DS_Store
