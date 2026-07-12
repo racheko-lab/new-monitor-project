@@ -7,7 +7,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-12T16:32:36.972488",
+    "last_check": "2026-07-12T16:45:54.788471",
     "duration": 0
   },
   "bilibili_3381141": {
@@ -18,29 +18,29 @@
     "status": "live",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-12T16:32:37.915135",
+    "last_check": "2026-07-12T16:45:55.896465",
     "duration": 0
   },
   "douyin_ludamobiubiu": {
     "platform": "douyin",
     "id": "ludamobiubiu",
-    "name": "ludamobiubiu",
-    "uname": "ludamobiubiu",
-    "status": "error",
-    "title": null,
+    "name": "鲁大魔",
+    "uname": "鲁大魔",
+    "status": "offline",
+    "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-12T16:32:40.116408",
+    "last_check": "2026-07-12T16:45:57.866588",
     "duration": 0
   },
   "douyin_misssiir": {
     "platform": "douyin",
     "id": "misssiir",
-    "name": "misssiir",
-    "uname": "misssiir",
-    "status": "error",
-    "title": null,
+    "name": "樱桃哥🍒（众包大王外卖技巧分享）",
+    "uname": "樱桃哥🍒（众包大王外卖技巧分享）",
+    "status": "live",
+    "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-12T16:32:41.774250",
+    "last_check": "2026-07-12T16:45:59.310039",
     "duration": 0
   }
 }
