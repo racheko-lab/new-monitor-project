@@ -214,12 +214,18 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
 
     返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
     status 为 'ok' / 'no_data' / 'error'。
+
+    针对 GitHub Actions 环境优化：
+    - 多次重试（首次访问常被风控拦截，cookie 建立后第二次能成功）
+    - 完整 stealth 反检测脚本
+    - 首页等待时间足够长，确保 cookie/ttwid 建立
+    - 直接访问 douyin.com/user 而非通过 live.douyin.com 跳转
     """
     if not PLAYWRIGHT_AVAILABLE:
         return None, "error"
 
     captured_awemes = []
-    max_posts = 30  # 最多捕获 30 条作品
+    max_posts = 30
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -228,6 +234,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 '--disable-blink-features=AutomationControlled',
                 '--no-sandbox',
                 '--disable-dev-shm-usage',
+                '--disable-features=IsolateOrigins,site-per-process',
+                '--disable-site-isolation-trials',
             ],
         )
         context = browser.new_context(
@@ -238,12 +246,19 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             timezone_id='Asia/Shanghai',
             extra_http_headers={'Accept-Language': 'zh-CN,zh;q=0.9'},
         )
-        # 反检测：隐藏 webdriver 标志
+        # 完整 stealth 反检测脚本
         context.add_init_script("""
             Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
             Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3,4,5]});
             Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN','zh','en']});
-            window.chrome = {runtime: {}};
+            Object.defineProperty(navigator, 'platform', {get: () => 'Win32'});
+            window.chrome = {runtime: {}, app: {}, csi: () => {}, loadTimes: () => {}};
+            const originalQuery = window.navigator.permissions.query;
+            window.navigator.permissions.query = (parameters) => (
+                parameters.name === 'notifications'
+                    ? Promise.resolve({state: Notification.permission})
+                    : originalQuery(parameters)
+            );
         """)
         page = context.new_page()
 
@@ -256,32 +271,54 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                         for a in aweme_list:
                             if len(captured_awemes) < max_posts:
                                 captured_awemes.append(a)
+                        print(f"  捕获作品 API: +{len(aweme_list)} 条 (累计 {len(captured_awemes)})")
                 except Exception:
                     pass
 
         page.on('response', on_response)
 
         try:
-            # 先访问首页拿 cookie，降低被识别为爬虫的概率
+            # Step 1: 访问首页拿 cookie（关键：等待 ttwid/msToken 等反爬 cookie 建立）
+            print("  访问 douyin.com 首页获取 cookie...")
             page.goto('https://www.douyin.com/', wait_until='domcontentloaded', timeout=30000)
-            page.wait_for_timeout(2500)
+            page.wait_for_timeout(4000)
+            cookies = context.cookies()
+            cookie_names = [c['name'] for c in cookies]
+            print(f"  获取 cookie: {len(cookies)} 个 ({', '.join(cookie_names[:8])})")
 
-            # 访问用户主页
-            page.goto(f'https://www.douyin.com/user/{sec_uid}',
-                      wait_until='domcontentloaded', timeout=45000)
-
-            # 等待作品 API 触发（最多 12 秒）
-            for _ in range(12):
+            # Step 2: 访问用户主页（最多重试 3 次）
+            user_url = f'https://www.douyin.com/user/{sec_uid}'
+            for attempt in range(3):
                 if captured_awemes:
                     break
-                page.wait_for_timeout(1000)
+                print(f"  访问用户主页 (尝试 {attempt+1}/3)...")
+                try:
+                    page.goto(user_url, wait_until='domcontentloaded', timeout=45000)
+                except PlaywrightTimeoutError:
+                    print("  页面加载超时，继续等待 API")
+                except Exception as e:
+                    print(f"  页面加载异常: {e}")
 
-            # 稍微滚动触发更多加载
-            for _ in range(2):
-                page.mouse.wheel(0, 1500)
-                page.wait_for_timeout(1200)
-        except PlaywrightTimeoutError:
-            pass
+                # 等待作品 API 触发（最多 15 秒）
+                for _ in range(15):
+                    if captured_awemes:
+                        break
+                    page.wait_for_timeout(1000)
+
+                # 滚动触发加载
+                if not captured_awemes:
+                    for _ in range(3):
+                        page.mouse.wheel(0, 1500)
+                        page.wait_for_timeout(1500)
+
+                if not captured_awemes:
+                    title = page.title()
+                    print(f"  本次未捕获，页面标题: {title}")
+                    # 检查是否是验证码页
+                    content = page.content()
+                    if '验证' in content or 'captcha' in content.lower() or 'verify' in content.lower():
+                        print("  检测到验证码页面，重试中...")
+                    page.wait_for_timeout(2000)
         except Exception as e:
             print(f"  Playwright 抓取异常: {e}")
         finally:
