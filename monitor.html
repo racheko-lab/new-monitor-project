@@ -921,6 +921,76 @@
             background: rgba(239, 68, 68, 0.2);
             border-color: var(--danger);
         }
+
+        .posts-accounts-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 14px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+        }
+
+        .posts-accounts-bar .pa-title {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-right: 4px;
+            white-space: nowrap;
+        }
+
+        .pa-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.8125rem;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .pa-chip:hover {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .pa-chip .pa-name {
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pa-chip .pa-del {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 0.75rem;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .pa-chip .pa-del:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .pa-empty {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
     </style>
 </head>
 <body>
@@ -1000,6 +1070,9 @@
                     <input type="text" id="posts-search-input" placeholder="搜索作品或作者..." />
                 </div>
                 <div class="header-right">
+                    <button class="refresh-btn" onclick="showAddModal()" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <span>➕</span> 添加主播
+                    </button>
                     <button class="refresh-btn" onclick="loadPosts(true)">
                         <span>🔄</span> 刷新
                     </button>
@@ -1018,6 +1091,8 @@
                     <div class="stat-label">总播放量</div>
                 </div>
             </div>
+
+            <div class="posts-accounts-bar" id="posts-accounts-bar"></div>
 
             <div class="posts-grid" id="posts-container"></div>
         </div>
@@ -1191,10 +1266,11 @@
                 closeAddModal();
                 // 立即刷新：新账号会以"待检测"状态显示
                 await loadData();
+                if (currentTab === 'posts') { await loadPosts(); }
                 // 触发后端检测，稍后再刷新拿真实状态
                 await triggerCheck();
-                setTimeout(() => loadData(), 15000);
-                setTimeout(() => loadData(), 40000);
+                setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 15000);
+                setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 40000);
             }
             document.getElementById('loading-overlay').classList.remove('show');
         }
@@ -1250,10 +1326,11 @@
                 closeDeleteModal();
                 // 立即刷新一次（本地数据已更新，即使 CDN 缓存旧数据也能正确显示）
                 await loadData();
+                if (currentTab === 'posts') { await loadPosts(); }
                 // 多次延迟刷新，绕过 CDN 缓存延迟
-                setTimeout(() => loadData(), 2000);
-                setTimeout(() => loadData(), 5000);
-                setTimeout(() => loadData(), 10000);
+                setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 2000);
+                setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 5000);
+                setTimeout(() => { loadData(); if (currentTab === 'posts') loadPosts(); }, 10000);
             }
         }
 
@@ -1662,13 +1739,35 @@
             }
         }
 
+        function renderPostsAccounts(rooms) {
+            const bar = document.getElementById('posts-accounts-bar');
+            if (!bar) return;
+            const douyinRooms = (rooms || []).filter(r => r.platform === 'douyin');
+            if (douyinRooms.length === 0) {
+                bar.innerHTML = `<span class="pa-title">监控中的抖音账号：</span><span class="pa-empty">暂未监控任何账号，点击"添加主播"开始</span>`;
+                return;
+            }
+            const chips = douyinRooms.map(r => {
+                const safeName = (r.name || r.id).replace(/'/g, "\\'");
+                return `<span class="pa-chip">
+                    <span class="pa-name">${r.name || r.id}</span>
+                    <button class="pa-del" title="删除" onclick="event.stopPropagation(); deleteRoom('${r.platform}', '${r.id}')">✕</button>
+                </span>`;
+            }).join('');
+            bar.innerHTML = `<span class="pa-title">监控中的抖音账号：</span>${chips}`;
+        }
+
         async function loadPosts(showLoading = false) {
             if (showLoading) {
                 document.getElementById('loading-overlay').classList.add('show');
             }
 
-            const posts = await fetchJson('posts.json');
+            const [posts, roomsList] = await Promise.all([
+                fetchJson('posts.json'),
+                fetchJson('rooms.json')
+            ]);
             updatePostsStats(posts);
+            renderPostsAccounts(roomsList || []);
             renderPosts(posts);
 
             if (showLoading) {
