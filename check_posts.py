@@ -166,14 +166,30 @@ def get_nickname_from_html(html: str) -> Optional[str]:
     return None
 
 
-def fetch_sec_uid_from_live(room_id: str) -> Tuple[Optional[str], Optional[str]]:
-    """从 live.douyin.com/{room_id} 提取 sec_uid 和昵称（用 requests 即可）。"""
+def get_avatar_from_html(html: str) -> Optional[str]:
+    """从抖音直播页 HTML 中提取头像 URL（__pace_f RSC 格式）。"""
+    pace_blocks = re.findall(r'self\.__pace_f\.push\(\[1,"(.*?)"\]\)', html, re.DOTALL)
+    for block in pace_blocks:
+        try:
+            unescaped = block.encode().decode('unicode_escape')
+        except Exception:
+            unescaped = block
+        m = re.search(r'"avatar_thumb":\{[^}]*"url_list":\["([^"]+)"', unescaped)
+        if m:
+            return m.group(1)
+    return None
+
+
+def fetch_sec_uid_from_live(room_id: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    """从 live.douyin.com/{room_id} 提取 sec_uid、昵称、头像（用 requests 即可）。"""
     try:
         headers = {**HEADERS, "Referer": "https://live.douyin.com/"}
         resp = requests.get(f"https://live.douyin.com/{room_id}", headers=headers, timeout=15)
-        return get_sec_uid_from_html(resp.text), get_nickname_from_html(resp.text)
+        return (get_sec_uid_from_html(resp.text),
+                get_nickname_from_html(resp.text),
+                get_avatar_from_html(resp.text))
     except Exception:
-        return None, None
+        return None, None, None
 
 
 def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
@@ -205,9 +221,11 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
         url_list = cover_obj.get("url_list") or []
         if url_list:
             cover = url_list[0]
-        # 作者头像（用于前端卡片展示）
+        # 作者头像（用于前端卡片展示，多字段兼容）
         author = post.get("author", {}) or {}
-        avatar_obj = author.get("avatar_thumb") or author.get("avatar_medium") or {}
+        avatar_obj = (author.get("avatar_thumb") or author.get("avatar_medium")
+                      or author.get("avatar_larger") or author.get("avatar_168x168")
+                      or author.get("avatar_300x300") or {})
         avatar_urls = avatar_obj.get("url_list") or []
         author_avatar = avatar_urls[0] if avatar_urls else None
         post_url = f"https://www.douyin.com/video/{aweme_id}"
@@ -341,12 +359,12 @@ def get_status_key(platform: str, room_id: str) -> str:
     return f"{platform}_{room_id}"
 
 
-def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional[str], Optional[Dict], List[Dict], List[str]]:
-    """检测一个抖音账号，返回 (sec_uid, display_name, latest_post, new_posts, notifications)。
+def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[Dict], List[Dict], List[str]]:
+    """检测一个抖音账号，返回 (sec_uid, display_name, avatar, latest_post, new_posts, notifications)。
 
     流程：
-    1. 用 requests 从 live.douyin.com 拿 sec_uid 和昵称
-    2. 用 Playwright 访问 douyin.com/user/{sec_uid} 拦截作品 API
+    1. 用 requests 从 live.douyin.com 拿 sec_uid、昵称、头像
+    2. 用 Playwright 访问 m.douyin.com/share/user/{sec_uid} 拦截作品 API
     3. 解析作品，对比 state 中的 seen_posts 找出新作品
     """
     notifications = []
@@ -354,21 +372,26 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
     latest_post = None
     sec_uid = None
     display_name = name
+    avatar = None
 
-    # Step 1: 获取 sec_uid
-    sec_uid, nickname = fetch_sec_uid_from_live(room_id)
+    # Step 1: 获取 sec_uid、昵称、头像
+    sec_uid, nickname, live_avatar = fetch_sec_uid_from_live(room_id)
     if not sec_uid:
-        return None, display_name, None, [], []
+        return None, display_name, None, None, [], []
     display_name = nickname or name
+    avatar = live_avatar
 
     # Step 2: 用 Playwright 抓取作品
     parsed_posts, status = fetch_posts_with_playwright(sec_uid, display_name)
 
     if not parsed_posts:
-        return sec_uid, display_name, None, [], []
+        return sec_uid, display_name, avatar, None, [], []
 
     # 最新作品 = 按时间倒序第一个
     latest_post = parsed_posts[0]
+    # 若作品 API 没带头像，用直播页头像兜底
+    if not latest_post.get("avatar") and avatar:
+        latest_post["avatar"] = avatar
 
     # Step 3: 新作品检测
     state = load_state()
@@ -400,7 +423,7 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
         }
         save_state(state)
 
-    return sec_uid, display_name, latest_post, new_posts_data, notifications
+    return sec_uid, display_name, avatar, latest_post, new_posts_data, notifications
 
 
 def check_all_posts() -> Tuple[List[str], List[Dict]]:
@@ -421,7 +444,7 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
             continue
 
         print(f"检测账号: {room_id} ({name})")
-        sec_uid, display_name, latest_post, new_posts, notifications = check_douyin_posts(room_id, name)
+        sec_uid, display_name, avatar, latest_post, new_posts, notifications = check_douyin_posts(room_id, name)
 
         # 自动补全昵称
         if display_name and display_name != name:
@@ -441,6 +464,7 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
             "id": room_id,
             "name": display_name or name,
             "sec_uid": sec_uid,
+            "avatar": avatar,
             "latest_post": latest_post,
             "total_seen": seen_count,
             "new_count": len(new_posts),

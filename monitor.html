@@ -826,7 +826,7 @@
                 const name = escapeHtml(room.name || room.id);
                 const title = escapeHtml(latest?.title || '暂无作品');
                 const timeStr = latest?.time ? formatTime(latest.time) : '';
-                const avatar = latest?.avatar;
+                const avatar = st.avatar || latest?.avatar;
                 const postUrl = latest?.url || '#';
 
                 let avatarHtml;
