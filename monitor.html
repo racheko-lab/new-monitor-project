@@ -7,31 +7,36 @@
     <title>Monitor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0a0b;
-            --surface: #131316;
-            --surface-2: #1a1a1f;
-            --border: rgba(255, 255, 255, 0.07);
-            --border-strong: rgba(255, 255, 255, 0.12);
-            --text: #f4f4f5;
-            --text-2: #a1a1aa;
-            --text-3: #71717a;
-            --text-4: #3f3f46;
+            --bg: #08080b;
+            --surface: #0e0e13;
+            --surface-hi: #16161d;
+            --surface-active: #1c1c25;
+            --divider: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.08);
+            --border-hi: rgba(255,255,255,0.14);
+            --text: #fafafa;
+            --text-2: #9ca3af;
+            --text-3: #6b7280;
+            --text-4: #374151;
             --live: #ef4444;
-            --live-bg: rgba(239, 68, 68, 0.1);
-            --new: #60a5fa;
-            --new-bg: rgba(96, 165, 250, 0.1);
+            --live-soft: rgba(239,68,68,0.08);
+            --live-glow: rgba(239,68,68,0.12);
+            --new: #3b82f6;
+            --new-soft: rgba(59,130,246,0.08);
             --warn: #f59e0b;
-            --radius: 14px;
-            --radius-sm: 10px;
-            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --ease: cubic-bezier(0.4,0,0.2,1);
+            --ease-out: cubic-bezier(0.16,1,0.3,1);
+            --r: 14px;
+            --r-sm: 10px;
+            --r-xs: 7px;
         }
 
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
 
-        html { font-size: 15px; }
+        html { font-size: 15px; -webkit-text-size-adjust: 100%; }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -43,12 +48,10 @@
             text-rendering: optimizeLegibility;
         }
 
-        .mono { font-family: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace; font-variant-numeric: tabular-nums; }
-
         .app {
-            max-width: 720px;
+            max-width: 680px;
             margin: 0 auto;
-            padding: 56px 24px 100px;
+            padding: 52px 24px 96px;
         }
 
         /* ===== Header ===== */
@@ -56,20 +59,20 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 40px;
+            margin-bottom: 36px;
         }
 
         .header-title {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            letter-spacing: -0.03em;
+            letter-spacing: -0.035em;
             color: var(--text);
         }
 
-        .btn-add {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--radius-sm);
+        .icon-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: var(--r-sm);
             border: 1px solid var(--border);
             background: var(--surface);
             color: var(--text-2);
@@ -77,41 +80,36 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s var(--ease);
+            transition: all 0.18s var(--ease);
         }
-
-        .btn-add:hover {
-            background: var(--surface-2);
+        .icon-btn:hover {
+            background: var(--surface-hi);
             color: var(--text);
-            border-color: var(--border-strong);
-            transform: translateY(-1px);
+            border-color: var(--border-hi);
         }
+        .icon-btn:active { transform: scale(0.97); }
+        .icon-btn svg { width: 15px; height: 15px; }
 
-        .btn-add:active { transform: translateY(0); }
-
-        .btn-add svg { width: 16px; height: 16px; }
-
-        /* ===== Tabs ===== */
-        .tabs {
+        /* ===== Segmented Control ===== */
+        .segmented {
             display: flex;
-            gap: 4px;
-            margin-bottom: 28px;
+            gap: 2px;
+            padding: 3px;
             background: var(--surface);
-            padding: 4px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            margin-bottom: 28px;
         }
 
-        .tab {
+        .seg {
             flex: 1;
-            padding: 10px 16px;
-            font-size: 0.875rem;
+            padding: 8px 12px;
+            font-size: 0.8125rem;
             font-weight: 500;
             color: var(--text-3);
             cursor: pointer;
             border: none;
             background: none;
-            border-radius: 8px;
+            border-radius: var(--r-xs);
             transition: all 0.2s var(--ease);
             font-family: inherit;
             letter-spacing: -0.01em;
@@ -120,178 +118,158 @@
             justify-content: center;
             gap: 6px;
         }
-
-        .tab:hover { color: var(--text-2); background: rgba(255,255,255,0.03); }
-
-        .tab.active {
+        .seg:hover { color: var(--text-2); }
+        .seg.active {
             color: var(--text);
-            background: var(--surface-2);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            background: var(--surface-hi);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.25);
         }
 
-        .tab-count {
+        .seg-count {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
+            font-size: 0.6875rem;
             color: var(--text-4);
-            font-weight: 400;
-            padding: 2px 6px;
-            background: rgba(255,255,255,0.04);
-            border-radius: 5px;
+            font-weight: 500;
         }
+        .seg.active .seg-count { color: var(--text-3); }
 
-        .tab.active .tab-count { color: var(--text-3); background: rgba(255,255,255,0.06); }
-
-        /* ===== Filter pills ===== */
-        .filters {
+        /* ===== Chips ===== */
+        .chips {
             display: flex;
-            gap: 6px;
-            margin-bottom: 20px;
+            gap: 4px;
+            margin-bottom: 16px;
         }
 
-        .filter {
-            padding: 7px 14px;
+        .chip {
+            padding: 6px 14px;
             border-radius: 8px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 500;
             cursor: pointer;
-            border: 1px solid transparent;
+            border: none;
             background: none;
             color: var(--text-3);
             transition: all 0.15s var(--ease);
             font-family: inherit;
         }
-
-        .filter:hover { color: var(--text-2); background: var(--surface); }
-
-        .filter.active {
+        .chip:hover { color: var(--text-2); background: var(--surface); }
+        .chip.active {
             color: var(--text);
-            background: var(--surface);
-            border-color: var(--border);
+            background: var(--surface-hi);
         }
 
-        /* ===== Card Container ===== */
-        .card {
+        /* ===== Panel Transition ===== */
+        .panel { display: none; }
+        .panel.active {
+            display: block;
+            animation: panelIn 0.28s var(--ease-out);
+        }
+        @keyframes panelIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Surface (no border, depth via bg) ===== */
+        .surface {
             background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
+            border-radius: var(--r);
             overflow: hidden;
-        }
-
-        .list {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .list > * + * {
-            border-top: 1px solid var(--border);
         }
 
         /* ===== Row ===== */
         .row {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
             padding: 16px 20px;
             cursor: pointer;
             transition: background 0.15s var(--ease);
             position: relative;
         }
+        .row + .row { border-top: 1px solid var(--divider); }
+        .row:hover { background: var(--surface-hi); }
+        .row:hover .row-del { opacity: 1; }
 
-        .row:hover { background: var(--surface-2); }
-        .row:hover .row-delete { opacity: 1; }
-
-        .row.live {
-            background: linear-gradient(90deg, var(--live-bg) 0%, transparent 60%);
+        .row.is-live {
+            background: linear-gradient(90deg, var(--live-soft) 0%, transparent 40%);
         }
-        .row.live:hover {
-            background: linear-gradient(90deg, rgba(239, 68, 68, 0.14) 0%, var(--surface-2) 60%);
+        .row.is-live:hover {
+            background: linear-gradient(90deg, var(--live-glow) 0%, var(--surface-hi) 40%);
         }
 
         /* Avatar */
         .avatar {
-            width: 44px;
-            height: 44px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             flex-shrink: 0;
             overflow: hidden;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
+            background: var(--surface-hi);
+            position: relative;
         }
-
         .avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
-
+        .avatar.is-live {
+            box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--live);
+        }
         .avatar-fb {
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 0.9375rem;
             font-weight: 600;
             color: var(--text-3);
-            background: var(--surface-2);
         }
 
-        /* Avatar link (for posts) */
+        /* Avatar link (posts) */
         .av-link {
             display: block;
-            width: 44px;
-            height: 44px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             flex-shrink: 0;
             overflow: hidden;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
+            background: var(--surface-hi);
             position: relative;
-            transition: all 0.2s var(--ease);
         }
-
         .av-link img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: filter 0.2s var(--ease), transform 0.2s var(--ease);
+            transition: filter 0.2s var(--ease), transform 0.25s var(--ease-out);
         }
-
-        .av-link:hover img { filter: brightness(0.6); transform: scale(1.05); }
-
-        .av-link .play-ico {
+        .av-link:hover img { filter: brightness(0.55); transform: scale(1.06); }
+        .av-link .play {
             position: absolute;
-            top: 50%;
-            left: 52%;
-            transform: translate(-50%, -50%);
-            width: 0;
-            height: 0;
-            border-left: 10px solid #fff;
-            border-top: 7px solid transparent;
-            border-bottom: 7px solid transparent;
+            top: 50%; left: 52%;
+            transform: translate(-50%,-50%);
+            width: 0; height: 0;
+            border-left: 9px solid #fff;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
             opacity: 0;
             transition: opacity 0.2s var(--ease);
-            z-index: 1;
             filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
         }
+        .av-link:hover .play { opacity: 1; }
 
-        .av-link:hover .play-ico { opacity: 1; }
+        /* Row body */
+        .row-body { flex: 1; min-width: 0; }
 
-        /* Content */
-        .row-body {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .row-top {
+        .row-head {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 4px;
+            gap: 8px;
+            margin-bottom: 3px;
         }
 
         .row-name {
-            font-size: 0.95rem;
+            font-size: 0.9375rem;
             font-weight: 600;
             color: var(--text);
             white-space: nowrap;
@@ -300,55 +278,50 @@
             letter-spacing: -0.015em;
         }
 
-        .row-tag {
+        .tag {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.65rem;
+            font-size: 0.625rem;
             color: var(--text-4);
             font-weight: 500;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.05em;
             text-transform: uppercase;
-            padding: 3px 7px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 5px;
             flex-shrink: 0;
         }
 
-        .row-status {
+        .status {
             margin-left: auto;
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 0.75rem;
+            font-size: 0.6875rem;
             font-weight: 600;
             flex-shrink: 0;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
         }
+        .status.live { color: var(--live); }
+        .status.offline { color: var(--text-4); }
+        .status.pending { color: var(--new); }
+        .status.error { color: var(--warn); }
 
-        .row-status.live { color: var(--live); }
-        .row-status.offline { color: var(--text-4); }
-        .row-status.pending { color: var(--new); }
-        .row-status.error { color: var(--warn); }
-
-        .dot {
-            width: 7px;
-            height: 7px;
+        .sd {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
         }
-
-        .dot.live { background: var(--live); box-shadow: 0 0 8px var(--live); animation: pulse 2s infinite; }
-        .dot.offline { background: var(--text-4); }
-        .dot.pending { background: var(--new); }
-        .dot.error { background: var(--warn); }
+        .sd.live { background: var(--live); box-shadow: 0 0 7px var(--live); animation: pulse 2s ease-in-out infinite; }
+        .sd.offline { background: var(--text-4); }
+        .sd.pending { background: var(--new); }
+        .sd.error { background: var(--warn); }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.35; }
         }
 
         .row-sub {
-            font-size: 0.85rem;
+            font-size: 0.8125rem;
             color: var(--text-2);
             white-space: nowrap;
             overflow: hidden;
@@ -358,22 +331,21 @@
 
         .row-meta {
             display: flex;
-            gap: 16px;
-            margin-top: 6px;
-            font-size: 0.75rem;
+            gap: 14px;
+            margin-top: 4px;
+            font-size: 0.6875rem;
             color: var(--text-3);
         }
-
         .row-meta span {
             font-family: 'JetBrains Mono', monospace;
             font-variant-numeric: tabular-nums;
         }
 
         /* Delete */
-        .row-delete {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+        .row-del {
+            width: 30px;
+            height: 30px;
+            border-radius: var(--r-xs);
             border: none;
             background: none;
             color: var(--text-4);
@@ -385,61 +357,45 @@
             opacity: 0;
             transition: all 0.15s var(--ease);
         }
-
-        .row-delete:hover {
-            background: var(--live-bg);
+        .row-del:hover {
+            background: var(--live-soft);
             color: var(--live);
         }
+        .row-del svg { width: 13px; height: 13px; }
 
-        .row-delete svg { width: 14px; height: 14px; }
-
-        /* ===== History Timeline ===== */
-        .timeline-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 8px 0;
-        }
-
-        .timeline {
-            display: flex;
-            flex-direction: column;
-        }
-
+        /* ===== Timeline ===== */
         .tl-item {
             display: flex;
-            gap: 16px;
-            padding: 14px 20px;
+            gap: 14px;
+            padding: 13px 20px;
             transition: background 0.15s var(--ease);
         }
-
-        .tl-item:hover { background: var(--surface-2); }
-        .tl-item + .tl-item { border-top: 1px solid var(--border); }
+        .tl-item:hover { background: var(--surface-hi); }
+        .tl-item + .tl-item { border-top: 1px solid var(--divider); }
 
         .tl-time {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
+            font-size: 0.6875rem;
             color: var(--text-4);
-            min-width: 64px;
+            min-width: 56px;
             flex-shrink: 0;
             padding-top: 2px;
         }
 
         .tl-dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             flex-shrink: 0;
             margin-top: 5px;
         }
-
-        .tl-dot.live_start { background: var(--live); box-shadow: 0 0 6px var(--live); }
+        .tl-dot.live_start { background: var(--live); box-shadow: 0 0 5px var(--live); }
         .tl-dot.live_end { background: var(--text-4); }
-        .tl-dot.new_post { background: var(--new); box-shadow: 0 0 6px var(--new); }
+        .tl-dot.new_post { background: var(--new); box-shadow: 0 0 5px var(--new); }
         .tl-dot.error { background: var(--warn); }
 
         .tl-text {
-            font-size: 0.85rem;
+            font-size: 0.8125rem;
             color: var(--text-2);
             flex: 1;
             line-height: 1.5;
@@ -448,25 +404,17 @@
         /* ===== Empty ===== */
         .empty {
             text-align: center;
-            padding: 80px 20px;
+            padding: 72px 20px;
         }
-
-        .empty-circle {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            border: 1px solid var(--border);
-            margin: 0 auto 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--surface-2);
+        .empty svg {
+            width: 28px;
+            height: 28px;
+            color: var(--text-4);
+            margin: 0 auto 14px;
+            display: block;
         }
-
-        .empty-circle svg { width: 20px; height: 20px; color: var(--text-4); }
-
         .empty-text {
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             color: var(--text-3);
         }
 
@@ -474,68 +422,68 @@
         .overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0,0,0,0.6);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
             z-index: 100;
             padding: 20px;
             opacity: 0;
-            transition: opacity 0.2s var(--ease);
+            visibility: hidden;
+            transition: opacity 0.25s var(--ease), visibility 0.25s var(--ease);
         }
-
-        .overlay.show { display: flex; }
-        .overlay.show.visible { opacity: 1; }
+        .overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
 
         .modal {
             background: var(--surface);
-            border: 1px solid var(--border-strong);
-            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
             padding: 28px;
             width: 100%;
-            max-width: 400px;
-            transform: translateY(8px) scale(0.98);
-            transition: transform 0.2s var(--ease);
-            box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+            max-width: 380px;
+            transform: scale(0.96) translateY(8px);
+            transition: transform 0.3s var(--ease-out);
+            box-shadow: 0 20px 50px -12px rgba(0,0,0,0.5);
+        }
+        .overlay.show .modal {
+            transform: scale(1) translateY(0);
         }
 
-        .overlay.visible .modal { transform: translateY(0) scale(1); }
-
         .modal-title {
-            font-size: 1.1rem;
+            font-size: 1.0625rem;
             font-weight: 600;
             margin-bottom: 24px;
             letter-spacing: -0.02em;
         }
 
-        .field { margin-bottom: 18px; }
-
+        .field { margin-bottom: 16px; }
         .field label {
             display: block;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-3);
-            margin-bottom: 8px;
+            margin-bottom: 7px;
             font-weight: 500;
         }
-
         .field input, .field select {
             width: 100%;
-            padding: 11px 14px;
+            padding: 10px 14px;
             background: var(--bg);
             border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
+            border-radius: var(--r-sm);
             color: var(--text);
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-family: inherit;
             outline: none;
-            transition: all 0.15s var(--ease);
+            transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
         }
-
         .field input:focus, .field select:focus {
-            border-color: var(--border-strong);
-            background: var(--surface-2);
+            border-color: var(--border-hi);
+            background: var(--surface-hi);
         }
         .field input::placeholder { color: var(--text-4); }
         .field select:disabled { opacity: 0.4; }
@@ -543,61 +491,64 @@
         .modal-actions {
             display: flex;
             gap: 10px;
-            margin-top: 28px;
+            margin-top: 26px;
         }
 
-        .mbtn {
+        .btn {
             flex: 1;
-            padding: 11px;
-            border-radius: var(--radius-sm);
-            font-size: 0.875rem;
+            padding: 10px;
+            border-radius: var(--r-sm);
+            font-size: 0.8125rem;
             font-weight: 500;
             cursor: pointer;
             border: 1px solid transparent;
             font-family: inherit;
             transition: all 0.15s var(--ease);
         }
-
-        .mbtn-primary {
+        .btn-primary {
             background: var(--text);
             color: var(--bg);
         }
-        .mbtn-primary:hover { background: #fff; transform: translateY(-1px); }
-        .mbtn-primary:active { transform: translateY(0); }
+        .btn-primary:hover { background: #fff; }
+        .btn-primary:active { transform: scale(0.98); }
 
-        .mbtn-ghost {
-            background: none;
+        .btn-ghost {
+            background: transparent;
             color: var(--text-2);
             border-color: var(--border);
         }
-        .mbtn-ghost:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
-
-        .mbtn-danger {
-            background: var(--live-bg);
-            color: var(--live);
-            border-color: rgba(239, 68, 68, 0.2);
+        .btn-ghost:hover {
+            background: var(--surface-hi);
+            color: var(--text);
+            border-color: var(--border-hi);
         }
-        .mbtn-danger:hover { background: rgba(239, 68, 68, 0.18); }
+
+        .btn-danger {
+            background: var(--live-soft);
+            color: var(--live);
+            border-color: rgba(239,68,68,0.15);
+        }
+        .btn-danger:hover { background: var(--live-glow); }
 
         /* Toast */
         .toast {
             position: fixed;
-            bottom: 40px;
+            bottom: 32px;
             left: 50%;
-            transform: translateX(-50%) translateY(12px);
-            background: var(--surface-2);
-            border: 1px solid var(--border-strong);
+            transform: translateX(-50%) translateY(16px);
+            background: var(--surface-active);
+            border: 1px solid var(--border-hi);
             color: var(--text);
-            padding: 12px 20px;
-            border-radius: var(--radius-sm);
-            font-size: 0.85rem;
+            padding: 11px 20px;
+            border-radius: var(--r-sm);
+            font-size: 0.8125rem;
             font-weight: 500;
             z-index: 200;
             opacity: 0;
-            transition: all 0.25s var(--ease);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            pointer-events: none;
+            transition: all 0.3s var(--ease-out);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.35);
         }
-
         .toast.show {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
@@ -606,13 +557,13 @@
         @media (max-width: 640px) {
             .app { padding: 32px 16px 80px; }
             .header { margin-bottom: 28px; }
-            .header-title { font-size: 1.4rem; }
+            .header-title { font-size: 1.35rem; }
+            .segmented { margin-bottom: 22px; }
             .row { padding: 14px 16px; gap: 12px; }
-            .avatar, .av-link { width: 40px; height: 40px; }
-            .row-delete { opacity: 1; }
-            .tabs { margin-bottom: 20px; }
+            .avatar, .av-link { width: 38px; height: 38px; }
+            .row-del { opacity: 1; }
             .tl-item { padding: 12px 16px; }
-            .empty { padding: 60px 20px; }
+            .empty { padding: 56px 20px; }
         }
     </style>
 </head>
@@ -620,37 +571,31 @@
     <div class="app">
         <header class="header">
             <h1 class="header-title">Monitor</h1>
-            <button class="btn-add" onclick="showAddModal()" aria-label="添加">
+            <button class="icon-btn" onclick="showAddModal()" aria-label="添加">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
             </button>
         </header>
 
-        <nav class="tabs">
-            <button class="tab active" id="tab-live" onclick="switchTab('live')">直播<span class="tab-count" id="live-n"></span></button>
-            <button class="tab" id="tab-posts" onclick="switchTab('posts')">作品<span class="tab-count" id="posts-n"></span></button>
-            <button class="tab" id="tab-history" onclick="switchTab('history')">历史</button>
+        <nav class="segmented">
+            <button class="seg active" id="tab-live" onclick="switchTab('live')">直播<span class="seg-count" id="live-n"></span></button>
+            <button class="seg" id="tab-posts" onclick="switchTab('posts')">作品<span class="seg-count" id="posts-n"></span></button>
+            <button class="seg" id="tab-history" onclick="switchTab('history')">历史</button>
         </nav>
 
-        <section id="live-section">
-            <div class="filters">
-                <button class="filter active" data-f="all" onclick="setFilter('all')">全部</button>
-                <button class="filter" data-f="live" onclick="setFilter('live')">直播中</button>
+        <section id="live-section" class="panel active">
+            <div class="chips">
+                <button class="chip active" data-f="all" onclick="setFilter('all')">全部</button>
+                <button class="chip" data-f="live" onclick="setFilter('live')">直播中</button>
             </div>
-            <div class="card" id="live-card">
-                <div class="list" id="rooms-list"></div>
-            </div>
+            <div class="surface" id="live-surface"></div>
         </section>
 
-        <section id="posts-section" style="display:none;">
-            <div class="card" id="posts-card">
-                <div class="list" id="posts-list"></div>
-            </div>
+        <section id="posts-section" class="panel">
+            <div class="surface" id="posts-surface"></div>
         </section>
 
-        <section id="history-section" style="display:none;">
-            <div class="timeline-card" id="history-card">
-                <div class="timeline" id="tl-list"></div>
-            </div>
+        <section id="history-section" class="panel">
+            <div class="surface" id="history-surface"></div>
         </section>
     </div>
 
@@ -680,8 +625,8 @@
                 <input type="text" id="add-name" placeholder="留空自动获取">
             </div>
             <div class="modal-actions">
-                <button class="mbtn mbtn-ghost" onclick="closeAdd()">取消</button>
-                <button class="mbtn mbtn-primary" onclick="doAdd()">添加</button>
+                <button class="btn btn-ghost" onclick="closeAdd()">取消</button>
+                <button class="btn btn-primary" onclick="doAdd()">添加</button>
             </div>
         </div>
     </div>
@@ -689,10 +634,10 @@
     <div class="overlay" id="del-modal">
         <div class="modal">
             <div class="modal-title">删除确认</div>
-            <p style="color:var(--text-2);font-size:0.875rem;margin-bottom:8px;line-height:1.6;" id="del-msg"></p>
+            <p style="color:var(--text-2);font-size:0.8125rem;margin-bottom:8px;line-height:1.6;" id="del-msg"></p>
             <div class="modal-actions">
-                <button class="mbtn mbtn-ghost" onclick="closeDel()">取消</button>
-                <button class="mbtn mbtn-danger" onclick="doDel()">删除</button>
+                <button class="btn btn-ghost" onclick="closeDel()">取消</button>
+                <button class="btn btn-danger" onclick="doDel()">删除</button>
             </div>
         </div>
     </div>
@@ -757,176 +702,195 @@
         function fmtNum(n) { return n>=10000?(n/10000).toFixed(1)+'w':(n||'0').toLocaleString(); }
         function pUrl(p,id) { return p==='bilibili'?`https://live.bilibili.com/${id}`:(p==='douyin'?`https://live.douyin.com/${id}`:'#'); }
         function esc(s){return(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-        function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),250);},2200);}
+        function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},2200);}
 
         function switchTab(t) {
-            tab=t;
-            document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+            tab = t;
+            document.querySelectorAll('.seg').forEach(b => b.classList.remove('active'));
             document.getElementById('tab-'+t).classList.add('active');
-            document.getElementById('live-section').style.display=t==='live'?'block':'none';
-            document.getElementById('posts-section').style.display=t==='posts'?'block':'none';
-            document.getElementById('history-section').style.display=t==='history'?'block':'none';
-            if(t==='posts') loadPosts();
-            if(t==='history') loadHistory();
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(t+'-section').classList.add('active');
+            if (t === 'posts') loadPosts();
+            if (t === 'history') loadHistory();
         }
-        function setFilter(f){filter=f;document.querySelectorAll('.filter').forEach(b=>b.classList.remove('active'));document.querySelector(`[data-f="${f}"]`).classList.add('active');renderRooms();}
+        function setFilter(f) {
+            filter = f;
+            document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+            document.querySelector(`[data-f="${f}"]`).classList.add('active');
+            renderRooms();
+        }
 
         const TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m5 0V4a1 1 0 011-1h2a1 1 0 011 1v2"/></svg>';
+        const EMPTY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="9"/></svg>';
 
         function renderRooms() {
-            const card=document.getElementById('live-card');
-            let arr=rooms.map(r=>{const k=`${r.platform}_${r.id}`,s=status[k];return s?{...s,name:r.name||s.name}:{...r,status:'pending',title:null,viewers:null,duration:0};});
-            arr.sort((a,b)=>({live:0,pending:1,error:2,offline:3}[a.status]??9)-({live:0,pending:1,error:2,offline:3}[b.status]??9));
-            const liveN=arr.filter(r=>r.status==='live').length;
-            document.getElementById('live-n').textContent=arr.length?` ${liveN}/${arr.length}`:'';
-            if(filter!=='all') arr=arr.filter(r=>r.status===filter);
-            if(!arr.length){
-                card.innerHTML = emptyHtml('暂无监控对象');
-                return;
-            }
-            card.innerHTML = `<div class="list">${arr.map(r=>{
-                const st={live:'LIVE',offline:'OFF',error:'ERR',pending:'...'}[r.status];
-                const nm=esc(r.uname||r.name);
-                const ttl=esc(r.title||(r.status==='live'?'正在直播':r.status==='pending'?'检测中':'—'));
-                const av=r.avatar?`<img src="${r.avatar}" alt="${nm}" referrerpolicy="no-referrer">`:`<div class="avatar-fb">${esc((nm||'?')[0])}</div>`;
-                const v=r.viewers?fmtNum(r.viewers):'—',d=fmtDur(r.duration||0);
-                return `<div class="row ${r.status==='live'?'live':''}" onclick="window.open('${pUrl(r.platform,r.id)}','_blank')">
-                    <div class="avatar">${av}</div>
+            const el = document.getElementById('live-surface');
+            let arr = rooms.map(r => {
+                const k = `${r.platform}_${r.id}`, s = status[k];
+                return s ? {...s, name: r.name || s.name} : {...r, status:'pending', title:null, viewers:null, duration:0};
+            });
+            arr.sort((a,b) => ({live:0,pending:1,error:2,offline:3}[a.status]??9) - ({live:0,pending:1,error:2,offline:3}[b.status]??9));
+            const liveN = arr.filter(r => r.status === 'live').length;
+            document.getElementById('live-n').textContent = arr.length ? `${liveN}/${arr.length}` : '';
+            if (filter !== 'all') arr = arr.filter(r => r.status === filter);
+            if (!arr.length) { el.innerHTML = emptyHtml('暂无监控对象'); return; }
+            el.innerHTML = arr.map(r => {
+                const st = {live:'LIVE',offline:'OFFLINE',error:'ERROR',pending:'CHECKING'}[r.status];
+                const nm = esc(r.uname || r.name);
+                const ttl = esc(r.title || (r.status==='live'?'正在直播':r.status==='pending'?'检测中':'—'));
+                const av = r.avatar
+                    ? `<img src="${r.avatar}" alt="${nm}" referrerpolicy="no-referrer">`
+                    : `<div class="avatar-fb">${esc((nm||'?')[0])}</div>`;
+                const v = r.viewers ? fmtNum(r.viewers) : '—';
+                const d = fmtDur(r.duration||0);
+                const isLive = r.status === 'live';
+                return `<div class="row${isLive?' is-live':''}" onclick="window.open('${pUrl(r.platform,r.id)}','_blank')">
+                    <div class="avatar${isLive?' is-live':''}">${av}</div>
                     <div class="row-body">
-                        <div class="row-top">
+                        <div class="row-head">
                             <span class="row-name">${nm}</span>
-                            <span class="row-tag">${r.platform==='bilibili'?'BILI':'DY'}</span>
-                            <span class="row-status ${r.status}"><span class="dot ${r.status}"></span>${st}</span>
+                            <span class="tag">${r.platform==='bilibili'?'BILI':'DY'}</span>
+                            <span class="status ${r.status}"><span class="sd ${r.status}"></span>${st}</span>
                         </div>
                         <div class="row-sub">${ttl}</div>
                         <div class="row-meta"><span>${v} 观看</span><span>${d}</span></div>
                     </div>
-                    <button class="row-delete" onclick="event.stopPropagation();askDel('${r.platform}','${r.id}')">${TRASH_SVG}</button>
+                    <button class="row-del" onclick="event.stopPropagation();askDel('${r.platform}','${r.id}')">${TRASH_SVG}</button>
                 </div>`;
-            }).join('')}</div>`;
+            }).join('');
         }
 
         function renderPosts() {
-            const card=document.getElementById('posts-card');
-            document.getElementById('posts-n').textContent=prooms.length?` ${prooms.length}`:'';
-            if(!prooms.length){
-                card.innerHTML = emptyHtml('暂无监控账号');
-                return;
-            }
-            card.innerHTML = `<div class="list">${prooms.map(r=>{
-                const st=pstatus[`${r.platform}_${r.id}`]||{},lp=st.latest_post;
-                const nm=esc(r.name||r.id),ttl=esc(lp?.title||'暂无作品'),ts=lp?.time?fmtTime(lp.time):'';
-                const av=st.avatar||lp?.avatar,url=lp?.url||'#';
-                const avH=av?`<a href="${url}" target="_blank" rel="noopener" class="av-link"><img src="${av}" referrerpolicy="no-referrer" alt="${nm}"><span class="play-ico"></span></a>`:`<div class="avatar"><div class="avatar-fb">${esc((nm||'?')[0])}</div></div>`;
+            const el = document.getElementById('posts-surface');
+            document.getElementById('posts-n').textContent = prooms.length ? `${prooms.length}` : '';
+            if (!prooms.length) { el.innerHTML = emptyHtml('暂无监控账号'); return; }
+            el.innerHTML = prooms.map(r => {
+                const st = pstatus[`${r.platform}_${r.id}`] || {}, lp = st.latest_post;
+                const nm = esc(r.name||r.id), ttl = esc(lp?.title||'暂无作品'), ts = lp?.time ? fmtTime(lp.time) : '';
+                const av = st.avatar || lp?.avatar, url = lp?.url || '#';
+                const avH = av
+                    ? `<a href="${url}" target="_blank" rel="noopener" class="av-link"><img src="${av}" referrerpolicy="no-referrer" alt="${nm}"><span class="play"></span></a>`
+                    : `<div class="avatar"><div class="avatar-fb">${esc((nm||'?')[0])}</div></div>`;
                 return `<div class="row">
                     ${avH}
                     <div class="row-body">
-                        <div class="row-top">
+                        <div class="row-head">
                             <span class="row-name">${nm}</span>
-                            <span class="row-tag">${r.platform==='bilibili'?'BILI':'DY'}</span>
+                            <span class="tag">${r.platform==='bilibili'?'BILI':'DY'}</span>
                         </div>
                         <div class="row-sub">${ttl}</div>
-                        ${ts?`<div class="row-meta"><span>${ts}</span></div>`:''}
+                        ${ts ? `<div class="row-meta"><span>${ts}</span></div>` : ''}
                     </div>
-                    <button class="row-delete" onclick="askDel('${r.platform}','${r.id}','posts')">${TRASH_SVG}</button>
+                    <button class="row-del" onclick="askDel('${r.platform}','${r.id}','posts')">${TRASH_SVG}</button>
                 </div>`;
-            }).join('')}</div>`;
+            }).join('');
         }
 
         function renderHistory(h) {
-            const card=document.getElementById('history-card');
-            if(!h||!h.length){
-                card.innerHTML = emptyHtml('暂无记录');
-                return;
-            }
-            const tg={live_start:'live_start',live_end:'live_end',new_post:'new_post'};
-            card.innerHTML = `<div class="timeline">${h.slice().reverse().map(i=>`<div class="tl-item">
+            const el = document.getElementById('history-surface');
+            if (!h || !h.length) { el.innerHTML = emptyHtml('暂无记录'); return; }
+            const tg = {live_start:'live_start', live_end:'live_end', new_post:'new_post'};
+            el.innerHTML = h.slice().reverse().map(i => `<div class="tl-item">
                 <span class="tl-time">${fmtTime(i.time)}</span>
                 <span class="tl-dot ${tg[i.type]||'live_end'}"></span>
                 <span class="tl-text">${esc(i.message)}</span>
-            </div>`).join('')}</div>`;
+            </div>`).join('');
         }
 
-        function emptyHtml(t){return`<div class="empty"><div class="empty-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/></svg></div><div class="empty-text">${t}</div></div>`;}
+        function emptyHtml(t) {
+            return `<div class="empty">${EMPTY_SVG}<div class="empty-text">${t}</div></div>`;
+        }
 
         async function loadData() {
-            const[s,h,rl]=await Promise.all([fetchJ('status.json'),fetchJ('history.json'),fetchJ('rooms.json')]);
-            status=s||{};rooms=rl||[];renderRooms();renderHistory(h||[]);
+            const [s,h,rl] = await Promise.all([fetchJ('status.json'), fetchJ('history.json'), fetchJ('rooms.json')]);
+            status = s || {}; rooms = rl || [];
+            renderRooms(); renderHistory(h||[]);
         }
         async function loadPosts() {
-            const[ps,pr]=await Promise.all([fetchJ('posts_status.json'),fetchJ('posts_rooms.json')]);
-            pstatus=ps||{};prooms=pr||[];renderPosts();
+            const [ps,pr] = await Promise.all([fetchJ('posts_status.json'), fetchJ('posts_rooms.json')]);
+            pstatus = ps || {}; prooms = pr || []; renderPosts();
         }
-        async function loadHistory(){const h=await fetchJ('history.json');renderHistory(h||[]);}
+        async function loadHistory() { const h = await fetchJ('history.json'); renderHistory(h||[]); }
 
-        function showAddModal(c){
-            addCtx=c||(tab==='posts'?'posts':'live');
-            document.getElementById('add-ctx').value=addCtx;
+        function showAddModal(c) {
+            addCtx = c || (tab === 'posts' ? 'posts' : 'live');
+            document.getElementById('add-ctx').value = addCtx;
             onCtxChange();
-            document.getElementById('add-id').value='';
-            document.getElementById('add-name').value='';
-            const m=document.getElementById('add-modal');
-            m.classList.add('show');
-            requestAnimationFrame(()=>m.classList.add('visible'));
+            document.getElementById('add-id').value = '';
+            document.getElementById('add-name').value = '';
+            document.getElementById('add-modal').classList.add('show');
         }
-        function onCtxChange(){
-            addCtx=document.getElementById('add-ctx').value;
-            const p=document.getElementById('add-plat'),pf=document.getElementById('plat-field');
-            if(addCtx==='posts'){p.value='douyin';p.disabled=true;pf.style.opacity='0.4';}
-            else{p.disabled=false;pf.style.opacity='1';p.value='bilibili';}
+        function onCtxChange() {
+            addCtx = document.getElementById('add-ctx').value;
+            const p = document.getElementById('add-plat'), pf = document.getElementById('plat-field');
+            if (addCtx === 'posts') { p.value = 'douyin'; p.disabled = true; pf.style.opacity = '0.4'; }
+            else { p.disabled = false; pf.style.opacity = '1'; p.value = 'bilibili'; }
         }
-        function closeAdd(){
-            const m=document.getElementById('add-modal');
-            m.classList.remove('visible');
-            setTimeout(()=>m.classList.remove('show'),200);
-        }
+        function closeAdd() { document.getElementById('add-modal').classList.remove('show'); }
 
-        function askDel(p,id,c){
-            pendingDel={p,id};delCtx=c||'live';
-            document.getElementById('del-msg').textContent=`删除${delCtx==='posts'?'作品账号':'主播'} ${p}/${id}？`;
-            const m=document.getElementById('del-modal');
-            m.classList.add('show');
-            requestAnimationFrame(()=>m.classList.add('visible'));
+        function askDel(p, id, c) {
+            pendingDel = {p, id}; delCtx = c || 'live';
+            document.getElementById('del-msg').textContent = `删除${delCtx==='posts'?'作品账号':'主播'} ${p}/${id}？`;
+            document.getElementById('del-modal').classList.add('show');
         }
-        function closeDel(){
-            const m=document.getElementById('del-modal');
-            m.classList.remove('visible');
-            setTimeout(()=>m.classList.remove('show'),200);
-            pendingDel=null;
-        }
+        function closeDel() { document.getElementById('del-modal').classList.remove('show'); pendingDel = null; }
 
-        async function doAdd(){
-            const p=document.getElementById('add-plat').value,id=document.getElementById('add-id').value.trim(),nm=document.getElementById('add-name').value.trim();
-            const ip=addCtx==='posts';
-            if(!id){toast('请输入 ID');return;}
-            const tf=ip?'posts_rooms.json':'rooms.json',arr=(await fetchJ(tf))||[];
-            if(arr.some(r=>r.platform===p&&r.id===id)){toast('已存在');return;}
-            let name=nm||id;
-            if(!nm&&!ip&&p==='bilibili'){try{const r=await fetch(`https://api.live.bilibili.com/room/v1/Room/room_init?id=${id}`),d=await r.json();if(d.code===0&&d.data?.uid){const u=await fetch(`https://api.live.bilibili.com/live_user/v1/Master/info?uid=${d.data.uid}`),ud=await u.json();if(ud.code===0&&ud.data?.info?.uname)name=ud.data.info.uname;}}catch{}}
-            arr.push({platform:p,id,name:name});
-            if(await saveRooms(arr,ip?`添加作品: ${name}`:`添加主播: ${name}`,tf)){
-                toast('已添加');closeAdd();await trigger();
-                if(ip){await loadPosts();setTimeout(loadPosts,15000);setTimeout(loadPosts,40000);}
-                else{await loadData();setTimeout(loadData,15000);setTimeout(loadData,40000);}
+        async function doAdd() {
+            const p = document.getElementById('add-plat').value,
+                  id = document.getElementById('add-id').value.trim(),
+                  nm = document.getElementById('add-name').value.trim();
+            const ip = addCtx === 'posts';
+            if (!id) { toast('请输入 ID'); return; }
+            const tf = ip ? 'posts_rooms.json' : 'rooms.json',
+                  arr = (await fetchJ(tf)) || [];
+            if (arr.some(r => r.platform === p && r.id === id)) { toast('已存在'); return; }
+            let name = nm || id;
+            if (!nm && !ip && p === 'bilibili') {
+                try {
+                    const r = await fetch(`https://api.live.bilibili.com/room/v1/Room/room_init?id=${id}`),
+                          d = await r.json();
+                    if (d.code === 0 && d.data?.uid) {
+                        const u = await fetch(`https://api.live.bilibili.com/live_user/v1/Master/info?uid=${d.data.uid}`),
+                              ud = await u.json();
+                        if (ud.code === 0 && ud.data?.info?.uname) name = ud.data.info.uname;
+                    }
+                } catch {}
+            }
+            arr.push({platform: p, id, name});
+            if (await saveRooms(arr, ip ? `添加作品: ${name}` : `添加主播: ${name}`, tf)) {
+                toast('已添加'); closeAdd(); await trigger();
+                if (ip) { await loadPosts(); setTimeout(loadPosts, 15000); setTimeout(loadPosts, 40000); }
+                else { await loadData(); setTimeout(loadData, 15000); setTimeout(loadData, 40000); }
             }
         }
 
-        async function doDel(){
-            if(!pendingDel)return;const{p,id}=pendingDel,ip=delCtx==='posts';
-            const tf=ip?'posts_rooms.json':'rooms.json',sf=ip?'posts_status.json':'status.json',dk=`${p}_${id}`;
-            const arr=(await fetchJ(tf))||[],nr=arr.filter(r=>!(r.platform===p&&r.id===id));
-            if(await saveRooms(nr,ip?`删除作品: ${p}/${id}`:`删除主播: ${p}/${id}`,tf)){
-                try{const f=await ghGet(sf);let o={};try{o=JSON.parse(atob(f.content));}catch{}if(o[dk]){delete o[dk];await ghPut(sf,JSON.stringify(o,null,2),f.sha,`清理: ${p}/${id}`);}}catch{}
-                toast('已删除');closeDel();
-                if(ip){await loadPosts();setTimeout(loadPosts,2000);}else{await loadData();setTimeout(loadData,2000);}
+        async function doDel() {
+            if (!pendingDel) return;
+            const {p, id} = pendingDel, ip = delCtx === 'posts';
+            const tf = ip ? 'posts_rooms.json' : 'rooms.json',
+                  sf = ip ? 'posts_status.json' : 'status.json',
+                  dk = `${p}_${id}`;
+            const arr = (await fetchJ(tf)) || [],
+                  nr = arr.filter(r => !(r.platform === p && r.id === id));
+            if (await saveRooms(nr, ip ? `删除作品: ${p}/${id}` : `删除主播: ${p}/${id}`, tf)) {
+                try {
+                    const f = await ghGet(sf); let o = {};
+                    try { o = JSON.parse(atob(f.content)); } catch {}
+                    if (o[dk]) { delete o[dk]; await ghPut(sf, JSON.stringify(o,null,2), f.sha, `清理: ${p}/${id}`); }
+                } catch {}
+                toast('已删除'); closeDel();
+                if (ip) { await loadPosts(); setTimeout(loadPosts, 2000); }
+                else { await loadData(); setTimeout(loadData, 2000); }
             }
         }
 
         document.querySelectorAll('.overlay').forEach(ov => {
-            ov.addEventListener('click', e => { if(e.target === ov) { if(ov.id==='add-modal') closeAdd(); else closeDel(); } });
+            ov.addEventListener('click', e => {
+                if (e.target === ov) { if (ov.id === 'add-modal') closeAdd(); else closeDel(); }
+            });
         });
         document.addEventListener('keydown', e => {
-            if(e.key === 'Escape') { closeAdd(); closeDel(); }
+            if (e.key === 'Escape') { closeAdd(); closeDel(); }
         });
 
         loadData();
