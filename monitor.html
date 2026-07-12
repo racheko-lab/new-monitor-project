@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直播监控</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #fff; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 20px; color: #00d4ff; }
+        .room-card { background: #16213e; border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .status-live { background: #ff4757; box-shadow: 0 0 8px #ff4757; }
+        .status-offline { background: #6b7280; }
+        .status-error { background: #ffd93d; }
+        .room-info { flex: 1; }
+        .room-name { font-weight: 600; font-size: 16px; }
+        .room-title { font-size: 12px; color: #9ca3af; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .room-meta { font-size: 12px; color: #6b7280; margin-top: 4px; }
+        .history-section { margin-top: 24px; }
+        .history-title { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #00d4ff; }
+        .history-list { background: #16213e; border-radius: 12px; padding: 12px; }
+        .history-item { padding: 8px 0; border-bottom: 1px solid #374151; font-size: 14px; }
+        .history-item:last-child { border-bottom: none; }
+        .history-time { color: #6b7280; font-size: 12px; margin-right: 8px; }
+        .history-type { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-right: 8px; }
+        .type-live_start { background: #ff4757; }
+        .type-live_end { background: #6b7280; }
+        .type-new_post { background: #2ed573; }
+        .type-error { background: #ffd93d; color: #000; }
+        .last-update { text-align: center; color: #6b7280; font-size: 12px; margin-top: 16px; }
+        .platform-tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; background: #00d4ff; color: #000; margin-left: 8px; }
+        .viewers { color: #ffd93d; font-weight: 600; }
+        .duration { color: #2ed573; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📡 直播监控</h1>
+        <div id="rooms-container"></div>
+        <div class="history-section">
+            <div class="history-title">📝 历史记录</div>
+            <div class="history-list" id="history-list"></div>
+        </div>
+        <div class="last-update" id="last-update"></div>
+    </div>
+
+    <script>
+        const GITHUB_REPO = 'racheko-lab/new-monitor-project';
+        const GITHUB_BRANCH = 'main';
+
+        async function fetchJson(file) {
+            const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${file}`;
+            try {
+                const resp = await fetch(url);
+                return await resp.json();
+            } catch {
+                return null;
+            }
+        }
+
+        function formatDuration(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            if (h > 0) return `${h}h ${m}m`;
+            if (m > 0) return `${m}m`;
+            return '';
+        }
+
+        function formatTime(isoString) {
+            if (!isoString) return '';
+            const date = new Date(isoString);
+            const now = new Date();
+            const diff = now - date;
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+            return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function renderRooms(status) {
+            const container = document.getElementById('rooms-container');
+            if (!status) {
+                container.innerHTML = '<div style="text-align:center;color:#6b7280;">加载失败</div>';
+                return;
+            }
+
+            const rooms = Object.values(status).sort((a, b) => {
+                const order = { live: 0, error: 1, offline: 2 };
+                return order[a.status] - order[b.status];
+            });
+
+            container.innerHTML = rooms.map(room => {
+                const statusClass = `status-${room.status}`;
+                const statusText = { live: '直播中', offline: '未开播', error: '检测失败' }[room.status];
+                const platformText = { bilibili: 'B站', douyin: '抖音' }[room.platform];
+                const duration = formatDuration(room.duration);
+                const viewers = room.viewers ? `<span class="viewers">${room.viewers.toLocaleString()}人观看</span>` : '';
+
+                return `
+                    <div class="room-card">
+                        <div class="status-dot ${statusClass}"></div>
+                        <div class="room-info">
+                            <div class="room-name">${room.name} <span class="platform-tag">${platformText}</span></div>
+                            <div class="room-title">${room.title || statusText}</div>
+                            <div class="room-meta">${viewers} ${duration ? `<span class="duration">| 累计直播 ${duration}</span>` : ''}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderHistory(history) {
+            const list = document.getElementById('history-list');
+            if (!history || history.length === 0) {
+                list.innerHTML = '<div style="text-align:center;color:#6b7280;">暂无记录</div>';
+                return;
+            }
+
+            list.innerHTML = history.slice().reverse().map(item => {
+                const time = formatTime(item.time);
+                const typeClass = `type-${item.type}`;
+                const typeText = { live_start: '开播', live_end: '下播', new_post: '新作品', error: '错误', status: '状态' }[item.type];
+
+                return `
+                    <div class="history-item">
+                        <span class="history-time">${time}</span>
+                        <span class="history-type ${typeClass}">${typeText}</span>
+                        <span>${item.message}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadData() {
+            const [status, history] = await Promise.all([
+                fetchJson('status.json'),
+                fetchJson('history.json')
+            ]);
+            renderRooms(status);
+            renderHistory(history);
+            document.getElementById('last-update').textContent = `最后更新: ${new Date().toLocaleString('zh-CN')}`;
+        }
+
+        loadData();
+        setInterval(loadData, 300000);
+    </script>
+</body>
+</html>

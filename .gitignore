@@ -1,0 +1,7 @@
+*.pyc
+__pycache__/
+status.json
+state.json
+tracking.json
+history.json
+.DS_Store
