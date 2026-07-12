@@ -27,9 +27,14 @@
   "bilibili_3381141": {
     "last_live_start": "2026-07-12T16:16:32.917098",
     "duration": 0,
-    "last_live_time": "2026-07-12T16:29:58.508197"
+    "last_live_time": "2026-07-12T16:32:37.915119"
   },
   "douyin_ludamobiubiu": {
+    "last_live_start": null,
+    "duration": 0,
+    "last_live_time": null
+  },
+  "douyin_misssiir": {
     "last_live_start": null,
     "duration": 0,
     "last_live_time": null
