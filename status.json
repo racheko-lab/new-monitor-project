@@ -8,7 +8,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-13T08:32:22.863262",
+    "last_check": "2026-07-13T08:34:26.698990",
     "duration": 2206
   },
   "bilibili_3381141": {
@@ -20,7 +20,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-13T08:32:23.987748",
+    "last_check": "2026-07-13T08:34:27.815431",
     "duration": 12810
   },
   "douyin_ludamobiubiu": {
@@ -32,7 +32,7 @@
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-13T08:32:25.778912",
+    "last_check": "2026-07-13T08:34:29.607545",
     "duration": 859
   },
   "douyin_misssiir": {
@@ -40,11 +40,11 @@
     "id": "misssiir",
     "name": "樱桃哥🍒（众包大王外卖技巧分享）",
     "uname": "樱桃哥🍒（众包大王外卖技巧分享）",
-    "avatar": null,
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_d42b3d572f223c06c63c291b6b3635d9.jpeg?from=3067671334",
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-13T08:32:27.384834",
+    "last_check": "2026-07-13T08:34:31.156743",
     "duration": 883
   }
 }
