@@ -8,7 +8,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-13T09:04:05.838489",
+    "last_check": "2026-07-13T09:07:49.158237",
     "duration": 2206
   },
   "bilibili_3381141": {
@@ -20,7 +20,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-13T09:04:06.631674",
+    "last_check": "2026-07-13T09:07:50.054285",
     "duration": 12810
   },
   "douyin_ludamobiubiu": {
@@ -28,11 +28,11 @@
     "id": "ludamobiubiu",
     "name": "鲁大魔",
     "uname": "鲁大魔",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1538749da661a0405c0aef5f0123b769.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1538749da661a0405c0aef5f0123b769.jpeg?from=3067671334",
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-13T09:04:08.946490",
+    "last_check": "2026-07-13T09:07:51.725598",
     "duration": 859
   },
   "douyin_misssiir": {
@@ -44,7 +44,7 @@
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-13T09:04:10.898523",
+    "last_check": "2026-07-13T09:07:53.176835",
     "duration": 883
   }
 }
