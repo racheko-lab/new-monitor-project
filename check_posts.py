@@ -263,7 +263,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
         return None, "error"
 
     captured_awemes = []
-    max_posts = 30
+    max_posts = 50
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -315,8 +315,6 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             # 直接访问移动端用户主页（移动端反爬较弱，无需先访问首页）
             user_url = f'https://m.douyin.com/share/user/{sec_uid}'
             for attempt in range(2):
-                if captured_awemes:
-                    break
                 print(f"  访问移动端用户主页 (尝试 {attempt+1}/2)...")
                 try:
                     page.goto(user_url, wait_until='domcontentloaded', timeout=45000)
@@ -331,12 +329,20 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                         break
                     page.wait_for_timeout(1000)
 
-                # 滚动触发加载
-                if not captured_awemes:
-                    for _ in range(3):
-                        page.mouse.wheel(0, 1000)
-                        page.wait_for_timeout(1500)
+                # 始终滚动加载更多作品（即使已有数据，可能还有更新的在下一页）
+                prev_count = 0
+                for scroll_round in range(5):
+                    page.mouse.wheel(0, 2000)
+                    page.wait_for_timeout(2000)
+                    curr_count = len(captured_awemes)
+                    if curr_count == prev_count and scroll_round > 0:
+                        print(f"  滚动 {scroll_round+1} 轮，无新数据，停止")
+                        break
+                    prev_count = curr_count
+                    print(f"  滚动 {scroll_round+1} 轮，累计 {curr_count} 条")
 
+                if captured_awemes:
+                    break
                 if not captured_awemes:
                     print(f"  本次未捕获，页面标题: {page.title()}")
                     page.wait_for_timeout(2000)
