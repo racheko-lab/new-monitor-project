@@ -383,14 +383,35 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 Object.defineProperty(navigator, 'platform', {get: () => 'Win32'});
             """)
             page = ctx.new_page()
+            # 诊断：记录所有包含 aweme 的API请求
+            def on_pc_request(req):
+                if 'aweme' in req.url and 'post' in req.url:
+                    print(f"  [pc] API请求: {req.url[:120]}")
+            page.on('request', on_pc_request)
             page.on('response', make_on_response('pc'))
             page.goto(f'https://www.douyin.com/user/{sec_uid}',
                       wait_until='domcontentloaded', timeout=45000)
+            # 诊断：打印页面URL和标题
+            print(f"  [pc] 页面URL: {page.url}")
+            try:
+                print(f"  [pc] 页面标题: {page.title()}")
+            except Exception:
+                pass
             # 等待初始 API 响应
             for _ in range(20):
                 if len(captured_awemes) > before:
                     break
                 page.wait_for_timeout(1000)
+
+            # 诊断：检查页面上是否有作品卡片
+            try:
+                card_info = page.evaluate("""() => {
+                    const links = document.querySelectorAll('a[href*="/video/"]');
+                    return {linkCount: links.length, hrefs: Array.from(links).slice(0, 3).map(a => a.href)};
+                }""")
+                print(f"  [pc] 作品链接: {card_info}")
+            except Exception:
+                pass
 
             # 滚动加载更多
             prev = len(captured_awemes)
