@@ -288,43 +288,43 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
         return new_count
 
     def make_on_response(tag: str):
-        logged_url = [False]
+        logged_urls = set()
         def on_response(resp):
             url = resp.url
-            if 'aweme/post' in url and 'iteminfo' not in url and 'publish' not in url:
-                if not logged_url[0]:
-                    logged_url[0] = True
-                    try:
-                        from urllib.parse import urlparse, parse_qs
-                        qs = parse_qs(urlparse(url).query)
-                        print(f"  [{tag}] API URL params: {qs}")
-                    except Exception:
-                        print(f"  [{tag}] API URL: {url[:200]}")
+            if 'iteminfo' in url or 'reply' in url or 'comment' in url or 'favorite' in url or 'like' in url or 'follow' in url or 'live' in url:
+                return
+            is_aweme = '/aweme/' in url or 'aweme/post' in url
+            if not is_aweme:
+                return
+            url_key = url.split('?')[0]
+            if url_key not in logged_urls and len(logged_urls) < 5:
+                logged_urls.add(url_key)
                 try:
-                    status = resp.status
-                    if status != 200:
-                        print(f"  [{tag}] API响应状态: {status}")
-                        return
-                    ctype = resp.headers.get("content-type", "")
-                    if "json" not in ctype.lower():
-                        if tag == 'pc' and not logged_url[1:]:
-                            print(f"  [{tag}] API响应非JSON: content-type={ctype}, status={status}")
-                        return
-                    data = resp.json()
-                    if not isinstance(data, dict):
-                        print(f"  [{tag}] API响应类型异常: {type(data)}")
-                        return
-                    aweme_list = data.get("aweme_list") or data.get("awemes") or []
-                    has_more = data.get("has_more", False)
-                    cursor = data.get("max_cursor", 0)
-                    if cursor:
-                        last_cursor[0] = cursor
-                    if not aweme_list and tag == 'pc':
-                        print(f"  [{tag}] API响应无aweme_list, keys={list(data.keys())[:10]}")
-                    add_awemes(aweme_list, tag)
-                except Exception as e:
-                    if tag == 'pc':
-                        print(f"  [{tag}] API响应解析异常: {e}")
+                    from urllib.parse import urlparse, parse_qs
+                    qs = parse_qs(urlparse(url).query)
+                    aweme_type_param = qs.get('aweme_type', ['?'])
+                    print(f"  [{tag}] API: {url[:200]}")
+                    print(f"  [{tag}] API params: aweme_type={aweme_type_param}")
+                except Exception:
+                    print(f"  [{tag}] API URL: {url[:200]}")
+            try:
+                status = resp.status
+                if status != 200:
+                    return
+                ctype = resp.headers.get("content-type", "")
+                if "json" not in ctype.lower():
+                    return
+                data = resp.json()
+                if not isinstance(data, dict):
+                    return
+                aweme_list = data.get("aweme_list") or data.get("awemes") or []
+                has_more = data.get("has_more", False)
+                cursor = data.get("max_cursor", 0)
+                if cursor:
+                    last_cursor[0] = cursor
+                add_awemes(aweme_list, tag + '-resp')
+            except Exception:
+                pass
         return on_response
 
     mobile_ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
@@ -360,7 +360,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                             const valid = list.filter(x => x && x.aweme_id);
                             if (valid.length) {
                                 window.__m_captured_awemes.push(...valid);
-                                window.__m_api_logs.push({url: url.substring(0,80), count: valid.length, source});
+                                window.__m_api_logs.push({url: url, count: valid.length, source});
                             }
                         }
                         function deepSearch(obj, depth) {
@@ -370,7 +370,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                     const valid = obj.filter(x => x && x.aweme_id);
                                     if (valid.length) {
                                         window.__m_captured_awemes.push(...valid);
-                                        window.__m_api_logs.push({url: url.substring(0,80), count: valid.length, source: source+'-deep'});
+                                        window.__m_api_logs.push({url: url, count: valid.length, source: source+'-deep'});
                                     }
                                     return;
                                 }
@@ -378,7 +378,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                             } else {
                                 if (obj.aweme_id) {
                                     window.__m_captured_awemes.push(obj);
-                                    window.__m_api_logs.push({url: url.substring(0,80), count: 1, source: source+'-single'});
+                                    window.__m_api_logs.push({url: url, count: 1, source: source+'-single'});
                                 }
                                 for (const key of Object.keys(obj)) deepSearch(obj[key], depth+1);
                             }
@@ -387,11 +387,22 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     } catch(e) {}
                 }
 
+                function shouldIntercept(url) {
+                    if (url.includes('iteminfo')) return false;
+                    if (url.includes('reply')) return false;
+                    if (url.includes('comment')) return false;
+                    if (url.includes('favorite')) return false;
+                    if (url.includes('like')) return false;
+                    if (url.includes('follow')) return false;
+                    if (url.includes('live')) return false;
+                    return url.includes('/aweme/') || url.includes('aweme/post');
+                }
+
                 const _origFetch = window.fetch;
                 window.fetch = function() {
                     return _origFetch.apply(this, arguments).then(resp => {
                         const url = resp.url || '';
-                        if (url.includes('aweme/post') && !url.includes('iteminfo')) {
+                        if (shouldIntercept(url)) {
                             const clone = resp.clone();
                             clone.json().then(d => tryAddAwemes(d, url, 'fetch')).catch(()=>{});
                         }
@@ -406,7 +417,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     return _origXHROpen.apply(this, arguments);
                 };
                 XMLHttpRequest.prototype.send = function() {
-                    if (this.__url && this.__url.includes('aweme/post') && !this.__url.includes('iteminfo')) {
+                    if (this.__url && shouldIntercept(this.__url)) {
                         this.addEventListener('load', function() {
                             try { tryAddAwemes(JSON.parse(this.responseText), this.__url, 'xhr'); } catch(e){}
                         });
@@ -474,7 +485,112 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 except Exception:
                     pass
 
-            page.wait_for_timeout(3000)
+            page.wait_for_timeout(2000)
+
+            # 从页面内嵌JSON提取awemes（ROUTER_DATA/RENDER_DATA）
+            try:
+                embed_data = page.evaluate("""() => {
+                    const found = [];
+                    const seen = new Set();
+                    function deepFind(obj, depth) {
+                        if (!obj || depth > 10 || typeof obj !== 'object' || found.length >= 20) return;
+                        if (Array.isArray(obj)) {
+                            if (obj.length > 0 && obj[0] && obj[0].aweme_id) {
+                                for (const item of obj) {
+                                    if (item && item.aweme_id && !seen.has(String(item.aweme_id))) {
+                                        seen.add(String(item.aweme_id));
+                                        found.push(item);
+                                        if (found.length >= 20) return;
+                                    }
+                                }
+                                return;
+                            }
+                            for (const item of obj) { deepFind(item, depth+1); if (found.length >= 20) return; }
+                        } else {
+                            if (obj.aweme_id && !seen.has(String(obj.aweme_id))) {
+                                seen.add(String(obj.aweme_id));
+                                found.push(obj);
+                                if (found.length >= 20) return;
+                            }
+                            for (const key of Object.keys(obj)) { deepFind(obj[key], depth+1); if (found.length >= 20) return; }
+                        }
+                    }
+                    for (const store of [window._ROUTER_DATA, window.__INITIAL_STATE__]) {
+                        try { if (store) deepFind(store, 0); } catch(e) {}
+                    }
+                    try {
+                        const rd = document.getElementById('RENDER_DATA');
+                        if (rd) { deepFind(JSON.parse(decodeURIComponent(rd.textContent)), 0); }
+                    } catch(e) {}
+                    return found;
+                }""")
+                if embed_data:
+                    cnt = add_awemes(embed_data, tag + '-embed')
+                    if cnt:
+                        print(f"  [{tag}] 从内嵌JSON提取 {cnt} 条")
+            except Exception as e:
+                print(f"  [{tag}] 内嵌JSON提取异常: {e}")
+
+            # 尝试点击"作品"标签切换到全部作品视图（如果有图文/作品分类tab）
+            try:
+                tabs_info = page.evaluate("""() => {
+                    const tabs = [];
+                    const allElements = document.querySelectorAll('div, span, p, a');
+                    for (const el of allElements) {
+                        const text = (el.textContent || '').trim();
+                        if ((text === '作品' || text === '视频' || text === '图文' || text === '全部') && el.offsetParent !== null) {
+                            const rect = el.getBoundingClientRect();
+                            if (rect.width > 0 && rect.height > 0 && rect.top >= 0 && rect.top < window.innerHeight) {
+                                tabs.push({text, tag: el.tagName, x: rect.x + rect.width/2, y: rect.y + rect.height/2});
+                            }
+                        }
+                    }
+                    return tabs.slice(0, 10);
+                }""")
+                if tabs_info:
+                    print(f"  [{tag}] 发现标签: {[(t['text'],int(t['y'])) for t in tabs_info]}")
+                    # 点击"作品"标签
+                    for t in tabs_info:
+                        if t['text'] in ('作品', '视频', '全部'):
+                            print(f"  [{tag}] 点击 '{t['text']}' 标签...")
+                            page.mouse.click(t['x'], t['y'])
+                            page.wait_for_timeout(3000)
+                            # 收集点击后加载的新数据
+                            for _ in range(5):
+                                page.wait_for_timeout(1500)
+                                try:
+                                    mdata2 = page.evaluate("""() => {
+                                        const awemes = window.__m_captured_awemes || [];
+                                        const logs = window.__m_api_logs || [];
+                                        window.__m_captured_awemes = [];
+                                        window.__m_api_logs = [];
+                                        return {awemes, logs};
+                                    }""")
+                                    if mdata2.get('awemes'):
+                                        add_awemes(mdata2['awemes'], tag + '-tab')
+                                    else:
+                                        break
+                                except Exception:
+                                    break
+                            # 再滚动几下加载更多
+                            for _ in range(4):
+                                page.mouse.wheel(0, 1500)
+                                page.wait_for_timeout(1500)
+                                try:
+                                    mdata2 = page.evaluate("""() => {
+                                        const awemes = window.__m_captured_awemes || [];
+                                        window.__m_captured_awemes = [];
+                                        return {awemes};
+                                    }""")
+                                    if mdata2.get('awemes'):
+                                        add_awemes(mdata2['awemes'], tag + '-tabs')
+                                except Exception:
+                                    pass
+                            break
+            except Exception as e:
+                print(f"  [{tag}] 标签点击异常: {e}")
+
+            # 最终收集hook数据
             try:
                 mdata = page.evaluate("""() => {
                     const awemes = window.__m_captured_awemes || [];
@@ -484,7 +600,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 if mdata.get('awemes'):
                     add_awemes(mdata['awemes'], tag + '-final')
                 if mdata.get('logs'):
-                    print(f"  [{tag}] API日志数: {len(mdata['logs'])}")
+                    for log_entry in mdata.get('logs', [])[:3]:
+                        print(f"  [{tag}-api-final] {log_entry}")
             except Exception:
                 pass
 
@@ -499,138 +616,74 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     pass
 
     def fetch_individual_post(browser, aweme_id: str, tag: str = 'detail'):
-        """访问单个视频/图文分享页，从ROUTER_DATA/SIGI_STATE提取完整aweme数据。
-        这是最可靠的备用方案——单个作品页通常包含完整aweme对象。
-        """
+        """快速访问单个作品分享页，提取aweme数据。优化速度：短超时、少URL。"""
         ctx = None
         urls_to_try = [
             f'https://m.douyin.com/share/video/{aweme_id}',
-            f'https://m.douyin.com/video/{aweme_id}',
-            f'https://m.douyin.com/share/note/{aweme_id}',
-            f'https://m.douyin.com/note/{aweme_id}',
             f'https://www.iesdouyin.com/share/video/{aweme_id}',
             f'https://www.douyin.com/video/{aweme_id}',
-            f'https://www.douyin.com/note/{aweme_id}',
         ]
-        found_source = None
         for url in urls_to_try:
+            is_mobile = 'm.douyin' in url or 'iesdouyin' in url
             try:
                 ctx = browser.new_context(
-                    user_agent=mobile_ua if 'm.douyin' in url or 'iesdouyin' in url else 
+                    user_agent=mobile_ua if is_mobile else
                         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    viewport={'width': 390, 'height': 844} if 'm.douyin' in url or 'iesdouyin' in url else {'width': 1920, 'height': 1080},
+                    viewport={'width': 390, 'height': 844} if is_mobile else {'width': 1920, 'height': 1080},
                     locale='zh-CN', timezone_id='Asia/Shanghai',
-                    is_mobile=('m.douyin' in url or 'iesdouyin' in url),
-                    has_touch=('m.douyin' in url or 'iesdouyin' in url),
+                    is_mobile=is_mobile, has_touch=is_mobile,
                 )
                 ctx.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
                 page = ctx.new_page()
-                page.goto(url, wait_until='domcontentloaded', timeout=15000)
-                page.wait_for_timeout(3000)
+                try:
+                    page.goto(url, wait_until='domcontentloaded', timeout=8000)
+                except Exception:
+                    try: ctx.close()
+                    except: pass
+                    ctx = None
+                    continue
+                page.wait_for_timeout(1500)
 
                 aweme_data = page.evaluate("""(aid) => {
-                    // 1. 从 _ROUTER_DATA 提取
-                    try {
-                        if (window._ROUTER_DATA) {
-                            function deepFindAweme(obj, depth) {
-                                if (!obj || depth > 10 || typeof obj !== 'object') return null;
-                                if (obj.aweme_id && String(obj.aweme_id) === aid) return obj;
-                                if (Array.isArray(obj)) {
-                                    for (const item of obj) {
-                                        const f = deepFindAweme(item, depth+1);
-                                        if (f) return f;
-                                    }
-                                } else {
-                                    for (const key of Object.keys(obj)) {
-                                        const f = deepFindAweme(obj[key], depth+1);
-                                        if (f) return f;
-                                    }
-                                }
-                                return null;
+                    function deepFind(obj, depth) {
+                        if (!obj || depth > 8 || typeof obj !== 'object') return null;
+                        if (obj.aweme_id && String(obj.aweme_id) === aid) return obj;
+                        if (Array.isArray(obj)) {
+                            for (const item of obj) {
+                                const f = deepFind(item, depth+1);
+                                if (f) return f;
                             }
-                            const found = deepFindAweme(window._ROUTER_DATA, 0);
-                            if (found) return {aweme: found, source: '_ROUTER_DATA'};
-                        }
-                    } catch(e) {}
-
-                    // 2. 从 SIGI_STATE 提取
-                    try {
-                        if (window._SIGI_STATE) {
-                            function deepFind2(obj, depth) {
-                                if (!obj || depth > 10 || typeof obj !== 'object') return null;
-                                if (obj.aweme_id && String(obj.aweme_id) === aid) return obj;
-                                if (Array.isArray(obj)) {
-                                    for (const item of obj) {
-                                        const f = deepFind2(item, depth+1);
-                                        if (f) return f;
-                                    }
-                                } else {
-                                    for (const key of Object.keys(obj)) {
-                                        const f = deepFind2(obj[key], depth+1);
-                                        if (f) return f;
-                                    }
-                                }
-                                return null;
+                        } else {
+                            for (const key of Object.keys(obj)) {
+                                const f = deepFind(obj[key], depth+1);
+                                if (f) return f;
                             }
-                            const found = deepFind2(window._SIGI_STATE, 0);
-                            if (found) return {aweme: found, source: '_SIGI_STATE'};
                         }
-                    } catch(e) {}
-
-                    // 3. 从 RENDER_DATA script 提取
-                    try {
-                        const rdEl = document.getElementById('RENDER_DATA');
-                        if (rdEl) {
-                            const decoded = decodeURIComponent(rdEl.textContent);
-                            const data = JSON.parse(decoded);
-                            function deepFind3(obj, depth) {
-                                if (!obj || depth > 10 || typeof obj !== 'object') return null;
-                                if (obj.aweme_id && String(obj.aweme_id) === aid) return obj;
-                                if (Array.isArray(obj)) {
-                                    for (const item of obj) {
-                                        const f = deepFind3(item, depth+1);
-                                        if (f) return f;
-                                    }
-                                } else {
-                                    for (const key of Object.keys(obj)) {
-                                        const f = deepFind3(obj[key], depth+1);
-                                        if (f) return f;
-                                    }
-                                }
-                                return null;
+                        return null;
+                    }
+                    for (const store of [window._ROUTER_DATA, window._SIGI_STATE, window.__INITIAL_STATE__]) {
+                        try {
+                            if (store) {
+                                const f = deepFind(store, 0);
+                                if (f) return {aweme: f, source: store === window._ROUTER_DATA ? '_ROUTER_DATA' : store === window._SIGI_STATE ? '_SIGI_STATE' : '__INITIAL_STATE__'};
                             }
-                            const found = deepFind3(data, 0);
-                            if (found) return {aweme: found, source: 'RENDER_DATA'};
-                        }
-                    } catch(e) {}
-
-                    // 4. 从 __NEXT_DATA__ 提取
-                    try {
-                        const ndEl = document.getElementById('__NEXT_DATA__');
-                        if (ndEl) {
-                            const data = JSON.parse(ndEl.textContent);
-                            function deepFind4(obj, depth) {
-                                if (!obj || depth > 10 || typeof obj !== 'object') return null;
-                                if (obj.aweme_id && String(obj.aweme_id) === aid) return obj;
-                                if (Array.isArray(obj)) {
-                                    for (const item of obj) {
-                                        const f = deepFind4(item, depth+1);
-                                        if (f) return f;
-                                    }
+                        } catch(e) {}
+                    }
+                    for (const elId of ['RENDER_DATA', '__NEXT_DATA__']) {
+                        try {
+                            const el = document.getElementById(elId);
+                            if (el) {
+                                let data;
+                                if (elId === 'RENDER_DATA') {
+                                    data = JSON.parse(decodeURIComponent(el.textContent));
                                 } else {
-                                    for (const key of Object.keys(obj)) {
-                                        const f = deepFind4(obj[key], depth+1);
-                                        if (f) return f;
-                                    }
+                                    data = JSON.parse(el.textContent);
                                 }
-                                return null;
+                                const f = deepFind(data, 0);
+                                if (f) return {aweme: f, source: elId};
                             }
-                            const found = deepFind4(data, 0);
-                            if (found) return {aweme: found, source: '__NEXT_DATA__'};
-                        }
-                    } catch(e) {}
-
-                    // 5. 从所有script标签搜索aweme对象
+                        } catch(e) {}
+                    }
                     try {
                         const scripts = document.querySelectorAll('script');
                         for (const s of scripts) {
@@ -638,56 +691,47 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                             const marker = '"aweme_id":"' + aid + '"';
                             if (!text.includes(marker)) continue;
                             const pos = text.indexOf(marker);
-                            for (let back = Math.max(0, pos-3000); back < pos; back++) {
+                            for (let back = Math.max(0, pos-2000); back < pos; back++) {
                                 if (text[back] !== '{') continue;
-                                let depth = 0;
-                                let inStr = false;
-                                let esc = false;
-                                let end = -1;
-                                for (let i = back; i < Math.min(text.length, back+20000); i++) {
+                                let depth = 0, inStr = false, esc = false, end = -1;
+                                for (let i = back; i < Math.min(text.length, back+15000); i++) {
                                     const c = text[i];
                                     if (esc) { esc = false; continue; }
                                     if (c === '\\') { esc = true; continue; }
                                     if (c === '"') { inStr = !inStr; continue; }
                                     if (inStr) continue;
                                     if (c === '{') depth++;
-                                    else if (c === '}') {
-                                        depth--;
-                                        if (depth === 0) { end = i; break; }
-                                    }
+                                    else if (c === '}') { depth--; if (depth === 0) { end = i; break; } }
                                 }
                                 if (end > back) {
                                     try {
                                         const obj = JSON.parse(text.substring(back, end+1));
                                         if (obj.aweme_id && String(obj.aweme_id) === aid) {
-                                            return {aweme: obj, source: 'script-brace'};
+                                            return {aweme: obj, source: 'script'};
                                         }
                                     } catch(e2) {}
                                 }
                             }
                         }
                     } catch(e) {}
-
                     return null;
                 }""", aweme_id)
 
-                ctx.close()
+                try: ctx.close()
+                except: pass
                 ctx = None
 
                 if aweme_data and aweme_data.get('aweme'):
                     a = aweme_data['aweme']
                     atype = a.get('aweme_type', '?')
                     desc = (a.get('desc') or '')[:30]
-                    found_source = aweme_data['source']
-                    print(f"  [{tag}] 从{found_source}获取 id={aweme_id} type={atype} desc={desc}")
+                    print(f"  [{tag}] 从{aweme_data['source']}获取 id={aweme_id} type={atype} desc={desc}")
                     return a
-            except Exception as e:
+            except Exception:
                 if ctx:
                     try: ctx.close()
                     except: pass
                 ctx = None
-
-        print(f"  [{tag}] 无法获取作品 {aweme_id} (已尝试所有URL)")
         return None
 
     def fetch_from_pc_page(browser):
@@ -735,11 +779,11 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 window.fetch = function() {
                     return _origFetch.apply(this, arguments).then(resp => {
                         const url = resp.url || '';
-                        if (url.includes('aweme/post') && !url.includes('iteminfo') && !url.includes('publish')) {
+                        const shouldSkip = url.includes('iteminfo') || url.includes('reply') || url.includes('comment') || url.includes('favorite') || url.includes('like') || url.includes('follow') || url.includes('live') || url.includes('publish');
+                        if (!shouldSkip && (url.includes('/aweme/') || url.includes('aweme/post'))) {
                             const clone = resp.clone();
                             clone.json().then(data => {
                                 tryParseAwemeList(data, url);
-                                // 深度搜索aweme对象
                                 function deepSearch(obj, depth) {
                                     if (!obj || depth > 8 || typeof obj !== 'object') return;
                                     if (Array.isArray(obj)) {
@@ -747,7 +791,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                             const valid = obj.filter(x => x && x.aweme_id);
                                             if (valid.length) {
                                                 window.__captured_awemes.push(...valid);
-                                                window.__api_logs.push({url: url.substring(0,100), count: valid.length, source: 'deep'});
+                                                window.__api_logs.push({url: url, count: valid.length, source: 'deep'});
                                             }
                                             return;
                                         }
@@ -755,7 +799,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                     } else {
                                         if (obj.aweme_id) {
                                             window.__captured_awemes.push(obj);
-                                            window.__api_logs.push({url: url.substring(0,100), count: 1, source: 'single'});
+                                            window.__api_logs.push({url: url, count: 1, source: 'single'});
                                         }
                                         for (const key of Object.keys(obj)) deepSearch(obj[key], depth+1);
                                     }
@@ -775,7 +819,9 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     return _origXHROpen.apply(this, arguments);
                 };
                 XMLHttpRequest.prototype.send = function() {
-                    if (this.__url && this.__url.includes('aweme/post') && !this.__url.includes('iteminfo')) {
+                    const u = this.__url || '';
+                    const shouldSkip = u.includes('iteminfo') || u.includes('reply') || u.includes('comment') || u.includes('favorite') || u.includes('like') || u.includes('follow') || u.includes('live');
+                    if (u && !shouldSkip && (u.includes('/aweme/') || u.includes('aweme/post'))) {
                         this.addEventListener('load', function() {
                             try {
                                 const data = JSON.parse(this.responseText);
@@ -1152,13 +1198,18 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
         fetch_from_share_page(browser, 'm.douyin.com', 'm-user', path_prefix='/user/')
         fetch_from_pc_page(browser)
 
-        # 备用：对DOM中发现但list API未返回的ID，逐个访问独立视频/图文页获取数据
+        # 备用：对DOM中发现但list API未返回的ID，逐个访问独立视频/图文页获取数据（限制最多5个）
         if dom_seen_ids:
             known_ids = {str(a.get('aweme_id','')) for a in captured_awemes}
             missing_ids = [did for did in dom_seen_ids if did not in known_ids]
+            # 按ID数值降序排列（大ID=新作品优先）
+            try:
+                missing_ids.sort(key=lambda x: int(x), reverse=True)
+            except Exception:
+                pass
             if missing_ids:
-                print(f"  [detail] DOM中有 {len(missing_ids)} 个ID需要从独立页面获取: {missing_ids[:10]}")
-                for mid in missing_ids[:20]:
+                print(f"  [detail] DOM中有 {len(missing_ids)} 个ID需独立获取(最多5个): {missing_ids[:5]}")
+                for mid in missing_ids[:5]:
                     aweme = fetch_individual_post(browser, mid, 'detail')
                     if aweme:
                         add_awemes([aweme], 'detail')
