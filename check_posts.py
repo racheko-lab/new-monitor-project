@@ -373,6 +373,50 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 if len(captured_awemes) == prev_count:
                     break
                 prev_count = len(captured_awemes)
+            # 尝试在页面上下文中主动调用API获取更多数据
+            if len(captured_awemes) > 0:
+                print(f"  [m.douyin] 尝试在页面上下文中调用更多页API...")
+                try:
+                    extra = page2.evaluate("""async (secUid) => {
+                        const results = [];
+                        try {
+                            // 尝试调用移动端v2 API
+                            const resp = await fetch('/web/api/v2/aweme/post/?sec_user_id=' + secUid + '&count=21&max_cursor=0', {
+                                method: 'GET',
+                                credentials: 'include',
+                            });
+                            const data = await resp.json();
+                            if (data.aweme_list && data.aweme_list.length) {
+                                results.push(...data.aweme_list);
+                            }
+                            // 如果有更多页，继续拉取
+                            if (data.has_more && data.max_cursor) {
+                                const resp2 = await fetch('/web/api/v2/aweme/post/?sec_user_id=' + secUid + '&count=21&max_cursor=' + data.max_cursor, {
+                                    method: 'GET',
+                                    credentials: 'include',
+                                });
+                                const data2 = await resp2.json();
+                                if (data2.aweme_list && data2.aweme_list.length) {
+                                    results.push(...data2.aweme_list);
+                                }
+                            }
+                        } catch(e) {
+                            // ignore
+                        }
+                        return results;
+                    }""", sec_uid)
+                    if extra and isinstance(extra, list):
+                        new_from_eval = 0
+                        for a in extra:
+                            aid = str(a.get("aweme_id", ""))
+                            if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
+                                captured_awemes.append(a)
+                                seen_raw_ids.add(aid)
+                                new_from_eval += 1
+                        if new_from_eval:
+                            print(f"  [m.douyin] page.evaluate 新增 {new_from_eval} 条")
+                except Exception as e:
+                    print(f"  [m.douyin] page.evaluate 异常: {e}")
             print(f"  [m.douyin] 完成，新增 {len(captured_awemes) - before_count} 条")
             ctx2.close()
         except Exception as e:
