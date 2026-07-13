@@ -251,9 +251,9 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
 def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Optional[List[Dict]], str]:
     """使用 Playwright headless Chrome 抓取用户主页作品列表。
 
-    策略（response 拦截 + 点击视频标签，不用 page.evaluate 调用 API 防串号）：
+    策略（response 拦截 + page.evaluate fetch）：
     1. m.douyin.com/share/user/{sec_uid}（移动端分享页，拦截初始 API 响应）
-    2. 点击"视频"标签让页面发起带正确签名的API请求获取视频作品
+    2. 在页面上下文里调用 fetch API 获取完整作品列表（包括视频）
     3. www.iesdouyin.com/share/user/{sec_uid}（旧版分享页，补充）
     严格过滤作者 sec_uid，确保不会抓取到其他用户的作品。
     """
@@ -309,9 +309,9 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                  'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1')
 
     def fetch_from_share_page(browser, host: str, tag: str):
-        """从移动端分享页抓取作品，通过 response 拦截获取作品。
+        """从移动端分享页抓取作品，通过 response 拦截 + page.evaluate fetch 获取作品。
 
-        访问分享页后，尝试点击"视频"标签让页面发起带正确签名的API请求获取视频作品。
+        访问分享页后，在页面上下文里调用 fetch API 获取完整作品列表（包括视频）。
         严格 sec_uid 过滤防串号。
         """
         ctx = None
@@ -344,57 +344,60 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     break
                 prev = len(captured_awemes)
 
-            # 尝试点击"视频"标签，让页面发起带正确签名的API请求获取视频
+            # 用 page.evaluate 在页面上下文里调用 fetch API，获取完整作品列表（包括视频）
             if host == 'm.douyin.com':
                 try:
-                    # 查找所有可能的标签元素
-                    tabs_info = page.evaluate("""() => {
-                        const result = [];
-                        // 查找所有包含"视频"、"作品"、"图文"文本的可点击元素
-                        const els = document.querySelectorAll('a, button, span, div, li');
-                        for (const el of els) {
-                            const text = (el.textContent || '').trim();
-                            if (text === '视频' || text === '作品' || text === '图文' || text === '喜欢') {
-                                result.push({
-                                    tag: el.tagName,
-                                    text: text,
-                                    className: el.className || '',
-                                    id: el.id || '',
-                                });
+                    print(f"  [{tag}] 尝试用 page.evaluate 调用 fetch API...")
+                    fetch_result = page.evaluate("""async (secUid) => {
+                        try {
+                            const url = `/web/api/v2/aweme/post/?sec_uid=${secUid}&count=50&max_cursor=0`;
+                            const resp = await fetch(url, {credentials: 'include'});
+                            const text = await resp.text();
+                            let data;
+                            try { data = JSON.parse(text); }
+                            catch(e) {
+                                return {error: 'JSON fail', status: resp.status,
+                                        textLen: text.length, textStart: text.substring(0, 200)};
                             }
+                            const list = data.aweme_list || [];
+                            return {
+                                status: resp.status,
+                                count: list.length,
+                                has_more: data.has_more,
+                                aweme_list: list,
+                            };
+                        } catch(e) {
+                            return {error: e.message};
                         }
-                        return result;
-                    }""")
-                    if tabs_info:
-                        print(f"  [{tag}] 找到标签元素: {tabs_info}")
-                        # 尝试点击"视频"标签
-                        for tab in tabs_info:
-                            if tab.get('text') == '视频':
-                                try:
-                                    locator = page.locator(f'{tab["tag"]}').filter(has_text='视频').first
-                                    locator.click(timeout=5000)
-                                    print(f"  [{tag}] 点击了'视频'标签")
-                                    # 等待新的API响应
-                                    before_click = len(captured_awemes)
-                                    for _ in range(10):
-                                        page.wait_for_timeout(1000)
-                                        if len(captured_awemes) > before_click:
-                                            break
-                                    # 滚动加载更多
-                                    prev = len(captured_awemes)
-                                    for _ in range(5):
-                                        page.mouse.wheel(0, 3000)
-                                        page.wait_for_timeout(2000)
-                                        if len(captured_awemes) == prev:
-                                            break
-                                        prev = len(captured_awemes)
-                                    break
-                                except Exception as e:
-                                    print(f"  [{tag}] 点击'视频'标签失败: {e}")
+                    }""", sec_uid)
+
+                    if fetch_result and isinstance(fetch_result, dict):
+                        if 'error' in fetch_result:
+                            print(f"  [{tag}] fetch API 错误: {fetch_result}")
+                        elif 'aweme_list' in fetch_result:
+                            new_list = fetch_result['aweme_list']
+                            print(f"  [{tag}] fetch API 获取 {len(new_list)} 条, has_more={fetch_result.get('has_more')}")
+                            for a in new_list[:5]:
+                                atype = a.get("aweme_type", "?")
+                                aid = a.get("aweme_id", "?")
+                                desc = (a.get("desc") or "")[:25]
+                                print(f"    [{tag}-fetch] type={atype} id={aid} desc={desc}")
+                            # 添加到 captured_awemes
+                            added = 0
+                            for a in new_list:
+                                aid = str(a.get("aweme_id", ""))
+                                if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
+                                    captured_awemes.append(a)
+                                    seen_raw_ids.add(aid)
+                                    added += 1
+                            if added:
+                                print(f"  [{tag}] fetch 新增 {added} 条 (累计 {len(captured_awemes)})")
+                        else:
+                            print(f"  [{tag}] fetch API 结果: {fetch_result}")
                     else:
-                        print(f"  [{tag}] 未找到标签元素")
+                        print(f"  [{tag}] fetch API 返回空: {fetch_result}")
                 except Exception as e:
-                    print(f"  [{tag}] 查找标签异常: {e}")
+                    print(f"  [{tag}] page.evaluate 异常: {e}")
 
             print(f"  [{tag}] 完成，新增 {len(captured_awemes) - before} 条")
         except Exception as e:
