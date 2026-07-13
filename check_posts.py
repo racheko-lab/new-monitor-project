@@ -308,15 +308,30 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             viewport={'width': 1280, 'height': 800},
             locale='zh-CN', timezone_id='Asia/Shanghai',
         )
-        ctx_p.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+        ctx_p.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            window.chrome = { runtime: {} };
+            Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3]});
+            Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN','zh','en']});
+        """)
         page_p = ctx_p.new_page()
         page_p.on('response', on_response)
 
         try:
+            # 先访问首页建立session/cookie
+            print("  [PC端] 先访问douyin.com首页...")
+            try:
+                page_p.goto('https://www.douyin.com/', wait_until='domcontentloaded', timeout=30000)
+                page_p.wait_for_timeout(3000)
+            except Exception:
+                pass
+
+            # 再访问用户主页
+            print(f"  [PC端] 跳转到用户主页...")
             page_p.goto(f'https://www.douyin.com/user/{sec_uid}',
                         wait_until='domcontentloaded', timeout=45000)
-            # 等待API触发
-            for _ in range(10):
+            # 等待API触发（PC端需要更长时间加载SPA）
+            for _ in range(15):
                 if captured_awemes:
                     break
                 page_p.wait_for_timeout(1000)
@@ -325,6 +340,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 for _ in range(2):
                     page_p.mouse.wheel(0, 2000)
                     page_p.wait_for_timeout(2000)
+            if not captured_awemes:
+                print(f"  [PC端] 未捕获API，页面标题: {page_p.title()}")
         except Exception as e:
             print(f"  [PC端] 异常: {e}")
         finally:
