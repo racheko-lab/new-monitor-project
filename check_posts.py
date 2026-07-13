@@ -265,7 +265,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     captured_awemes = []
     seen_raw_ids = set()
     max_posts = 50
-    dom_post_ids = []  # 从DOM提取的 aweme_id 列表
+    dom_post_ids = []  # [(aweme_id, title_text), ...]
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -329,12 +329,15 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     href = link.get_attribute('href') or ''
                     for pattern in ['/video/', '/note/']:
                         if pattern in href:
-                            # 提取 aweme_id
                             parts = href.split(pattern)
                             if len(parts) > 1:
                                 aid = parts[1].split('?')[0].split('/')[0]
-                                if aid.isdigit() and aid not in dom_post_ids:
-                                    dom_post_ids.append(aid)
+                                if aid.isdigit():
+                                    link_text = (link.inner_text() or '').strip()[:80]
+                                    existing_ids = {x[0] for x in dom_post_ids}
+                                    if aid not in existing_ids:
+                                        dom_post_ids.append((aid, link_text))
+                                        print(f"  [移动端DOM] {aid} text={link_text[:30]}")
                 if dom_post_ids:
                     print(f"  [移动端] DOM提取 {len(dom_post_ids)} 个作品链接")
             except Exception as e:
@@ -368,7 +371,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             # 从PC DOM提取所有作品链接
             try:
                 links = page_p.query_selector_all('a[href*="/video/"], a[href*="/note/"]')
-                pc_ids = []
+                existing_ids = {x[0] for x in dom_post_ids}
+                pc_count = 0
                 for link in links:
                     href = link.get_attribute('href') or ''
                     for pattern in ['/video/', '/note/']:
@@ -376,11 +380,14 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                             parts = href.split(pattern)
                             if len(parts) > 1:
                                 aid = parts[1].split('?')[0].split('/')[0]
-                                if aid.isdigit() and aid not in dom_post_ids and aid not in pc_ids:
-                                    pc_ids.append(aid)
-                                    dom_post_ids.append(aid)
-                if pc_ids:
-                    print(f"  [PC端] DOM提取 {len(pc_ids)} 个作品链接")
+                                if aid.isdigit() and aid not in existing_ids:
+                                    link_text = (link.inner_text() or '').strip()[:80]
+                                    dom_post_ids.append((aid, link_text))
+                                    existing_ids.add(aid)
+                                    pc_count += 1
+                                    print(f"  [PC端DOM] {aid} text={link_text[:30]}")
+                if pc_count:
+                    print(f"  [PC端] DOM提取 {pc_count} 个作品链接")
             except Exception as e:
                 print(f"  [PC端] DOM提取异常: {e}")
         except Exception as e:
@@ -402,16 +409,15 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             seen_ids.add(parsed["id"])
 
     # 补充DOM提取但API未返回的作品（如图文笔记）
-    for aid in dom_post_ids:
+    for aid, link_text in dom_post_ids:
         if aid not in seen_ids:
-            is_note = True  # DOM提取的未知类型，默认构建为note
-            post_url = f"https://www.douyin.com/note/{aid}" if is_note else f"https://www.douyin.com/video/{aid}"
-            # 尝试判断类型：如果API数据中有这个ID，跳过
+            # 统一用 /video/ 路径，抖音会自动重定向到note
+            post_url = f"https://www.douyin.com/video/{aid}"
             parsed_posts.append({
                 "id": str(aid),
                 "platform": "douyin",
                 "name": display_name,
-                "title": "点击查看",
+                "title": link_text or "点击查看",
                 "views": 0,
                 "likes": 0,
                 "cover": None,
@@ -421,7 +427,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 "sort_key": int(aid),
             })
             seen_ids.add(aid)
-            print(f"  [DOM补充] 添加作品 {aid}")
+            print(f"  [DOM补充] 添加作品 {aid} title={link_text[:30]}")
 
     if not parsed_posts:
         return [], "no_data"
