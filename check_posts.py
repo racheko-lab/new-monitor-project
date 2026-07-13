@@ -251,14 +251,11 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
 def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Optional[List[Dict]], str]:
     """使用 Playwright headless Chrome 抓取用户主页作品列表。
 
-    返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
-    status 为 'ok' / 'no_data' / 'error'。
-
     策略：
-    1. m.douyin.com/share/user/{sec_uid}（新版移动端分享页，主动滚动加载多页）
+    1. m.douyin.com/share/user/{sec_uid}（移动端分享页，拦截API响应）
     2. www.iesdouyin.com/share/user/{sec_uid}（旧版分享页，补充）
-    3. 从最新作品详情页 SSR 数据中补充（兜底）
-    合并去重后按 sort_key 倒序，并过滤掉作者 sec_uid 不匹配的作品（防止串号）。
+    只通过 response 拦截获取数据，不使用 page.evaluate 调用 API（防止串号）。
+    严格过滤作者 sec_uid，确保不会抓取到其他用户的作品。
     """
     if not PLAYWRIGHT_AVAILABLE:
         return None, "error"
@@ -297,8 +294,65 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     mobile_ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
                  'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1')
 
-    pc_ua = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-             '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+    def fetch_from_share_page(browser, host: str, tag: str):
+        """从移动端分享页抓取作品，通过 response 拦截获取 API 数据。
+        尝试点击不同 tab（作品/视频）以获取所有类型的作品。
+        """
+        try:
+            before = len(captured_awemes)
+            print(f"  [{tag}] 访问 {host}/share/user/...")
+            ctx = browser.new_context(
+                user_agent=mobile_ua,
+                viewport={'width': 390, 'height': 844},
+                locale='zh-CN', timezone_id='Asia/Shanghai',
+                is_mobile=True, has_touch=True,
+            )
+            ctx.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+            page = ctx.new_page()
+            page.on('response', make_on_response(tag))
+            page.goto(f'https://{host}/share/user/{sec_uid}',
+                       wait_until='domcontentloaded', timeout=45000)
+            for _ in range(12):
+                if len(captured_awemes) > before:
+                    break
+                page.wait_for_timeout(1000)
+            # 用 Playwright locator 点击 tab（比 evaluate 更可靠）
+            for tab_text in ['作品', '视频']:
+                try:
+                    before_tab = len(captured_awemes)
+                    tab = page.locator(f'text="{tab_text}"').first
+                    tab.click(timeout=3000)
+                    print(f"  [{tag}] 点击tab: {tab_text}")
+                    page.wait_for_timeout(3000)
+                    prev = len(captured_awemes)
+                    for _ in range(5):
+                        try:
+                            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                        except Exception:
+                            page.mouse.wheel(0, 3000)
+                        page.wait_for_timeout(2000)
+                        if len(captured_awemes) == prev:
+                            break
+                        prev = len(captured_awemes)
+                    if len(captured_awemes) > before_tab:
+                        print(f"  [{tag}] tab={tab_text} 新增 {len(captured_awemes) - before_tab} 条")
+                except Exception:
+                    pass
+            # 默认滚动加载
+            prev = len(captured_awemes)
+            for _ in range(6):
+                try:
+                    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                except Exception:
+                    page.mouse.wheel(0, 3000)
+                page.wait_for_timeout(2000)
+                if len(captured_awemes) == prev:
+                    break
+                prev = len(captured_awemes)
+            print(f"  [{tag}] 完成，新增 {len(captured_awemes) - before} 条")
+            ctx.close()
+        except Exception as e:
+            print(f"  [{tag}] 异常: {e}")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -310,234 +364,11 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             ],
         )
 
-        # === 来源1: PC端 douyin.com 用户主页（主源，数据最全） ===
-        try:
-            print("  [PC端] 访问用户主页...")
-            ctx_pc = browser.new_context(
-                user_agent=pc_ua,
-                viewport={'width': 1280, 'height': 800},
-                locale='zh-CN', timezone_id='Asia/Shanghai',
-            )
-            ctx_pc.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
-            page_pc = ctx_pc.new_page()
-            page_pc.on('response', make_on_response('pc'))
-            page_pc.goto(f'https://www.douyin.com/user/{sec_uid}',
-                         wait_until='domcontentloaded', timeout=45000)
-            for _ in range(10):
-                if captured_awemes:
-                    break
-                page_pc.wait_for_timeout(1000)
-            if not captured_awemes:
-                print("  [PC端] 初始未捕获API，尝试滚动...")
-                for _ in range(5):
-                    page_pc.mouse.wheel(0, 1500)
-                    page_pc.wait_for_timeout(2000)
-                    if captured_awemes:
-                        break
-            if captured_awemes:
-                prev_count = len(captured_awemes)
-                for _ in range(5):
-                    page_pc.mouse.wheel(0, 2000)
-                    page_pc.wait_for_timeout(2000)
-                    if len(captured_awemes) == prev_count:
-                        break
-                    prev_count = len(captured_awemes)
-            # 如果API没捕获到，尝试从DOM提取作品ID，然后访问详情页获取信息
-            if not captured_awemes:
-                print("  [PC端] API未触发，尝试从DOM提取作品ID...")
-                try:
-                    aweme_ids = page_pc.evaluate("""() => {
-                        const ids = new Set();
-                        // 从链接中提取aweme_id
-                        document.querySelectorAll('a[href*="/video/"]').forEach(a => {
-                            const m = a.href.match(/\\/video\\/(\\d+)/);
-                            if (m) ids.add(m[1]);
-                        });
-                        // 从data属性中提取
-                        document.querySelectorAll('[data-aweme-id]').forEach(el => {
-                            ids.add(el.getAttribute('data-aweme-id'));
-                        });
-                        // 从li/div的属性中提取
-                        document.querySelectorAll('[data-e2e="user-post-item"]').forEach(el => {
-                            const m = el.innerHTML.match(/\/video\/(\d+)/);
-                            if (m) ids.add(m[1]);
-                        });
-                        return Array.from(ids).slice(0, 20);
-                    }""")
-                    if aweme_ids and len(aweme_ids) > 0:
-                        print(f"  [PC端] 从DOM提取到 {len(aweme_ids)} 个作品ID")
-                        # 逐个访问作品详情页获取完整信息
-                        for aid in aweme_ids[:10]:
-                            if aid in seen_raw_ids or len(captured_awemes) >= max_posts:
-                                continue
-                            try:
-                                detail_url = f'https://www.douyin.com/video/{aid}'
-                                detail_page = ctx_pc.new_page()
-                                detail_page.goto(detail_url, wait_until='domcontentloaded', timeout=15000)
-                                detail_page.wait_for_timeout(2000)
-                                # 从_ROUTER_DATA或_RENDER_DATA中提取
-                                aweme_data = detail_page.evaluate("""(awemeId) => {
-                                    try {
-                                        let data = null;
-                                        if (window._ROUTER_DATA) {
-                                            const str = JSON.stringify(window._ROUTER_DATA);
-                                            const re = new RegExp('"aweme_id":"' + awemeId + '".*?"author"', 's');
-                                            // 尝试从loaderData中提取
-                                            const ld = window._ROUTER_DATA.loaderData;
-                                            for (const key in ld) {
-                                                if (ld[key] && ld[key].videoInfoRes && ld[key].videoInfoRes.item_list) {
-                                                    for (const item of ld[key].videoInfoRes.item_list) {
-                                                        if (item.aweme_id == awemeId) {
-                                                            return item;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        return null;
-                                    } catch(e) {
-                                        return null;
-                                    }
-                                }""", aid)
-                                if aweme_data and aweme_data.get("aweme_id"):
-                                    author_sec = (aweme_data.get("author") or {}).get("sec_uid") or ""
-                                    if not author_sec or author_sec == sec_uid:
-                                        captured_awemes.append(aweme_data)
-                                        seen_raw_ids.add(aid)
-                                detail_page.close()
-                            except Exception:
-                                pass
-                        print(f"  [PC端] DOM+详情页获取 {len(captured_awemes)} 条作品")
-                except Exception as e:
-                    print(f"  [PC端] DOM提取异常: {e}")
-            print(f"  [PC端] 完成，累计 {len(captured_awemes)} 条")
-            ctx_pc.close()
-        except Exception as e:
-            print(f"  [PC端] 异常: {e}")
+        # 来源1: m.douyin.com 分享页
+        fetch_from_share_page(browser, 'm.douyin.com', 'm')
 
-        # === 来源2: m.douyin.com 分享页（补充/兜底） ===
-        try:
-            before_count = len(captured_awemes)
-            print(f"  [m.douyin] 已有 {before_count} 条，尝试补充更多...")
-            ctx2 = browser.new_context(
-                user_agent=mobile_ua,
-                viewport={'width': 390, 'height': 844},
-                locale='zh-CN', timezone_id='Asia/Shanghai',
-                is_mobile=True, has_touch=True,
-            )
-            ctx2.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
-            page2 = ctx2.new_page()
-            page2.on('response', make_on_response('m'))
-            page2.goto(f'https://m.douyin.com/share/user/{sec_uid}',
-                       wait_until='domcontentloaded', timeout=45000)
-            for _ in range(10):
-                if len(captured_awemes) > before_count:
-                    break
-                page2.wait_for_timeout(1000)
-            # 尝试点击各种tab（作品/图文/视频等），获取更多类型的作品
-            print("  [m.douyin] 尝试点击不同的tab...")
-            try:
-                page2.evaluate("""() => {
-                    // 尝试查找并点击tab元素
-                    const tabTexts = ['作品', '视频', '图文', '全部'];
-                    for (const text of tabTexts) {
-                        const els = document.querySelectorAll('div, span, a, li');
-                        for (const el of els) {
-                            if (el.textContent.trim() === text) {
-                                el.click();
-                                break;
-                            }
-                        }
-                    }
-                }""")
-                page2.wait_for_timeout(2000)
-            except Exception:
-                pass
-            prev_count = len(captured_awemes)
-            for scroll_round in range(8):
-                try:
-                    page2.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                except Exception:
-                    page2.mouse.wheel(0, 3000)
-                page2.wait_for_timeout(2500)
-                if len(captured_awemes) == prev_count:
-                    break
-                prev_count = len(captured_awemes)
-            # 尝试在页面上下文中主动调用API获取更多数据
-            if len(captured_awemes) > 0:
-                print(f"  [m.douyin] 尝试在页面上下文中调用更多页API...")
-                try:
-                    extra = page2.evaluate("""async (secUid) => {
-                        const results = [];
-                        try {
-                            // 尝试调用移动端v2 API
-                            const resp = await fetch('/web/api/v2/aweme/post/?sec_user_id=' + secUid + '&count=21&max_cursor=0', {
-                                method: 'GET',
-                                credentials: 'include',
-                            });
-                            const data = await resp.json();
-                            if (data.aweme_list && data.aweme_list.length) {
-                                results.push(...data.aweme_list);
-                            }
-                            // 如果有更多页，继续拉取
-                            if (data.has_more && data.max_cursor) {
-                                const resp2 = await fetch('/web/api/v2/aweme/post/?sec_user_id=' + secUid + '&count=21&max_cursor=' + data.max_cursor, {
-                                    method: 'GET',
-                                    credentials: 'include',
-                                });
-                                const data2 = await resp2.json();
-                                if (data2.aweme_list && data2.aweme_list.length) {
-                                    results.push(...data2.aweme_list);
-                                }
-                            }
-                        } catch(e) {
-                            // ignore
-                        }
-                        return results;
-                    }""", sec_uid)
-                    if extra and isinstance(extra, list):
-                        new_from_eval = 0
-                        for a in extra:
-                            aid = str(a.get("aweme_id", ""))
-                            if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
-                                captured_awemes.append(a)
-                                seen_raw_ids.add(aid)
-                                new_from_eval += 1
-                        if new_from_eval:
-                            print(f"  [m.douyin] page.evaluate 新增 {new_from_eval} 条")
-                except Exception as e:
-                    print(f"  [m.douyin] page.evaluate 异常: {e}")
-            print(f"  [m.douyin] 完成，新增 {len(captured_awemes) - before_count} 条")
-            ctx2.close()
-        except Exception as e:
-            print(f"  [m.douyin] 异常: {e}")
-
-        # === 来源3: iesdouyin.com 分享页（兜底） ===
-        try:
-            before_count = len(captured_awemes)
-            print(f"  [iesdouyin] 已有 {before_count} 条，尝试补充更多...")
-            ctx3 = browser.new_context(
-                user_agent=mobile_ua,
-                viewport={'width': 390, 'height': 844},
-                locale='zh-CN', timezone_id='Asia/Shanghai',
-                is_mobile=True, has_touch=True,
-            )
-            ctx3.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
-            page3 = ctx3.new_page()
-            page3.on('response', make_on_response('ies'))
-            page3.goto(f'https://www.iesdouyin.com/share/user/{sec_uid}',
-                       wait_until='domcontentloaded', timeout=30000)
-            for _ in range(8):
-                if len(captured_awemes) > before_count:
-                    break
-                page3.wait_for_timeout(1000)
-            for _ in range(3):
-                page3.mouse.wheel(0, 2000)
-                page3.wait_for_timeout(1500)
-            print(f"  [iesdouyin] 完成，新增 {len(captured_awemes) - before_count} 条")
-            ctx3.close()
-        except Exception as e:
-            print(f"  [iesdouyin] 异常: {e}")
+        # 来源2: iesdouyin.com 分享页
+        fetch_from_share_page(browser, 'www.iesdouyin.com', 'ies')
 
         browser.close()
 
