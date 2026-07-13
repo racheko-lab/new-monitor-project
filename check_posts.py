@@ -342,6 +342,74 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     if len(captured_awemes) == prev_count:
                         break
                     prev_count = len(captured_awemes)
+            # 如果API没捕获到，尝试从DOM提取作品ID，然后访问详情页获取信息
+            if not captured_awemes:
+                print("  [PC端] API未触发，尝试从DOM提取作品ID...")
+                try:
+                    aweme_ids = page_pc.evaluate("""() => {
+                        const ids = new Set();
+                        // 从链接中提取aweme_id
+                        document.querySelectorAll('a[href*="/video/"]').forEach(a => {
+                            const m = a.href.match(/\\/video\\/(\\d+)/);
+                            if (m) ids.add(m[1]);
+                        });
+                        // 从data属性中提取
+                        document.querySelectorAll('[data-aweme-id]').forEach(el => {
+                            ids.add(el.getAttribute('data-aweme-id'));
+                        });
+                        // 从li/div的属性中提取
+                        document.querySelectorAll('[data-e2e="user-post-item"]').forEach(el => {
+                            const m = el.innerHTML.match(/\/video\/(\d+)/);
+                            if (m) ids.add(m[1]);
+                        });
+                        return Array.from(ids).slice(0, 20);
+                    }""")
+                    if aweme_ids and len(aweme_ids) > 0:
+                        print(f"  [PC端] 从DOM提取到 {len(aweme_ids)} 个作品ID")
+                        # 逐个访问作品详情页获取完整信息
+                        for aid in aweme_ids[:10]:
+                            if aid in seen_raw_ids or len(captured_awemes) >= max_posts:
+                                continue
+                            try:
+                                detail_url = f'https://www.douyin.com/video/{aid}'
+                                detail_page = ctx_pc.new_page()
+                                detail_page.goto(detail_url, wait_until='domcontentloaded', timeout=15000)
+                                detail_page.wait_for_timeout(2000)
+                                # 从_ROUTER_DATA或_RENDER_DATA中提取
+                                aweme_data = detail_page.evaluate("""(awemeId) => {
+                                    try {
+                                        let data = null;
+                                        if (window._ROUTER_DATA) {
+                                            const str = JSON.stringify(window._ROUTER_DATA);
+                                            const re = new RegExp('"aweme_id":"' + awemeId + '".*?"author"', 's');
+                                            // 尝试从loaderData中提取
+                                            const ld = window._ROUTER_DATA.loaderData;
+                                            for (const key in ld) {
+                                                if (ld[key] && ld[key].videoInfoRes && ld[key].videoInfoRes.item_list) {
+                                                    for (const item of ld[key].videoInfoRes.item_list) {
+                                                        if (item.aweme_id == awemeId) {
+                                                            return item;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        return null;
+                                    } catch(e) {
+                                        return null;
+                                    }
+                                }""", aid)
+                                if aweme_data and aweme_data.get("aweme_id"):
+                                    author_sec = (aweme_data.get("author") or {}).get("sec_uid") or ""
+                                    if not author_sec or author_sec == sec_uid:
+                                        captured_awemes.append(aweme_data)
+                                        seen_raw_ids.add(aid)
+                                detail_page.close()
+                            except Exception:
+                                pass
+                        print(f"  [PC端] DOM+详情页获取 {len(captured_awemes)} 条作品")
+                except Exception as e:
+                    print(f"  [PC端] DOM提取异常: {e}")
             print(f"  [PC端] 完成，累计 {len(captured_awemes)} 条")
             ctx_pc.close()
         except Exception as e:
