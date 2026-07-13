@@ -254,10 +254,10 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
     status 为 'ok' / 'no_data' / 'error'。
 
-    双源抓取策略：
-    1. 移动端 m.douyin.com/share/user/{sec_uid} — 实时同步，但可能只返回视频
-    2. PC端 douyin.com/user/{sec_uid} — 包含视频+图文笔记，带 create_time
-    合并两源数据，按 create_time（优先）或 aweme_id 排序
+    策略：
+    1. 移动端 m.douyin.com/share/user/{sec_uid} 拦截 API 获取视频（带完整元数据）
+    2. PC端 douyin.com/user/{sec_uid} 从DOM提取所有作品链接（含图文笔记）
+    3. 合并：API数据优先，DOM补充缺失的笔记
     """
     if not PLAYWRIGHT_AVAILABLE:
         return None, "error"
@@ -265,6 +265,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     captured_awemes = []
     seen_raw_ids = set()
     max_posts = 50
+    dom_post_ids = []  # 从DOM提取的 aweme_id 列表
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -291,12 +292,12 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                     seen_raw_ids.add(aid)
                                     new_count += 1
                             if new_count:
-                                print(f"  [{label}] 捕获 +{new_count} 条 (累计 {len(captured_awemes)})")
+                                print(f"  [{label}] API捕获 +{new_count} 条 (累计 {len(captured_awemes)})")
                     except Exception:
                         pass
             return handler
 
-        # ===== 源1：移动端分享页（实时视频） =====
+        # ===== 源1：移动端分享页（实时视频 + DOM链接） =====
         print("  [移动端] 访问分享页...")
         ctx_m = browser.new_context(
             user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
@@ -320,12 +321,30 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 for _ in range(3):
                     page_m.mouse.wheel(0, 1000)
                     page_m.wait_for_timeout(1500)
+
+            # 从DOM提取所有作品链接（包括笔记）
+            try:
+                links = page_m.query_selector_all('a[href*="/video/"], a[href*="/note/"]')
+                for link in links:
+                    href = link.get_attribute('href') or ''
+                    for pattern in ['/video/', '/note/']:
+                        if pattern in href:
+                            # 提取 aweme_id
+                            parts = href.split(pattern)
+                            if len(parts) > 1:
+                                aid = parts[1].split('?')[0].split('/')[0]
+                                if aid.isdigit() and aid not in dom_post_ids:
+                                    dom_post_ids.append(aid)
+                if dom_post_ids:
+                    print(f"  [移动端] DOM提取 {len(dom_post_ids)} 个作品链接")
+            except Exception as e:
+                print(f"  [移动端] DOM提取异常: {e}")
         except Exception as e:
             print(f"  [移动端] 异常: {e}")
         finally:
             ctx_m.close()
 
-        # ===== 源2：PC端用户主页（视频+图文笔记） =====
+        # ===== 源2：PC端用户主页（DOM提取笔记） =====
         print("  [PC端] 访问用户主页...")
         ctx_p = browser.new_context(
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
@@ -340,14 +359,30 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
         try:
             page_p.goto(f'https://www.douyin.com/user/{sec_uid}',
                         wait_until='domcontentloaded', timeout=45000)
-            for _ in range(8):
-                if len(captured_awemes) >= 10:
-                    break
-                page_p.wait_for_timeout(1000)
-            # 滚动加载更多
+            page_p.wait_for_timeout(3000)
+            # 滚动加载
             for _ in range(3):
                 page_p.mouse.wheel(0, 1500)
                 page_p.wait_for_timeout(1500)
+
+            # 从PC DOM提取所有作品链接
+            try:
+                links = page_p.query_selector_all('a[href*="/video/"], a[href*="/note/"]')
+                pc_ids = []
+                for link in links:
+                    href = link.get_attribute('href') or ''
+                    for pattern in ['/video/', '/note/']:
+                        if pattern in href:
+                            parts = href.split(pattern)
+                            if len(parts) > 1:
+                                aid = parts[1].split('?')[0].split('/')[0]
+                                if aid.isdigit() and aid not in dom_post_ids and aid not in pc_ids:
+                                    pc_ids.append(aid)
+                                    dom_post_ids.append(aid)
+                if pc_ids:
+                    print(f"  [PC端] DOM提取 {len(pc_ids)} 个作品链接")
+            except Exception as e:
+                print(f"  [PC端] DOM提取异常: {e}")
         except Exception as e:
             print(f"  [PC端] 异常: {e}")
         finally:
@@ -355,17 +390,41 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
 
         browser.close()
 
-    if not captured_awemes:
-        return [], "no_data"
-
-    # 解析作品，去重
+    # 合并：API数据 + DOM补充
     parsed_posts = []
     seen_ids = set()
+
+    # 先解析API捕获的完整数据
     for a in captured_awemes:
         parsed = parse_aweme(a, display_name)
         if parsed and parsed["id"] not in seen_ids:
             parsed_posts.append(parsed)
             seen_ids.add(parsed["id"])
+
+    # 补充DOM提取但API未返回的作品（如图文笔记）
+    for aid in dom_post_ids:
+        if aid not in seen_ids:
+            is_note = True  # DOM提取的未知类型，默认构建为note
+            post_url = f"https://www.douyin.com/note/{aid}" if is_note else f"https://www.douyin.com/video/{aid}"
+            # 尝试判断类型：如果API数据中有这个ID，跳过
+            parsed_posts.append({
+                "id": str(aid),
+                "platform": "douyin",
+                "name": display_name,
+                "title": "点击查看",
+                "views": 0,
+                "likes": 0,
+                "cover": None,
+                "avatar": None,
+                "url": post_url,
+                "time": datetime.now().isoformat(),
+                "sort_key": int(aid),
+            })
+            seen_ids.add(aid)
+            print(f"  [DOM补充] 添加作品 {aid}")
+
+    if not parsed_posts:
+        return [], "no_data"
 
     # 按 sort_key 倒序（create_time 或 aweme_id 数值）
     parsed_posts.sort(key=lambda x: x.get("sort_key", 0), reverse=True)
