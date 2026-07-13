@@ -299,8 +299,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     max_posts = 50
     last_cursor = [0]
     trusted_ids = set()
-    page_context_uid = [None]
-    page_context_nickname = [None]
+    page_owner_sec = [None]
+    page_owner_nick = [None]
 
     def add_awemes(aweme_list, tag, trust_context=False):
         if not aweme_list or not isinstance(aweme_list, list):
@@ -586,8 +586,14 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 if embed_data:
                     if embed_data.get('pageUser'):
                         pu = embed_data['pageUser']
-                        print(f"  [{tag}] 页面用户: nick={pu.get('nickname')} sec={str(pu.get('sec_uid',''))[:20]}...")
-                        page_context_nickname[0] = pu.get('nickname')
+                        psec = str(pu.get('sec_uid','') or '')
+                        pnick = pu.get('nickname') or ''
+                        print(f"  [{tag}] 页面用户: nick={pnick} sec={psec[:25]}...")
+                        if psec and psec != sec_uid:
+                            print(f"  [{tag}] ⚠️ 页面用户sec_uid不匹配! 期望={sec_uid[:25]}... 实际={psec[:25]}...")
+                        else:
+                            page_owner_sec[0] = psec or page_owner_sec[0]
+                            page_owner_nick[0] = pnick or page_owner_nick[0]
                     if embed_data.get('awemes'):
                         cnt = add_awemes(embed_data['awemes'], tag + '-embed', trust_context=True)
                         if cnt:
