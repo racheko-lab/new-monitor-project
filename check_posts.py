@@ -254,17 +254,17 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
     status 为 'ok' / 'no_data' / 'error'。
 
-    策略：
-    1. PC端：访问 douyin.com 首页加载签名JS → page.evaluate 调用 web API
-       （浏览器 fetch 已被 webmssdk.js patch，自动生成 a_bogus 签名；
-       web API 返回含图文笔记的最新作品列表）
-    2. 移动端回退：m.douyin.com/share/user/{sec_uid} 拦截 v2 API
-       （旧接口，部分用户最新作品可能缺失）
+    策略：依次访问两个移动端分享页，拦截 aweme/post API 响应，合并结果。
+    1. iesdouyin.com/share/user/{sec_uid}（旧版分享页，可能返回更全的作品）
+    2. m.douyin.com/share/user/{sec_uid}（新版分享页，作为补充）
+    合并去重后按 sort_key 倒序，并过滤掉作者 sec_uid 不匹配的作品（防止串号）。
     """
     if not PLAYWRIGHT_AVAILABLE:
         return None, "error"
 
     captured_awemes = []
+    seen_raw_ids = set()
+    max_posts = 30
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -276,90 +276,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             ],
         )
 
-        # === PC端：直接调用 web API ===
-        ctx_p = browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                       '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            viewport={'width': 1280, 'height': 800},
-            locale='zh-CN', timezone_id='Asia/Shanghai',
-        )
-        ctx_p.add_init_script("""
-            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-            window.chrome = { runtime: {} };
-            Object.defineProperty(navigator, 'plugins', {get: () => [1,2,3]});
-            Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN','zh','en']});
-        """)
-        page_p = ctx_p.new_page()
-
-        try:
-            # 访问首页加载 webmssdk.js（patch fetch 以自动添加 a_bogus 签名）
-            print("  [PC端] 访问douyin.com首页加载签名JS...")
-            try:
-                page_p.goto('https://www.douyin.com/', wait_until='domcontentloaded', timeout=30000)
-                page_p.wait_for_timeout(4000)
-            except Exception:
-                pass
-
-            # 直接调用 web API（浏览器 patch 后的 fetch 自动生成 a_bogus 签名）
-            print("  [PC端] 调用 web API 获取作品列表...")
-            result = page_p.evaluate("""
-                async (sec_uid) => {
-                    try {
-                        const params = new URLSearchParams({
-                            'device_platform': 'webapp',
-                            'aid': '6383',
-                            'channel': 'channel_pc_web',
-                            'sec_user_id': sec_uid,
-                            'max_cursor': '0',
-                            'count': '21',
-                            'publish_video_strategy_type': '2',
-                            'version_code': '170400',
-                            'version_name': '17.4.0',
-                        });
-                        const resp = await fetch('/aweme/v1/web/aweme/post/?' + params.toString(), {
-                            headers: { 'Accept': 'application/json, text/plain, */*' },
-                            credentials: 'include',
-                        });
-                        const text = await resp.text();
-                        try {
-                            return JSON.parse(text);
-                        } catch(e) {
-                            return { _error: 'JSON parse failed', _status: resp.status, _body: text.slice(0, 200) };
-                        }
-                    } catch(e) {
-                        return { _error: e.message };
-                    }
-                }
-            """, sec_uid)
-
-            if result and not result.get('_error'):
-                aweme_list = result.get('aweme_list') or []
-                for a in aweme_list:
-                    if isinstance(a, dict) and a.get('aweme_id'):
-                        captured_awemes.append(a)
-                if captured_awemes:
-                    print(f"  [PC端] API返回 {len(captured_awemes)} 条")
-                    for a in captured_awemes[:3]:
-                        atype = a.get('aweme_type', '?')
-                        aid = a.get('aweme_id', '?')
-                        desc = (a.get('desc') or '')[:25]
-                        print(f"    type={atype} id={aid} desc={desc}")
-                else:
-                    print(f"  [PC端] API返回但无作品列表")
-            else:
-                err = result.get('_error') if result else '无响应'
-                status = result.get('_status', '') if result else ''
-                print(f"  [PC端] API失败: {err} {status}")
-        except Exception as e:
-            print(f"  [PC端] 异常: {e}")
-        finally:
-            ctx_p.close()
-
-        # === 移动端回退 ===
-        if not captured_awemes:
-            print("  [移动端] PC端无数据，回退到移动端分享页...")
-            mobile_seen = set()
-
+        def make_on_response(tag: str):
             def on_response(resp):
                 url = resp.url
                 if 'aweme/post' in url and 'iteminfo' not in url and 'publish' not in url:
@@ -367,57 +284,105 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                         data = resp.json()
                         aweme_list = data.get("aweme_list") or data.get("awemes") or []
                         if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
+                            new_count = 0
                             for a in aweme_list:
                                 aid = str(a.get("aweme_id", ""))
-                                if aid and aid not in mobile_seen and len(captured_awemes) < 30:
+                                if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
                                     captured_awemes.append(a)
-                                    mobile_seen.add(aid)
-                            if aweme_list:
+                                    seen_raw_ids.add(aid)
+                                    new_count += 1
+                            if new_count:
                                 for a in aweme_list[:3]:
                                     atype = a.get("aweme_type", "?")
                                     aid = a.get("aweme_id", "?")
                                     desc = (a.get("desc") or "")[:25]
-                                    print(f"    type={atype} id={aid} desc={desc}")
-                                print(f"  [移动端] 捕获 +{len(aweme_list)} 条 (累计 {len(captured_awemes)})")
+                                    print(f"    [{tag}] type={atype} id={aid} desc={desc}")
+                                print(f"  [{tag}] 捕获 +{new_count} 条 (累计 {len(captured_awemes)})")
                     except Exception:
                         pass
+            return on_response
 
-            ctx_m = browser.new_context(
-                user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
-                           'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+        mobile_ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
+                     'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1')
+
+        # === 来源1: iesdouyin.com 分享页 ===
+        try:
+            print("  [iesdouyin] 访问分享页...")
+            ctx1 = browser.new_context(
+                user_agent=mobile_ua,
                 viewport={'width': 390, 'height': 844},
                 locale='zh-CN', timezone_id='Asia/Shanghai',
                 is_mobile=True, has_touch=True,
             )
-            ctx_m.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
-            page_m = ctx_m.new_page()
-            page_m.on('response', on_response)
+            ctx1.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+            page1 = ctx1.new_page()
+            page1.on('response', make_on_response('ies'))
+            page1.goto(f'https://www.iesdouyin.com/share/user/{sec_uid}',
+                       wait_until='domcontentloaded', timeout=30000)
+            for _ in range(8):
+                if captured_awemes:
+                    break
+                page1.wait_for_timeout(1000)
+            if not captured_awemes:
+                for _ in range(2):
+                    page1.mouse.wheel(0, 1000)
+                    page1.wait_for_timeout(1500)
+            ctx1.close()
+        except Exception as e:
+            print(f"  [iesdouyin] 异常: {e}")
 
-            try:
-                page_m.goto(f'https://m.douyin.com/share/user/{sec_uid}',
-                            wait_until='domcontentloaded', timeout=45000)
-                for _ in range(10):
-                    if captured_awemes:
-                        break
-                    page_m.wait_for_timeout(1000)
-                if not captured_awemes:
-                    for _ in range(3):
-                        page_m.mouse.wheel(0, 1000)
-                        page_m.wait_for_timeout(1500)
-            except Exception as e:
-                print(f"  [移动端] 异常: {e}")
-            finally:
-                ctx_m.close()
+        # === 来源2: m.douyin.com 分享页（补充） ===
+        try:
+            if captured_awemes:
+                print(f"  [m.douyin] 已有 {len(captured_awemes)} 条，尝试补充更多...")
+            else:
+                print("  [m.douyin] iesdouyin无数据，访问m.douyin.com分享页...")
+            ctx2 = browser.new_context(
+                user_agent=mobile_ua,
+                viewport={'width': 390, 'height': 844},
+                locale='zh-CN', timezone_id='Asia/Shanghai',
+                is_mobile=True, has_touch=True,
+            )
+            ctx2.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+            page2 = ctx2.new_page()
+            page2.on('response', make_on_response('m'))
+            page2.goto(f'https://m.douyin.com/share/user/{sec_uid}',
+                       wait_until='domcontentloaded', timeout=45000)
+            for _ in range(10):
+                if captured_awemes:
+                    break
+                page2.wait_for_timeout(1000)
+            if not captured_awemes:
+                for _ in range(3):
+                    page2.mouse.wheel(0, 1000)
+                    page2.wait_for_timeout(1500)
+            ctx2.close()
+        except Exception as e:
+            print(f"  [m.douyin] 异常: {e}")
 
         browser.close()
 
     if not captured_awemes:
         return [], "no_data"
 
+    # 过滤：只保留作者 sec_uid 匹配的作品（防止串号/推荐内容混入）
+    filtered_awemes = []
+    for a in captured_awemes:
+        author = a.get("author", {}) or {}
+        author_sec = author.get("sec_uid") or ""
+        if not author_sec or author_sec == sec_uid:
+            filtered_awemes.append(a)
+        else:
+            print(f"  [过滤] 丢弃非目标用户作品: id={a.get('aweme_id')} author_sec={author_sec[:20]}...")
+
+    if not filtered_awemes:
+        print("  [警告] 过滤后无作品（全部为非目标用户）")
+        return [], "no_data"
+
     # 解析作品，去重
     parsed_posts = []
     seen_ids = set()
-    for a in captured_awemes:
+    for a in filtered_awemes:
         parsed = parse_aweme(a, display_name)
         if parsed and parsed["id"] not in seen_ids:
             parsed_posts.append(parsed)
@@ -437,8 +402,8 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
 
     流程：
     1. 用 requests 从 live.douyin.com 拿 sec_uid、昵称、头像
-    2. 用 Playwright PC端调用 web API 获取作品列表（含图文笔记），失败回退移动端
-    3. 解析作品，对比 state 中的 seen_posts 找出新作品
+    2. 用 Playwright 访问 iesdouyin.com + m.douyin.com 分享页拦截作品 API
+    3. 解析作品，过滤非目标用户作品，对比 state 中的 seen_posts 找出新作品
     """
     notifications = []
     new_posts_data = []
