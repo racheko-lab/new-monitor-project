@@ -251,9 +251,9 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
 def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Optional[List[Dict]], str]:
     """使用 Playwright headless Chrome 抓取用户主页作品列表。
 
-    策略（response 拦截 + page.route，不用 page.evaluate 防串号）：
-    1. m.douyin.com/share/user/{sec_uid}（默认，获取图文或视频）
-    2. m.douyin.com + page.route 修改 aweme_type=0（获取视频类型作品）
+    策略（response 拦截 + 点击视频标签，不用 page.evaluate 调用 API 防串号）：
+    1. m.douyin.com/share/user/{sec_uid}（移动端分享页，拦截初始 API 响应）
+    2. 点击"视频"标签让页面发起带正确签名的API请求获取视频作品
     3. www.iesdouyin.com/share/user/{sec_uid}（旧版分享页，补充）
     严格过滤作者 sec_uid，确保不会抓取到其他用户的作品。
     """
@@ -308,17 +308,16 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     mobile_ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
                  'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1')
 
-    def fetch_from_share_page(browser, host: str, tag: str, aweme_type_filter=None):
+    def fetch_from_share_page(browser, host: str, tag: str):
         """从移动端分享页抓取作品，通过 response 拦截获取作品。
 
-        如果 aweme_type_filter 不为 None，使用 page.route 修改 API 请求 URL 添加 aweme_type 参数。
-        页面自己生成签名，route 只修改 URL 参数，让 API 返回指定类型的作品。
+        访问分享页后，尝试点击"视频"标签让页面发起带正确签名的API请求获取视频作品。
+        严格 sec_uid 过滤防串号。
         """
         ctx = None
         try:
             before = len(captured_awemes)
-            desc = f" (aweme_type={aweme_type_filter})" if aweme_type_filter is not None else ""
-            print(f"  [{tag}] 访问 {host}/share/user/...{desc}")
+            print(f"  [{tag}] 访问 {host}/share/user/...")
             ctx = browser.new_context(
                 user_agent=mobile_ua,
                 viewport={'width': 390, 'height': 844},
@@ -328,19 +327,6 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             ctx.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
             page = ctx.new_page()
             page.on('response', make_on_response(tag))
-
-            # 使用 page.route 修改 API 请求 URL，添加 aweme_type 参数
-            if aweme_type_filter is not None:
-                def handle_route(route):
-                    url = route.request.url
-                    if 'aweme/post' in url and 'aweme_type' not in url:
-                        new_url = url + f'&aweme_type={aweme_type_filter}'
-                        print(f"  [{tag}] route: 添加 aweme_type={aweme_type_filter}")
-                        route.continue_(url=new_url)
-                    else:
-                        route.continue_()
-                page.route('**/aweme/post**', handle_route)
-
             page.goto(f'https://{host}/share/user/{sec_uid}',
                        wait_until='domcontentloaded', timeout=45000)
             # 等待初始 API 响应
@@ -357,6 +343,58 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 if len(captured_awemes) == prev:
                     break
                 prev = len(captured_awemes)
+
+            # 尝试点击"视频"标签，让页面发起带正确签名的API请求获取视频
+            if host == 'm.douyin.com':
+                try:
+                    # 查找所有可能的标签元素
+                    tabs_info = page.evaluate("""() => {
+                        const result = [];
+                        // 查找所有包含"视频"、"作品"、"图文"文本的可点击元素
+                        const els = document.querySelectorAll('a, button, span, div, li');
+                        for (const el of els) {
+                            const text = (el.textContent || '').trim();
+                            if (text === '视频' || text === '作品' || text === '图文' || text === '喜欢') {
+                                result.push({
+                                    tag: el.tagName,
+                                    text: text,
+                                    className: el.className || '',
+                                    id: el.id || '',
+                                });
+                            }
+                        }
+                        return result;
+                    }""")
+                    if tabs_info:
+                        print(f"  [{tag}] 找到标签元素: {tabs_info}")
+                        # 尝试点击"视频"标签
+                        for tab in tabs_info:
+                            if tab.get('text') == '视频':
+                                try:
+                                    locator = page.locator(f'{tab["tag"]}').filter(has_text='视频').first
+                                    locator.click(timeout=5000)
+                                    print(f"  [{tag}] 点击了'视频'标签")
+                                    # 等待新的API响应
+                                    before_click = len(captured_awemes)
+                                    for _ in range(10):
+                                        page.wait_for_timeout(1000)
+                                        if len(captured_awemes) > before_click:
+                                            break
+                                    # 滚动加载更多
+                                    prev = len(captured_awemes)
+                                    for _ in range(5):
+                                        page.mouse.wheel(0, 3000)
+                                        page.wait_for_timeout(2000)
+                                        if len(captured_awemes) == prev:
+                                            break
+                                        prev = len(captured_awemes)
+                                    break
+                                except Exception as e:
+                                    print(f"  [{tag}] 点击'视频'标签失败: {e}")
+                    else:
+                        print(f"  [{tag}] 未找到标签元素")
+                except Exception as e:
+                    print(f"  [{tag}] 查找标签异常: {e}")
 
             print(f"  [{tag}] 完成，新增 {len(captured_awemes) - before} 条")
         except Exception as e:
@@ -378,13 +416,10 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             ],
         )
 
-        # 来源1: m.douyin.com 分享页（默认，获取图文type=68或视频type=0）
+        # 来源1: m.douyin.com 分享页（移动端，尝试点击视频标签获取视频）
         fetch_from_share_page(browser, 'm.douyin.com', 'm')
 
-        # 来源2: m.douyin.com 分享页（route修改aweme_type=0，获取视频）
-        fetch_from_share_page(browser, 'm.douyin.com', 'm-v', aweme_type_filter=0)
-
-        # 来源3: iesdouyin.com 分享页（补充）
+        # 来源2: iesdouyin.com 分享页（补充）
         fetch_from_share_page(browser, 'www.iesdouyin.com', 'ies')
 
         browser.close()
