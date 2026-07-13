@@ -265,14 +265,35 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     max_posts = 50
     last_cursor = [0]  # 可变容器，保存最近一次 API 返回的 max_cursor
 
+    def add_awemes(aweme_list, tag):
+        """将aweme列表添加到captured_awemes，去重，打印日志。返回新增数量。"""
+        if not aweme_list or not isinstance(aweme_list, list):
+            return 0
+        new_count = 0
+        for a in aweme_list:
+            if not isinstance(a, dict) or "aweme_id" not in a:
+                continue
+            aid = str(a.get("aweme_id", ""))
+            if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
+                captured_awemes.append(a)
+                seen_raw_ids.add(aid)
+                new_count += 1
+        if new_count:
+            for a in aweme_list[:3]:
+                atype = a.get("aweme_type", "?")
+                aid = a.get("aweme_id", "?")
+                desc = (a.get("desc") or "")[:25]
+                print(f"    [{tag}] type={atype} id={aid} desc={desc}")
+            print(f"  [{tag}] +{new_count} (累计 {len(captured_awemes)})")
+        return new_count
+
     def make_on_response(tag: str):
-        logged_url = [False]  # 只记录第一次API URL
+        logged_url = [False]
         def on_response(resp):
             url = resp.url
             if 'aweme/post' in url and 'iteminfo' not in url and 'publish' not in url:
                 if not logged_url[0]:
                     logged_url[0] = True
-                    # 只打印URL的查询参数部分
                     try:
                         from urllib.parse import urlparse, parse_qs
                         qs = parse_qs(urlparse(url).query)
@@ -280,29 +301,30 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     except Exception:
                         print(f"  [{tag}] API URL: {url[:200]}")
                 try:
+                    status = resp.status
+                    if status != 200:
+                        print(f"  [{tag}] API响应状态: {status}")
+                        return
+                    ctype = resp.headers.get("content-type", "")
+                    if "json" not in ctype.lower():
+                        if tag == 'pc' and not logged_url[1:]:
+                            print(f"  [{tag}] API响应非JSON: content-type={ctype}, status={status}")
+                        return
                     data = resp.json()
+                    if not isinstance(data, dict):
+                        print(f"  [{tag}] API响应类型异常: {type(data)}")
+                        return
                     aweme_list = data.get("aweme_list") or data.get("awemes") or []
                     has_more = data.get("has_more", False)
                     cursor = data.get("max_cursor", 0)
                     if cursor:
                         last_cursor[0] = cursor
-                    if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
-                        new_count = 0
-                        for a in aweme_list:
-                            aid = str(a.get("aweme_id", ""))
-                            if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
-                                captured_awemes.append(a)
-                                seen_raw_ids.add(aid)
-                                new_count += 1
-                        if new_count:
-                            for a in aweme_list[:3]:
-                                atype = a.get("aweme_type", "?")
-                                aid = a.get("aweme_id", "?")
-                                desc = (a.get("desc") or "")[:25]
-                                print(f"    [{tag}] type={atype} id={aid} desc={desc}")
-                            print(f"  [{tag}] +{new_count} (累计 {len(captured_awemes)}), has_more={has_more}, cursor={cursor}")
-                except Exception:
-                    pass
+                    if not aweme_list and tag == 'pc':
+                        print(f"  [{tag}] API响应无aweme_list, keys={list(data.keys())[:10]}")
+                    add_awemes(aweme_list, tag)
+                except Exception as e:
+                    if tag == 'pc':
+                        print(f"  [{tag}] API响应解析异常: {e}")
         return on_response
 
     mobile_ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
@@ -360,9 +382,10 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     def fetch_from_pc_page(browser):
         """从PC端douyin.com用户主页抓取作品（stealth模式）。
 
-        移动端API对部分用户只返回图文(type=68)，PC端API返回所有类型作品。
-        用 headless=False + stealth 脚本绕过反爬虫检测。
-        严格 sec_uid 过滤防串号。
+        策略：
+        1. 拦截 aweme/post API 响应（主要方式）
+        2. 从页面内嵌JSON（SIGI_STATE/RENDER_DATA等）提取作品（备用）
+        3. 从DOM中提取视频/图文链接ID，逐个访问分享页获取详情（补充）
         """
         ctx = None
         try:
@@ -374,7 +397,6 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 viewport={'width': 1920, 'height': 1080},
                 locale='zh-CN', timezone_id='Asia/Shanghai',
             )
-            # Stealth模式：添加反检测脚本
             ctx.add_init_script("""
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
                 Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
@@ -383,44 +405,237 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 Object.defineProperty(navigator, 'platform', {get: () => 'Win32'});
             """)
             page = ctx.new_page()
-            # 诊断：记录所有包含 aweme 的API请求
-            def on_pc_request(req):
-                if 'aweme' in req.url and 'post' in req.url:
-                    print(f"  [pc] API请求: {req.url[:120]}")
-            page.on('request', on_pc_request)
             page.on('response', make_on_response('pc'))
             page.goto(f'https://www.douyin.com/user/{sec_uid}',
                       wait_until='domcontentloaded', timeout=45000)
-            # 诊断：打印页面URL和标题
+
             print(f"  [pc] 页面URL: {page.url}")
             try:
-                print(f"  [pc] 页面标题: {page.title()}")
+                title = page.title()
+                print(f"  [pc] 页面标题: {title}")
             except Exception:
                 pass
-            # 等待初始 API 响应
-            for _ in range(20):
+
+            for _ in range(25):
                 if len(captured_awemes) > before:
                     break
                 page.wait_for_timeout(1000)
 
-            # 诊断：检查页面上是否有作品卡片
             try:
-                card_info = page.evaluate("""() => {
-                    const links = document.querySelectorAll('a[href*="/video/"]');
-                    return {linkCount: links.length, hrefs: Array.from(links).slice(0, 3).map(a => a.href)};
-                }""")
-                print(f"  [pc] 作品链接: {card_info}")
-            except Exception:
-                pass
+                page_data = page.evaluate("""() => {
+                    const result = {sources: {}, videoIds: [], noteIds: []};
+                    // 1. 尝试从 window._SIGI_STATE_ 提取
+                    try {
+                        if (window._SIGI_STATE) {
+                            const sigi = JSON.stringify(window._SIGI_STATE).substring(0, 200);
+                            result.sources.SIGI_STATE = sigi;
+                            // 查找aweme列表
+                            const sigiState = window._SIGI_STATE;
+                            if (sigiState && sigiState.AwemeList) {
+                                const list = Object.values(sigiState.AwemeList).filter(x => x && x.aweme_id);
+                                result.sigiAwemes = list.slice(0, 20);
+                            }
+                            // 另一种结构：sigiState.ItemModule 或 sigiState.aweme
+                            if (sigiState && sigiState.ItemModule) {
+                                const list = Object.values(sigiState.ItemModule);
+                                result.sigiAwemes = (result.sigiAwemes || []).concat(list.filter(x => x && x.aweme_id).slice(0, 20));
+                            }
+                        }
+                    } catch(e) { result.sources.SIGI_STATE_ERR = String(e); }
 
-            # 滚动加载更多
-            prev = len(captured_awemes)
-            for _ in range(5):
+                    // 2. 尝试从 RENDER_DATA script标签提取
+                    try {
+                        const rd = document.getElementById('RENDER_DATA');
+                        if (rd) {
+                            result.sources.RENDER_DATA = rd.textContent.substring(0, 200);
+                            try {
+                                const decoded = decodeURIComponent(rd.textContent);
+                                const data = JSON.parse(decoded);
+                                // 在RENDER_DATA中查找aweme列表
+                                function findAwemes(obj, depth) {
+                                    if (!obj || depth > 5 || typeof obj !== 'object') return [];
+                                    if (Array.isArray(obj)) {
+                                        if (obj.length > 0 && obj[0] && obj[0].aweme_id) return obj;
+                                        for (const item of obj) {
+                                            const found = findAwemes(item, depth+1);
+                                            if (found.length) return found;
+                                        }
+                                    } else {
+                                        for (const key of Object.keys(obj)) {
+                                            if (key === 'aweme_list' || key === 'awemes') {
+                                                const val = obj[key];
+                                                if (Array.isArray(val) && val.length > 0 && val[0] && val[0].aweme_id) return val;
+                                            }
+                                            const found = findAwemes(obj[key], depth+1);
+                                            if (found.length) return found;
+                                        }
+                                    }
+                                    return [];
+                                }
+                                const awemes = findAwemes(data, 0);
+                                if (awemes.length) {
+                                    result.renderAwemes = awemes.slice(0, 20);
+                                }
+                            } catch(e2) { result.sources.RENDER_DATA_PARSE_ERR = String(e2); }
+                        }
+                    } catch(e) { result.sources.RENDER_DATA_ERR = String(e); }
+
+                    // 3. 尝试从 __NEXT_DATA__ 提取
+                    try {
+                        const nd = document.getElementById('__NEXT_DATA__');
+                        if (nd) {
+                            result.sources.NEXT_DATA = nd.textContent.substring(0, 200);
+                            try {
+                                const data = JSON.parse(nd.textContent);
+                                function findAwemes(obj, depth) {
+                                    if (!obj || depth > 5 || typeof obj !== 'object') return [];
+                                    if (Array.isArray(obj)) {
+                                        if (obj.length > 0 && obj[0] && obj[0].aweme_id) return obj;
+                                        for (const item of obj) {
+                                            const found = findAwemes(item, depth+1);
+                                            if (found.length) return found;
+                                        }
+                                    } else {
+                                        for (const key of Object.keys(obj)) {
+                                            if (key === 'aweme_list' || key === 'awemes') {
+                                                const val = obj[key];
+                                                if (Array.isArray(val) && val.length > 0 && val[0] && val[0].aweme_id) return val;
+                                            }
+                                            const found = findAwemes(obj[key], depth+1);
+                                            if (found.length) return found;
+                                        }
+                                    }
+                                    return [];
+                                }
+                                const awemes = findAwemes(data, 0);
+                                if (awemes.length) {
+                                    result.nextAwemes = awemes.slice(0, 20);
+                                }
+                            } catch(e2) { result.sources.NEXT_DATA_PARSE_ERR = String(e2); }
+                        }
+                    } catch(e) { result.sources.NEXT_DATA_ERR = String(e); }
+
+                    // 4. 从DOM提取所有视频/图文链接的aweme_id
+                    try {
+                        const allLinks = document.querySelectorAll('a[href*="/video/"], a[href*="/note/"]');
+                        const ids = new Set();
+                        allLinks.forEach(a => {
+                            try {
+                                const path = new URL(a.href).pathname;
+                                const parts = path.split('/');
+                                for (let i = 0; i < parts.length - 1; i++) {
+                                    if (parts[i] === 'video' || parts[i] === 'note') {
+                                        const idStr = parts[i+1].split('?')[0].split('#')[0];
+                                        if (/^\\d+$/.test(idStr)) ids.add(idStr);
+                                    }
+                                }
+                            } catch(e2) {}
+                        });
+                        result.videoIds = Array.from(ids).slice(0, 30);
+                    } catch(e) {}
+
+                    // 5. 扫描所有script标签查找aweme数据
+                    try {
+                        const scripts = document.querySelectorAll('script');
+                        let foundFromScripts = [];
+                        for (const s of scripts) {
+                            const text = s.textContent || '';
+                            if (text.length < 50) continue;
+                            // 查找自渲染数据块 RENDER_DATA
+                            if (text.includes('aweme_id') && (text.includes('aweme_list') || text.includes('desc'))) {
+                                try {
+                                    // 尝试作为JSON解析
+                                    const trimmed = text.trim();
+                                    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+                                        const data = JSON.parse(trimmed);
+                                        function findAwemesDeep(obj, depth) {
+                                            if (!obj || depth > 6 || typeof obj !== 'object') return [];
+                                            if (Array.isArray(obj)) {
+                                                if (obj.length > 0 && obj[0] && obj[0].aweme_id) return obj.filter(x => x && x.aweme_id);
+                                                let found = [];
+                                                for (const item of obj) {
+                                                    const f = findAwemesDeep(item, depth+1);
+                                                    if (f.length) found = found.concat(f);
+                                                }
+                                                return found;
+                                            } else {
+                                                let found = [];
+                                                for (const key of Object.keys(obj)) {
+                                                    if (key === 'aweme_list' || key === 'awemes') {
+                                                        const val = obj[key];
+                                                        if (Array.isArray(val) && val.length > 0 && val[0] && val[0].aweme_id) {
+                                                            found = found.concat(val.filter(x => x && x.aweme_id));
+                                                        }
+                                                    }
+                                                    const f = findAwemesDeep(obj[key], depth+1);
+                                                    if (f.length) found = found.concat(f);
+                                                }
+                                                return found;
+                                            }
+                                        }
+                                        const awemes = findAwemesDeep(data, 0);
+                                        if (awemes.length > foundFromScripts.length) {
+                                            foundFromScripts = awemes.slice(0, 20);
+                                        }
+                                    }
+                                } catch(e3) {}
+                            }
+                        }
+                        if (foundFromScripts.length) {
+                            result.scriptAwemes = foundFromScripts;
+                        }
+                    } catch(e) {}
+
+                    return result;
+                }""")
+                print(f"  [pc] 页面数据来源: {list(page_data.get('sources', {}).keys())}")
+                if page_data.get('sigiAwemes'):
+                    cnt = add_awemes(page_data['sigiAwemes'], 'pc-sigi')
+                    print(f"  [pc-sigi] 从SIGI_STATE提取 {cnt} 条")
+                if page_data.get('renderAwemes'):
+                    cnt = add_awemes(page_data['renderAwemes'], 'pc-render')
+                    print(f"  [pc-render] 从RENDER_DATA提取 {cnt} 条")
+                if page_data.get('nextAwemes'):
+                    cnt = add_awemes(page_data['nextAwemes'], 'pc-next')
+                    print(f"  [pc-next] 从NEXT_DATA提取 {cnt} 条")
+                if page_data.get('scriptAwemes'):
+                    cnt = add_awemes(page_data['scriptAwemes'], 'pc-script')
+                    print(f"  [pc-script] 从script标签提取 {cnt} 条")
+                dom_ids = page_data.get('videoIds', [])
+                print(f"  [pc] DOM中发现 {len(dom_ids)} 个作品ID: {dom_ids[:10]}")
+            except Exception as e:
+                print(f"  [pc] 页面数据提取异常: {e}")
+                dom_ids = []
+
+            for _ in range(3):
                 page.mouse.wheel(0, 3000)
                 page.wait_for_timeout(2000)
-                if len(captured_awemes) == prev:
-                    break
-                prev = len(captured_awemes)
+
+            page.wait_for_timeout(3000)
+
+            try:
+                post_goto_ids = page.evaluate("""() => {
+                    const allLinks = document.querySelectorAll('a[href*="/video/"], a[href*="/note/"]');
+                    const ids = new Set();
+                    allLinks.forEach(a => {
+                        try {
+                            const path = new URL(a.href).pathname;
+                            const parts = path.split('/');
+                            for (let i = 0; i < parts.length - 1; i++) {
+                                if (parts[i] === 'video' || parts[i] === 'note') {
+                                    const idStr = parts[i+1].split('?')[0].split('#')[0];
+                                    if (/^\\d+$/.test(idStr)) ids.add(idStr);
+                                }
+                            }
+                        } catch(e2) {}
+                    });
+                    return Array.from(ids).slice(0, 30);
+                }""")
+                new_dom_ids = [i for i in post_goto_ids if i not in seen_raw_ids]
+                if new_dom_ids:
+                    print(f"  [pc] 滚动后新增DOM ID: {new_dom_ids[:10]}")
+            except Exception:
+                new_dom_ids = []
 
             print(f"  [pc] 完成，新增 {len(captured_awemes) - before} 条")
         except Exception as e:
