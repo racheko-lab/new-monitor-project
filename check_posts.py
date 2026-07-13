@@ -254,16 +254,17 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
     status 为 'ok' / 'no_data' / 'error'。
 
-    策略：PC端 douyin.com/user/{sec_uid} 拦截 aweme/v1/web/aweme/post
-    （新接口，含图文笔记 type=68，浏览器自动生成 a_bogus 签名）。
-    若PC端无数据，回退到移动端 m.douyin.com/share/user/{sec_uid}。
+    策略：
+    1. PC端：访问 douyin.com 首页加载签名JS → page.evaluate 调用 web API
+       （浏览器 fetch 已被 webmssdk.js patch，自动生成 a_bogus 签名；
+       web API 返回含图文笔记的最新作品列表）
+    2. 移动端回退：m.douyin.com/share/user/{sec_uid} 拦截 v2 API
+       （旧接口，部分用户最新作品可能缺失）
     """
     if not PLAYWRIGHT_AVAILABLE:
         return None, "error"
 
     captured_awemes = []
-    seen_raw_ids = set()
-    max_posts = 30
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -275,34 +276,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             ],
         )
 
-        def on_response(resp):
-            url = resp.url
-            if any(kw in url for kw in ['aweme/post', 'aweme/v1/web/aweme/post']):
-                if 'iteminfo' in url or 'publish' in url:
-                    return
-                try:
-                    data = resp.json()
-                    aweme_list = data.get("aweme_list") or data.get("awemes") or []
-                    if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
-                        new_count = 0
-                        for a in aweme_list:
-                            aid = str(a.get("aweme_id", ""))
-                            if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
-                                captured_awemes.append(a)
-                                seen_raw_ids.add(aid)
-                                new_count += 1
-                        if new_count:
-                            for a in aweme_list[:3]:
-                                atype = a.get("aweme_type", "?")
-                                aid = a.get("aweme_id", "?")
-                                desc = (a.get("desc") or "")[:25]
-                                print(f"    type={atype} id={aid} desc={desc}")
-                            print(f"  捕获 +{new_count} 条 (累计 {len(captured_awemes)})")
-                except Exception:
-                    pass
-
-        # PC端 + 移动端同时开context，PC端先跑
-        # PC端 context
+        # === PC端：直接调用 web API ===
         ctx_p = browser.new_context(
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                        '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -316,67 +290,98 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN','zh','en']});
         """)
         page_p = ctx_p.new_page()
-        page_p.on('response', on_response)
 
         try:
-            # 先访问首页
-            print("  [PC端] 访问douyin.com首页...")
+            # 访问首页加载 webmssdk.js（patch fetch 以自动添加 a_bogus 签名）
+            print("  [PC端] 访问douyin.com首页加载签名JS...")
             try:
                 page_p.goto('https://www.douyin.com/', wait_until='domcontentloaded', timeout=30000)
-                page_p.wait_for_timeout(3000)
+                page_p.wait_for_timeout(4000)
             except Exception:
                 pass
 
-            # 访问用户主页，用 networkidle 等待SPA完全加载
-            print(f"  [PC端] 跳转到用户主页...")
-            try:
-                page_p.goto(f'https://www.douyin.com/user/{sec_uid}',
-                            wait_until='networkidle', timeout=60000)
-            except PlaywrightTimeoutError:
-                print("  [PC端] networkidle超时，继续检查已捕获数据")
-            except Exception as e:
-                print(f"  [PC端] 页面异常: {e}")
+            # 直接调用 web API（浏览器 patch 后的 fetch 自动生成 a_bogus 签名）
+            print("  [PC端] 调用 web API 获取作品列表...")
+            result = page_p.evaluate("""
+                async (sec_uid) => {
+                    try {
+                        const params = new URLSearchParams({
+                            'device_platform': 'webapp',
+                            'aid': '6383',
+                            'channel': 'channel_pc_web',
+                            'sec_user_id': sec_uid,
+                            'max_cursor': '0',
+                            'count': '21',
+                            'publish_video_strategy_type': '2',
+                            'version_code': '170400',
+                            'version_name': '17.4.0',
+                        });
+                        const resp = await fetch('/aweme/v1/web/aweme/post/?' + params.toString(), {
+                            headers: { 'Accept': 'application/json, text/plain, */*' },
+                            credentials: 'include',
+                        });
+                        const text = await resp.text();
+                        try {
+                            return JSON.parse(text);
+                        } catch(e) {
+                            return { _error: 'JSON parse failed', _status: resp.status, _body: text.slice(0, 200) };
+                        }
+                    } catch(e) {
+                        return { _error: e.message };
+                    }
+                }
+            """, sec_uid)
 
-            # 额外等待API
-            for _ in range(15):
+            if result and not result.get('_error'):
+                aweme_list = result.get('aweme_list') or []
+                for a in aweme_list:
+                    if isinstance(a, dict) and a.get('aweme_id'):
+                        captured_awemes.append(a)
                 if captured_awemes:
-                    break
-                page_p.wait_for_timeout(1000)
-
-            if captured_awemes:
-                # 滚动加载更多
-                for _ in range(2):
-                    page_p.mouse.wheel(0, 2000)
-                    page_p.wait_for_timeout(2000)
-                print(f"  [PC端] 成功捕获 {len(captured_awemes)} 条")
+                    print(f"  [PC端] API返回 {len(captured_awemes)} 条")
+                    for a in captured_awemes[:3]:
+                        atype = a.get('aweme_type', '?')
+                        aid = a.get('aweme_id', '?')
+                        desc = (a.get('desc') or '')[:25]
+                        print(f"    type={atype} id={aid} desc={desc}")
+                else:
+                    print(f"  [PC端] API返回但无作品列表")
             else:
-                print(f"  [PC端] 未捕获API，页面标题: {page_p.title()}")
-                # 打印所有捕获的请求URL用于调试
-                print("  [PC端] 尝试点击作品tab...")
-                try:
-                    # 可能在"喜欢"tab，需要点击"作品"tab
-                    tabs = page_p.query_selector_all('a, button, span, div')
-                    for tab in tabs[:50]:
-                        text = (tab.inner_text() or '').strip()
-                        if text == '作品':
-                            tab.click()
-                            page_p.wait_for_timeout(5000)
-                            print(f"  [PC端] 点击了作品tab，等待API...")
-                            for _ in range(10):
-                                if captured_awemes:
-                                    break
-                                page_p.wait_for_timeout(1000)
-                            break
-                except Exception:
-                    pass
+                err = result.get('_error') if result else '无响应'
+                status = result.get('_status', '') if result else ''
+                print(f"  [PC端] API失败: {err} {status}")
         except Exception as e:
             print(f"  [PC端] 异常: {e}")
         finally:
             ctx_p.close()
 
-        # 移动端回退
+        # === 移动端回退 ===
         if not captured_awemes:
             print("  [移动端] PC端无数据，回退到移动端分享页...")
+            mobile_seen = set()
+
+            def on_response(resp):
+                url = resp.url
+                if 'aweme/post' in url and 'iteminfo' not in url and 'publish' not in url:
+                    try:
+                        data = resp.json()
+                        aweme_list = data.get("aweme_list") or data.get("awemes") or []
+                        if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
+                            for a in aweme_list:
+                                aid = str(a.get("aweme_id", ""))
+                                if aid and aid not in mobile_seen and len(captured_awemes) < 30:
+                                    captured_awemes.append(a)
+                                    mobile_seen.add(aid)
+                            if aweme_list:
+                                for a in aweme_list[:3]:
+                                    atype = a.get("aweme_type", "?")
+                                    aid = a.get("aweme_id", "?")
+                                    desc = (a.get("desc") or "")[:25]
+                                    print(f"    type={atype} id={aid} desc={desc}")
+                                print(f"  [移动端] 捕获 +{len(aweme_list)} 条 (累计 {len(captured_awemes)})")
+                    except Exception:
+                        pass
+
             ctx_m = browser.new_context(
                 user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
                            'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
@@ -432,7 +437,7 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
 
     流程：
     1. 用 requests 从 live.douyin.com 拿 sec_uid、昵称、头像
-    2. 用 Playwright 访问 m.douyin.com/share/user/{sec_uid} 拦截作品 API
+    2. 用 Playwright PC端调用 web API 获取作品列表（含图文笔记），失败回退移动端
     3. 解析作品，对比 state 中的 seen_posts 找出新作品
     """
     notifications = []
