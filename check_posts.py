@@ -344,60 +344,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     break
                 prev = len(captured_awemes)
 
-            # 用 page.evaluate 在页面上下文里调用 fetch API，获取完整作品列表（包括视频）
-            if host == 'm.douyin.com':
-                try:
-                    print(f"  [{tag}] 尝试用 page.evaluate 调用 fetch API...")
-                    fetch_result = page.evaluate("""async (secUid) => {
-                        try {
-                            const url = `/web/api/v2/aweme/post/?sec_uid=${secUid}&count=50&max_cursor=0`;
-                            const resp = await fetch(url, {credentials: 'include'});
-                            const text = await resp.text();
-                            let data;
-                            try { data = JSON.parse(text); }
-                            catch(e) {
-                                return {error: 'JSON fail', status: resp.status,
-                                        textLen: text.length, textStart: text.substring(0, 200)};
-                            }
-                            const list = data.aweme_list || [];
-                            return {
-                                status: resp.status,
-                                count: list.length,
-                                has_more: data.has_more,
-                                aweme_list: list,
-                            };
-                        } catch(e) {
-                            return {error: e.message};
-                        }
-                    }""", sec_uid)
-
-                    if fetch_result and isinstance(fetch_result, dict):
-                        if 'error' in fetch_result:
-                            print(f"  [{tag}] fetch API 错误: {fetch_result}")
-                        elif 'aweme_list' in fetch_result:
-                            new_list = fetch_result['aweme_list']
-                            print(f"  [{tag}] fetch API 获取 {len(new_list)} 条, has_more={fetch_result.get('has_more')}")
-                            for a in new_list[:5]:
-                                atype = a.get("aweme_type", "?")
-                                aid = a.get("aweme_id", "?")
-                                desc = (a.get("desc") or "")[:25]
-                                print(f"    [{tag}-fetch] type={atype} id={aid} desc={desc}")
-                            # 添加到 captured_awemes
-                            added = 0
-                            for a in new_list:
-                                aid = str(a.get("aweme_id", ""))
-                                if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
-                                    captured_awemes.append(a)
-                                    seen_raw_ids.add(aid)
-                                    added += 1
-                            if added:
-                                print(f"  [{tag}] fetch 新增 {added} 条 (累计 {len(captured_awemes)})")
-                        else:
-                            print(f"  [{tag}] fetch API 结果: {fetch_result}")
-                    else:
-                        print(f"  [{tag}] fetch API 返回空: {fetch_result}")
-                except Exception as e:
-                    print(f"  [{tag}] page.evaluate 异常: {e}")
+            # 注：page.evaluate 调用 fetch API 已测试不可行（缺少 a_bogus 签名，返回空内容）
+            # 移动端 API 对栗子鸡只返回 type=68（图文），视频作品需要从 PC 端获取
 
             print(f"  [{tag}] 完成，新增 {len(captured_awemes) - before} 条")
         except Exception as e:
@@ -409,21 +357,79 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 except Exception:
                     pass
 
+    def fetch_from_pc_page(browser):
+        """从PC端douyin.com用户主页抓取作品（stealth模式）。
+
+        移动端API对部分用户只返回图文(type=68)，PC端API返回所有类型作品。
+        用 headless=False + stealth 脚本绕过反爬虫检测。
+        严格 sec_uid 过滤防串号。
+        """
+        ctx = None
+        try:
+            before = len(captured_awemes)
+            print(f"  [pc] 访问 www.douyin.com/user/...")
+            ctx = browser.new_context(
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                           '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                viewport={'width': 1920, 'height': 1080},
+                locale='zh-CN', timezone_id='Asia/Shanghai',
+            )
+            # Stealth模式：添加反检测脚本
+            ctx.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+                Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN', 'zh', 'en']});
+                window.chrome = {runtime: {}};
+                Object.defineProperty(navigator, 'platform', {get: () => 'Win32'});
+            """)
+            page = ctx.new_page()
+            page.on('response', make_on_response('pc'))
+            page.goto(f'https://www.douyin.com/user/{sec_uid}',
+                      wait_until='domcontentloaded', timeout=45000)
+            # 等待初始 API 响应
+            for _ in range(20):
+                if len(captured_awemes) > before:
+                    break
+                page.wait_for_timeout(1000)
+
+            # 滚动加载更多
+            prev = len(captured_awemes)
+            for _ in range(5):
+                page.mouse.wheel(0, 3000)
+                page.wait_for_timeout(2000)
+                if len(captured_awemes) == prev:
+                    break
+                prev = len(captured_awemes)
+
+            print(f"  [pc] 完成，新增 {len(captured_awemes) - before} 条")
+        except Exception as e:
+            print(f"  [pc] 异常: {e}")
+        finally:
+            if ctx:
+                try:
+                    ctx.close()
+                except Exception:
+                    pass
+
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=True,
+            headless=False,
             args=[
                 '--disable-blink-features=AutomationControlled',
                 '--no-sandbox',
                 '--disable-dev-shm-usage',
+                '--disable-gpu',
             ],
         )
 
-        # 来源1: m.douyin.com 分享页（移动端，尝试点击视频标签获取视频）
+        # 来源1: m.douyin.com 分享页（移动端，拦截初始 API 响应）
         fetch_from_share_page(browser, 'm.douyin.com', 'm')
 
         # 来源2: iesdouyin.com 分享页（补充）
         fetch_from_share_page(browser, 'www.iesdouyin.com', 'ies')
+
+        # 来源3: PC端douyin.com用户主页（stealth模式，获取视频作品）
+        fetch_from_pc_page(browser)
 
         browser.close()
 

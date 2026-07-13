@@ -47,7 +47,7 @@ jobs:
         continue-on-error: true
         env:
           MONITOR_CONFIG: ${{ secrets.MONITOR_CONFIG }}
-        run: python check_posts.py
+        run: xvfb-run -a python check_posts.py
 
       - name: Commit status
         if: always()
