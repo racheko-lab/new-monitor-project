@@ -251,10 +251,10 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
 def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Optional[List[Dict]], str]:
     """使用 Playwright headless Chrome 抓取用户主页作品列表。
 
-    策略：
-    1. m.douyin.com/share/user/{sec_uid}（移动端分享页，拦截API响应）
-    2. www.iesdouyin.com/share/user/{sec_uid}（旧版分享页，补充）
-    只通过 response 拦截获取数据，不使用 page.evaluate 调用 API（防止串号）。
+    策略（仅 response 拦截，不使用 page.evaluate 调用 API，防止串号）：
+    1. PC端 douyin.com/user/{sec_uid}（返回所有类型作品，包括视频和图文）
+    2. m.douyin.com/share/user/{sec_uid}（移动端分享页，补充）
+    3. www.iesdouyin.com/share/user/{sec_uid}（旧版分享页，补充）
     严格过滤作者 sec_uid，确保不会抓取到其他用户的作品。
     """
     if not PLAYWRIGHT_AVAILABLE:
@@ -297,9 +297,11 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
 
     mobile_ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
                  'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1')
+    pc_ua = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+             '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
 
     def fetch_from_share_page(browser, host: str, tag: str):
-        """从移动端分享页抓取作品，通过 response 拦截 + 分页 API 获取所有类型作品。"""
+        """从移动端分享页抓取作品，通过 response 拦截获取作品。"""
         try:
             before = len(captured_awemes)
             print(f"  [{tag}] 访问 {host}/share/user/...")
@@ -320,7 +322,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     break
                 page.wait_for_timeout(1000)
 
-            # 滚动加载更多（用 mouse.wheel 更真实）
+            # 滚动加载更多
             prev = len(captured_awemes)
             for _ in range(5):
                 page.mouse.wheel(0, 3000)
@@ -329,67 +331,45 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     break
                 prev = len(captured_awemes)
 
-            # 用 page.evaluate 调用 v2 API 获取不同类型的作品
-            # 从分享页上下文调用，带 sec_user_id 参数，并用 sec_uid 过滤确保安全
-            if len(captured_awemes) < max_posts:
-                print(f"  [{tag}] 尝试用不同 aweme_type 获取作品...")
-                try:
-                    extra = page.evaluate("""async (secUid) => {
-                        const results = [];
-                        const seen = new Set();
-                        const debug = [];
-                        const types = ['', '&aweme_type=2', '&aweme_type=68'];
-                        for (const at of types) {
-                            let cursor = 0;
-                            for (let pg = 0; pg < 3; pg++) {
-                                const url = '/web/api/v2/aweme/post/?sec_user_id=' + secUid +
-                                    '&count=21&max_cursor=' + cursor + at;
-                                try {
-                                    const resp = await fetch(url, {method:'GET', credentials:'include'});
-                                    const data = await resp.json();
-                                    const list = data.aweme_list || data.awemes || [];
-                                    debug.push('type=' + (at||'default') + ' status=' + resp.status + ' count=' + list.length + ' has_more=' + data.has_more);
-                                    if (!list.length) break;
-                                    for (const item of list) {
-                                        if (item.aweme_id && !seen.has(item.aweme_id)) {
-                                            seen.add(item.aweme_id);
-                                            results.push(item);
-                                        }
-                                    }
-                                    if (!data.has_more || !data.max_cursor) break;
-                                    cursor = data.max_cursor;
-                                } catch(e) {
-                                    debug.push('type=' + (at||'default') + ' error=' + e.message);
-                                    break;
-                                }
-                            }
-                        }
-                        return {results: results, debug: debug};
-                    }""", sec_uid)
-                    if extra:
-                        debug_info = extra.get("debug", []) if isinstance(extra, dict) else []
-                        for d in debug_info:
-                            print(f"  [{tag}] {d}")
-                        items = extra.get("results", []) if isinstance(extra, dict) else (extra if isinstance(extra, list) else [])
-                        added = 0
-                        filtered_out = 0
-                        for a in items:
-                            aid = str(a.get("aweme_id", ""))
-                            author = a.get("author", {}) or {}
-                            author_sec = author.get("sec_uid") or ""
-                            if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
-                                if not author_sec or author_sec == sec_uid:
-                                    captured_awemes.append(a)
-                                    seen_raw_ids.add(aid)
-                                    added += 1
-                                else:
-                                    filtered_out += 1
-                        if added:
-                            print(f"  [{tag}] API +{added} (累计 {len(captured_awemes)})")
-                        if filtered_out:
-                            print(f"  [{tag}] 过滤掉 {filtered_out} 条非目标用户作品")
-                except Exception as e:
-                    print(f"  [{tag}] API异常: {e}")
+            print(f"  [{tag}] 完成，新增 {len(captured_awemes) - before} 条")
+            ctx.close()
+        except Exception as e:
+            print(f"  [{tag}] 异常: {e}")
+
+    def fetch_from_pc_page(browser):
+        """从PC端 douyin.com/user/{sec_uid} 抓取作品（仅response拦截）。
+
+        PC端API /aweme/v1/web/aweme/post/ 返回所有类型作品（视频+图文），
+        页面自己生成 a_bogus 签名，我们只拦截响应。严格 sec_uid 过滤防串号。
+        """
+        tag = 'pc'
+        try:
+            before = len(captured_awemes)
+            print(f"  [{tag}] 访问 douyin.com/user/...")
+            ctx = browser.new_context(
+                user_agent=pc_ua,
+                viewport={'width': 1280, 'height': 800},
+                locale='zh-CN', timezone_id='Asia/Shanghai',
+            )
+            ctx.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+            page = ctx.new_page()
+            page.on('response', make_on_response(tag))
+            page.goto(f'https://www.douyin.com/user/{sec_uid}',
+                       wait_until='domcontentloaded', timeout=45000)
+            # 等待初始 API 响应
+            for _ in range(20):
+                if len(captured_awemes) > before:
+                    break
+                page.wait_for_timeout(1000)
+
+            # 滚动加载更多
+            prev = len(captured_awemes)
+            for _ in range(8):
+                page.mouse.wheel(0, 5000)
+                page.wait_for_timeout(2500)
+                if len(captured_awemes) == prev:
+                    break
+                prev = len(captured_awemes)
 
             print(f"  [{tag}] 完成，新增 {len(captured_awemes) - before} 条")
             ctx.close()
@@ -406,10 +386,13 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             ],
         )
 
-        # 来源1: m.douyin.com 分享页
+        # 来源1: PC端 douyin.com 用户主页（返回所有类型作品，包括视频）
+        fetch_from_pc_page(browser)
+
+        # 来源2: m.douyin.com 分享页（移动端，补充）
         fetch_from_share_page(browser, 'm.douyin.com', 'm')
 
-        # 来源2: iesdouyin.com 分享页
+        # 来源3: iesdouyin.com 分享页（旧版，补充）
         fetch_from_share_page(browser, 'www.iesdouyin.com', 'ies')
 
         browser.close()
