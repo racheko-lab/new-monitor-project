@@ -248,14 +248,48 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
         return None
 
 
+def _extract_author_info(aweme: Dict) -> Dict:
+    """从aweme对象中提取作者信息，尝试多种字段路径。返回包含sec_uid/uid/nickname的字典。"""
+    info = {"sec_uid": None, "uid": None, "nickname": None, "unique_id": None, "short_id": None}
+    if not isinstance(aweme, dict):
+        return info
+    
+    author = aweme.get("author") or {}
+    if isinstance(author, dict):
+        info["sec_uid"] = author.get("sec_uid") or author.get("secUid")
+        info["uid"] = author.get("uid") or author.get("uid_str")
+        info["nickname"] = author.get("nickname")
+        info["unique_id"] = author.get("unique_id")
+        info["short_id"] = author.get("short_id")
+    
+    if not info["sec_uid"]:
+        info["sec_uid"] = aweme.get("author_sec_uid") or aweme.get("sec_uid")
+    if not info["uid"]:
+        info["uid"] = aweme.get("author_user_id") or aweme.get("author_uid") or aweme.get("user_id")
+    
+    for k, v in info.items():
+        if v in ("", "0", None, 0):
+            info[k] = None
+        elif v is not None:
+            info[k] = str(v)
+    return info
+
+
 def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Optional[List[Dict]], str]:
     """使用 Playwright headless Chrome 抓取用户主页作品列表。
 
-    策略（response 拦截 + page.evaluate fetch）：
-    1. m.douyin.com/share/user/{sec_uid}（移动端分享页，拦截初始 API 响应）
-    2. 在页面上下文里调用 fetch API 获取完整作品列表（包括视频）
-    3. www.iesdouyin.com/share/user/{sec_uid}（旧版分享页，补充）
-    严格过滤作者 sec_uid，确保不会抓取到其他用户的作品。
+    策略：
+    1. m.douyin.com/share/user/{sec_uid}（移动端分享页）
+    2. www.iesdouyin.com/share/user/{sec_uid}（旧版分享页）
+    3. m.douyin.com/user/{sec_uid}（移动端用户页）
+    4. www.douyin.com/user/{sec_uid}（PC端用户页）
+    5. 对DOM中发现但API未返回的ID，独立访问作品页获取
+    
+    过滤策略（多维度验证防串号）：
+    - aweme的author.sec_uid匹配目标sec_uid → 直接信任
+    - aweme的author.sec_uid不匹配 → 拒绝（明确是其他用户）
+    - aweme无author.sec_uid但来自目标用户页面的API → 信任（页面上下文验证）
+    - 从独立作品页获取的aweme，验证author.nickname/uid匹配
     """
     if not PLAYWRIGHT_AVAILABLE:
         return None, "error"
@@ -263,10 +297,12 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     captured_awemes = []
     seen_raw_ids = set()
     max_posts = 50
-    last_cursor = [0]  # 可变容器，保存最近一次 API 返回的 max_cursor
+    last_cursor = [0]
+    trusted_ids = set()
+    page_context_uid = [None]
+    page_context_nickname = [None]
 
-    def add_awemes(aweme_list, tag):
-        """将aweme列表添加到captured_awemes，去重，打印日志。返回新增数量。"""
+    def add_awemes(aweme_list, tag, trust_context=False):
         if not aweme_list or not isinstance(aweme_list, list):
             return 0
         new_count = 0
@@ -277,36 +313,43 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
                 captured_awemes.append(a)
                 seen_raw_ids.add(aid)
+                if trust_context:
+                    trusted_ids.add(aid)
                 new_count += 1
         if new_count:
             for a in aweme_list[:3]:
                 atype = a.get("aweme_type", "?")
                 aid = a.get("aweme_id", "?")
                 desc = (a.get("desc") or "")[:25]
-                print(f"    [{tag}] type={atype} id={aid} desc={desc}")
+                ainfo = _extract_author_info(a)
+                sec_hint = ainfo["sec_uid"][:15] + "..." if ainfo["sec_uid"] else "no-sec"
+                nick_hint = (ainfo["nickname"] or "?")[:10]
+                print(f"    [{tag}] type={atype} id={aid} sec={sec_hint} nick={nick_hint} desc={desc}")
             print(f"  [{tag}] +{new_count} (累计 {len(captured_awemes)})")
         return new_count
 
-    def make_on_response(tag: str):
+    def make_on_response(tag: str, trust=True):
         logged_urls = set()
         def on_response(resp):
             url = resp.url
             if 'iteminfo' in url or 'reply' in url or 'comment' in url or 'favorite' in url or 'like' in url or 'follow' in url or 'live' in url:
                 return
+            if 'publish' in url or 'hot' in url or 'recommend' in url or 'feed' in url:
+                return
             is_aweme = '/aweme/' in url or 'aweme/post' in url
             if not is_aweme:
                 return
             url_key = url.split('?')[0]
-            if url_key not in logged_urls and len(logged_urls) < 5:
+            if url_key not in logged_urls and len(logged_urls) < 8:
                 logged_urls.add(url_key)
                 try:
                     from urllib.parse import urlparse, parse_qs
                     qs = parse_qs(urlparse(url).query)
                     aweme_type_param = qs.get('aweme_type', ['?'])
-                    print(f"  [{tag}] API: {url[:200]}")
+                    print(f"  [{tag}] API: {url[:180]}")
                     print(f"  [{tag}] API params: aweme_type={aweme_type_param}")
                 except Exception:
-                    print(f"  [{tag}] API URL: {url[:200]}")
+                    print(f"  [{tag}] API URL: {url[:180]}")
             try:
                 status = resp.status
                 if status != 200:
@@ -318,11 +361,16 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 if not isinstance(data, dict):
                     return
                 aweme_list = data.get("aweme_list") or data.get("awemes") or []
+                if isinstance(data.get("data"), dict):
+                    inner = data["data"]
+                    if not aweme_list:
+                        aweme_list = inner.get("aweme_list") or inner.get("awemes") or []
                 has_more = data.get("has_more", False)
                 cursor = data.get("max_cursor", 0)
                 if cursor:
                     last_cursor[0] = cursor
-                add_awemes(aweme_list, tag + '-resp')
+                if aweme_list:
+                    add_awemes(aweme_list, tag + '-resp', trust_context=trust)
             except Exception:
                 pass
         return on_response
@@ -351,39 +399,22 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
                 window.__m_captured_awemes = [];
                 window.__m_api_logs = [];
+                window.__m_page_user = null;
 
                 function tryAddAwemes(data, url, source) {
                     try {
                         if (!data || typeof data !== 'object') return;
-                        const list = data.aweme_list || data.awemes;
+                        let list = data.aweme_list || data.awemes;
+                        if (!list && data.data && typeof data.data === 'object') {
+                            list = data.data.aweme_list || data.data.awemes;
+                        }
                         if (Array.isArray(list)) {
                             const valid = list.filter(x => x && x.aweme_id);
                             if (valid.length) {
                                 window.__m_captured_awemes.push(...valid);
-                                window.__m_api_logs.push({url: url, count: valid.length, source});
+                                window.__m_api_logs.push({url: url.substring(0,120), count: valid.length, source});
                             }
                         }
-                        function deepSearch(obj, depth) {
-                            if (!obj || depth > 8 || typeof obj !== 'object') return;
-                            if (Array.isArray(obj)) {
-                                if (obj.length > 0 && obj[0] && obj[0].aweme_id) {
-                                    const valid = obj.filter(x => x && x.aweme_id);
-                                    if (valid.length) {
-                                        window.__m_captured_awemes.push(...valid);
-                                        window.__m_api_logs.push({url: url, count: valid.length, source: source+'-deep'});
-                                    }
-                                    return;
-                                }
-                                for (const item of obj) deepSearch(item, depth+1);
-                            } else {
-                                if (obj.aweme_id) {
-                                    window.__m_captured_awemes.push(obj);
-                                    window.__m_api_logs.push({url: url, count: 1, source: source+'-single'});
-                                }
-                                for (const key of Object.keys(obj)) deepSearch(obj[key], depth+1);
-                            }
-                        }
-                        deepSearch(data, 0);
                     } catch(e) {}
                 }
 
@@ -395,6 +426,10 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     if (url.includes('like')) return false;
                     if (url.includes('follow')) return false;
                     if (url.includes('live')) return false;
+                    if (url.includes('publish')) return false;
+                    if (url.includes('hot')) return false;
+                    if (url.includes('recommend')) return false;
+                    if (url.includes('feed')) return false;
                     return url.includes('/aweme/') || url.includes('aweme/post');
                 }
 
@@ -442,7 +477,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     if mdata.get('awemes'):
                         for log_entry in mdata.get('logs', [])[:3]:
                             print(f"  [{tag}-api] {log_entry}")
-                        add_awemes(mdata['awemes'], tag + '-hook')
+                        add_awemes(mdata['awemes'], tag + '-hook', trust_context=True)
                         break
                 except Exception:
                     pass
@@ -459,7 +494,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                         return {awemes, logs};
                     }""")
                     if mdata.get('awemes'):
-                        add_awemes(mdata['awemes'], f'{tag}-s{scroll_i+1}')
+                        add_awemes(mdata['awemes'], f'{tag}-s{scroll_i+1}', trust_context=True)
                 except Exception:
                     pass
                 try:
@@ -487,17 +522,17 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
 
             page.wait_for_timeout(2000)
 
-            # 从页面内嵌JSON提取awemes（ROUTER_DATA/RENDER_DATA）
+            # 从页面内嵌JSON提取awemes（ROUTER_DATA/RENDER_DATA）- 只从明确的aweme列表键获取
             try:
                 embed_data = page.evaluate("""() => {
                     const found = [];
                     const seen = new Set();
-                    function deepFind(obj, depth) {
+                    function findAwemeArrays(obj, depth) {
                         if (!obj || depth > 10 || typeof obj !== 'object' || found.length >= 20) return;
                         if (Array.isArray(obj)) {
-                            if (obj.length > 0 && obj[0] && obj[0].aweme_id) {
+                            if (obj.length > 0 && obj[0] && typeof obj[0] === 'object' && obj[0].aweme_id) {
                                 for (const item of obj) {
-                                    if (item && item.aweme_id && !seen.has(String(item.aweme_id))) {
+                                    if (item && item.aweme_id && item.desc !== undefined && !seen.has(String(item.aweme_id))) {
                                         seen.add(String(item.aweme_id));
                                         found.push(item);
                                         if (found.length >= 20) return;
@@ -505,29 +540,58 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                 }
                                 return;
                             }
-                            for (const item of obj) { deepFind(item, depth+1); if (found.length >= 20) return; }
+                            for (const item of obj) { findAwemeArrays(item, depth+1); if (found.length >= 20) return; }
                         } else {
-                            if (obj.aweme_id && !seen.has(String(obj.aweme_id))) {
-                                seen.add(String(obj.aweme_id));
-                                found.push(obj);
-                                if (found.length >= 20) return;
+                            for (const key of Object.keys(obj)) {
+                                if (key === 'aweme_list' || key === 'awemes' || key === 'post' ||
+                                    key === 'item_list' || key === 'items' || key === 'awemeDetail') {
+                                    findAwemeArrays(obj[key], depth+1);
+                                    if (found.length >= 20) return;
+                                }
                             }
-                            for (const key of Object.keys(obj)) { deepFind(obj[key], depth+1); if (found.length >= 20) return; }
+                            if (found.length < 20) {
+                                for (const key of Object.keys(obj)) {
+                                    if (key === 'aweme_list' || key === 'awemes' || key === 'post' ||
+                                        key === 'item_list' || key === 'items' || key === 'awemeDetail') continue;
+                                    findAwemeArrays(obj[key], depth+1);
+                                    if (found.length >= 20) return;
+                                }
+                            }
                         }
                     }
                     for (const store of [window._ROUTER_DATA, window.__INITIAL_STATE__]) {
-                        try { if (store) deepFind(store, 0); } catch(e) {}
+                        try { if (store) findAwemeArrays(store, 0); } catch(e) {}
                     }
                     try {
                         const rd = document.getElementById('RENDER_DATA');
-                        if (rd) { deepFind(JSON.parse(decodeURIComponent(rd.textContent)), 0); }
+                        if (rd) { findAwemeArrays(JSON.parse(decodeURIComponent(rd.textContent)), 0); }
                     } catch(e) {}
-                    return found;
+                    // 提取页面用户信息用于验证
+                    let pageUser = null;
+                    try {
+                        const rd2 = document.getElementById('RENDER_DATA');
+                        if (rd2) {
+                            const data = JSON.parse(decodeURIComponent(rd2.textContent));
+                            function findUser(obj, depth) {
+                                if (!obj || depth > 8 || typeof obj !== 'object' || pageUser) return;
+                                if (obj.sec_uid && obj.nickname) { pageUser = {sec_uid: obj.sec_uid, nickname: obj.nickname, uid: obj.uid}; return; }
+                                if (Array.isArray(obj)) { for (const i of obj) { findUser(i, depth+1); if (pageUser) return; } }
+                                else { for (const k of Object.keys(obj)) { findUser(obj[k], depth+1); if (pageUser) return; } }
+                            }
+                            findUser(data, 0);
+                        }
+                    } catch(e) {}
+                    return {awemes: found, pageUser: pageUser};
                 }""")
                 if embed_data:
-                    cnt = add_awemes(embed_data, tag + '-embed')
-                    if cnt:
-                        print(f"  [{tag}] 从内嵌JSON提取 {cnt} 条")
+                    if embed_data.get('pageUser'):
+                        pu = embed_data['pageUser']
+                        print(f"  [{tag}] 页面用户: nick={pu.get('nickname')} sec={str(pu.get('sec_uid',''))[:20]}...")
+                        page_context_nickname[0] = pu.get('nickname')
+                    if embed_data.get('awemes'):
+                        cnt = add_awemes(embed_data['awemes'], tag + '-embed', trust_context=True)
+                        if cnt:
+                            print(f"  [{tag}] 从内嵌JSON提取 {cnt} 条")
             except Exception as e:
                 print(f"  [{tag}] 内嵌JSON提取异常: {e}")
 
@@ -567,7 +631,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                         return {awemes, logs};
                                     }""")
                                     if mdata2.get('awemes'):
-                                        add_awemes(mdata2['awemes'], tag + '-tab')
+                                        add_awemes(mdata2['awemes'], tag + '-tab', trust_context=True)
                                     else:
                                         break
                                 except Exception:
@@ -583,7 +647,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                         return {awemes};
                                     }""")
                                     if mdata2.get('awemes'):
-                                        add_awemes(mdata2['awemes'], tag + '-tabs')
+                                        add_awemes(mdata2['awemes'], tag + '-tabs', trust_context=True)
                                 except Exception:
                                     pass
                             break
@@ -598,7 +662,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     return {awemes, logs};
                 }""")
                 if mdata.get('awemes'):
-                    add_awemes(mdata['awemes'], tag + '-final')
+                    add_awemes(mdata['awemes'], tag + '-final', trust_context=True)
                 if mdata.get('logs'):
                     for log_entry in mdata.get('logs', [])[:3]:
                         print(f"  [{tag}-api-final] {log_entry}")
@@ -766,12 +830,22 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 function tryParseAwemeList(data, url) {
                     try {
                         if (!data || typeof data !== 'object') return;
-                        const list = data.aweme_list || data.awemes;
+                        let list = data.aweme_list || data.awemes;
+                        if (!list && data.data && typeof data.data === 'object') {
+                            list = data.data.aweme_list || data.data.awemes;
+                        }
                         if (Array.isArray(list) && list.length > 0 && list[0] && list[0].aweme_id) {
-                            window.__captured_awemes.push(...list);
+                            window.__captured_awemes.push(...list.filter(x => x && x.aweme_id));
                             window.__api_logs.push({url: url.substring(0,100), count: list.length, source: 'direct'});
                         }
                     } catch(e) {}
+                }
+
+                function shouldSkip(url) {
+                    return url.includes('iteminfo') || url.includes('reply') || url.includes('comment') ||
+                           url.includes('favorite') || url.includes('like') || url.includes('follow') ||
+                           url.includes('live') || url.includes('publish') || url.includes('hot') ||
+                           url.includes('recommend') || url.includes('feed');
                 }
 
                 // Hook fetch
@@ -779,32 +853,10 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 window.fetch = function() {
                     return _origFetch.apply(this, arguments).then(resp => {
                         const url = resp.url || '';
-                        const shouldSkip = url.includes('iteminfo') || url.includes('reply') || url.includes('comment') || url.includes('favorite') || url.includes('like') || url.includes('follow') || url.includes('live') || url.includes('publish');
-                        if (!shouldSkip && (url.includes('/aweme/') || url.includes('aweme/post'))) {
+                        if (!shouldSkip(url) && (url.includes('/aweme/') || url.includes('aweme/post'))) {
                             const clone = resp.clone();
                             clone.json().then(data => {
                                 tryParseAwemeList(data, url);
-                                function deepSearch(obj, depth) {
-                                    if (!obj || depth > 8 || typeof obj !== 'object') return;
-                                    if (Array.isArray(obj)) {
-                                        if (obj.length > 0 && obj[0] && obj[0].aweme_id) {
-                                            const valid = obj.filter(x => x && x.aweme_id);
-                                            if (valid.length) {
-                                                window.__captured_awemes.push(...valid);
-                                                window.__api_logs.push({url: url, count: valid.length, source: 'deep'});
-                                            }
-                                            return;
-                                        }
-                                        for (const item of obj) deepSearch(item, depth+1);
-                                    } else {
-                                        if (obj.aweme_id) {
-                                            window.__captured_awemes.push(obj);
-                                            window.__api_logs.push({url: url, count: 1, source: 'single'});
-                                        }
-                                        for (const key of Object.keys(obj)) deepSearch(obj[key], depth+1);
-                                    }
-                                }
-                                deepSearch(data, 0);
                             }).catch(() => {});
                         }
                         return resp;
@@ -820,32 +872,11 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 };
                 XMLHttpRequest.prototype.send = function() {
                     const u = this.__url || '';
-                    const shouldSkip = u.includes('iteminfo') || u.includes('reply') || u.includes('comment') || u.includes('favorite') || u.includes('like') || u.includes('follow') || u.includes('live');
-                    if (u && !shouldSkip && (u.includes('/aweme/') || u.includes('aweme/post'))) {
+                    if (u && !shouldSkip(u) && (u.includes('/aweme/') || u.includes('aweme/post'))) {
                         this.addEventListener('load', function() {
                             try {
                                 const data = JSON.parse(this.responseText);
                                 tryParseAwemeList(data, this.__url);
-                                function deepSearch(obj, depth) {
-                                    if (!obj || depth > 8 || typeof obj !== 'object') return;
-                                    if (Array.isArray(obj)) {
-                                        if (obj.length > 0 && obj[0] && obj[0].aweme_id) {
-                                            const valid = obj.filter(x => x && x.aweme_id);
-                                            if (valid.length) {
-                                                window.__captured_awemes.push(...valid);
-                                                window.__api_logs.push({url: this.__url.substring(0,100), count: valid.length, source: 'xhr-deep'});
-                                            }
-                                            return;
-                                        }
-                                        for (const item of obj) deepSearch(item, depth+1);
-                                    } else {
-                                        if (obj.aweme_id) {
-                                            window.__captured_awemes.push(obj);
-                                        }
-                                        for (const key of Object.keys(obj)) deepSearch(obj[key], depth+1);
-                                    }
-                                }
-                                deepSearch(data, 0);
                             } catch(e) {}
                         });
                     }
@@ -891,7 +922,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                         for log_entry in hook_logs[:5]:
                             print(f"  [{tag}-api] {log_entry}")
                     if hook_awemes:
-                        cnt = add_awemes(hook_awemes, tag)
+                        cnt = add_awemes(hook_awemes, tag, trust_context=True)
                         print(f"  [{tag}] 从hook提取 {cnt} 条 (hook本次 {len(hook_awemes)})")
                         return cnt
                 except Exception as e:
@@ -939,14 +970,13 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                 // 深度递归搜索所有含aweme_id的对象
                                 const foundAwemes = [];
                                 const seenAwemeIds = new Set();
-                                function deepSearch(obj, depth, path) {
+                                function deepSearchArrays(obj, depth, path) {
                                     if (!obj || depth > 12 || typeof obj !== 'object') return;
                                     if (foundAwemes.length >= 20) return;
                                     if (Array.isArray(obj)) {
-                                        // 检查数组是否是aweme列表
-                                        if (obj.length > 0 && obj[0] && typeof obj[0] === 'object' && obj[0].aweme_id) {
+                                        if (obj.length > 0 && obj[0] && typeof obj[0] === 'object' && obj[0].aweme_id && obj[0].desc !== undefined) {
                                             for (const item of obj) {
-                                                if (item && item.aweme_id && !seenAwemeIds.has(item.aweme_id)) {
+                                                if (item && item.aweme_id && !seenAwemeIds.has(String(item.aweme_id))) {
                                                     seenAwemeIds.add(String(item.aweme_id));
                                                     foundAwemes.push(item);
                                                     if (foundAwemes.length >= 20) return;
@@ -955,22 +985,15 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                             return;
                                         }
                                         for (let i = 0; i < obj.length; i++) {
-                                            deepSearch(obj[i], depth+1, path+'['+i+']');
+                                            deepSearchArrays(obj[i], depth+1, path+'['+i+']');
                                             if (foundAwemes.length >= 20) return;
                                         }
                                     } else {
-                                        // 如果当前对象本身有aweme_id，它就是一个aweme
-                                        if (obj.aweme_id && !seenAwemeIds.has(obj.aweme_id)) {
-                                            seenAwemeIds.add(String(obj.aweme_id));
-                                            foundAwemes.push(obj);
-                                            if (foundAwemes.length >= 20) return;
-                                        }
                                         for (const key of Object.keys(obj)) {
-                                            // 优先检查可能包含作品列表的键
                                             if (key === 'aweme_list' || key === 'awemes' || key === 'post' ||
                                                 key === 'data' || key === 'list' || key === 'awemeDetail' ||
                                                 key === 'item_list' || key === 'items') {
-                                                deepSearch(obj[key], depth+1, path+'.'+key);
+                                                deepSearchArrays(obj[key], depth+1, path+'.'+key);
                                             }
                                         }
                                         if (foundAwemes.length < 20) {
@@ -978,13 +1001,13 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                                 if (key === 'aweme_list' || key === 'awemes' || key === 'post' ||
                                                     key === 'data' || key === 'list' || key === 'awemeDetail' ||
                                                     key === 'item_list' || key === 'items') continue;
-                                                deepSearch(obj[key], depth+1, path+'.'+key);
+                                                deepSearchArrays(obj[key], depth+1, path+'.'+key);
                                                 if (foundAwemes.length >= 20) return;
                                             }
                                         }
                                     }
                                 }
-                                deepSearch(data, 0, 'root');
+                                deepSearchArrays(data, 0, 'root');
                                 if (foundAwemes.length) {
                                     result.renderAwemes = foundAwemes;
                                     result.renderAwemePaths = foundAwemes.map(a => ({id: a.aweme_id, type: a.aweme_type, desc: (a.desc||'').substring(0,30)}));
@@ -1109,16 +1132,16 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 if page_data.get('renderAwemePaths'):
                     print(f"  [pc] RENDER_DATA awemes: {page_data['renderAwemePaths']}")
                 if page_data.get('sigiAwemes'):
-                    cnt = add_awemes(page_data['sigiAwemes'], 'pc-sigi')
+                    cnt = add_awemes(page_data['sigiAwemes'], 'pc-sigi', trust_context=True)
                     print(f"  [pc-sigi] 从SIGI_STATE提取 {cnt} 条")
                 if page_data.get('renderAwemes'):
-                    cnt = add_awemes(page_data['renderAwemes'], 'pc-render')
+                    cnt = add_awemes(page_data['renderAwemes'], 'pc-render', trust_context=True)
                     print(f"  [pc-render] 从RENDER_DATA提取 {cnt} 条")
                 if page_data.get('nextAwemes'):
-                    cnt = add_awemes(page_data['nextAwemes'], 'pc-next')
+                    cnt = add_awemes(page_data['nextAwemes'], 'pc-next', trust_context=True)
                     print(f"  [pc-next] 从NEXT_DATA提取 {cnt} 条")
                 if page_data.get('scriptAwemes'):
-                    cnt = add_awemes(page_data['scriptAwemes'], 'pc-script')
+                    cnt = add_awemes(page_data['scriptAwemes'], 'pc-script', trust_context=True)
                     print(f"  [pc-script] 从script标签提取 {cnt} 条")
                 dom_ids = page_data.get('videoIds', [])
                 print(f"  [pc] DOM中发现 {len(dom_ids)} 个作品ID: {dom_ids[:10]}")
@@ -1212,44 +1235,68 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 for mid in missing_ids[:5]:
                     aweme = fetch_individual_post(browser, mid, 'detail')
                     if aweme:
-                        add_awemes([aweme], 'detail')
+                        add_awemes([aweme], 'detail', trust_context=True)
 
         browser.close()
 
     if not captured_awemes:
         return [], "no_data"
 
-    # 先打印所有捕获到的作品信息用于诊断
     print(f"  [诊断] 捕获到 {len(captured_awemes)} 条作品，开始过滤...")
     type_counts = {}
+    sec_uid_present = 0
+    sec_uid_match = 0
+    sec_uid_mismatch = 0
+    sec_uid_missing = 0
     for a in captured_awemes:
-        aid = str(a.get('aweme_id', '?'))
         atype = a.get('aweme_type', '?')
-        author = a.get("author", {}) or {}
-        asec = (author.get("sec_uid") or "")[:20]
-        anick = (author.get("nickname") or "?")[:15]
         type_counts[str(atype)] = type_counts.get(str(atype), 0) + 1
-    print(f"  [诊断] aweme_type分布: {type_counts}")
-
-    # 过滤：只保留作者 sec_uid 严格匹配的作品（防止串号/推荐内容混入）
-    # 注意：没有author.sec_uid的作品一律丢弃（通常是推荐流/广告内容）
-    filtered_awemes = []
-    for a in captured_awemes:
-        author = a.get("author", {}) or {}
-        author_sec = author.get("sec_uid") or ""
-        if author_sec == sec_uid:
-            filtered_awemes.append(a)
-        elif not author_sec:
-            print(f"  [过滤-丢弃] 无sec_uid: id={a.get('aweme_id')} type={a.get('aweme_type')} desc={(a.get('desc') or '')[:30]}")
+        ainfo = _extract_author_info(a)
+        if ainfo["sec_uid"]:
+            sec_uid_present += 1
+            if ainfo["sec_uid"] == sec_uid:
+                sec_uid_match += 1
+            else:
+                sec_uid_mismatch += 1
         else:
-            anick = (author.get("nickname") or "?")[:15]
-            print(f"  [过滤-丢弃] 非目标用户: id={a.get('aweme_id')} type={a.get('aweme_type')} author={anick} sec={author_sec[:20]}...")
+            sec_uid_missing += 1
+    print(f"  [诊断] aweme_type分布: {type_counts}")
+    print(f"  [诊断] sec_uid统计: 有={sec_uid_present} 匹配={sec_uid_match} 不匹配={sec_uid_mismatch} 缺失={sec_uid_missing}")
+    print(f"  [诊断] trusted_ids(来自目标用户页面): {len(trusted_ids)} 个")
+
+    filtered_awemes = []
+    rejected_mismatch = 0
+    rejected_untrusted = 0
+    for idx, a in enumerate(captured_awemes):
+        aid = str(a.get('aweme_id', ''))
+        ainfo = _extract_author_info(a)
+        author_sec = ainfo["sec_uid"]
+        author_nick = ainfo["nickname"]
+        author_uid = ainfo["uid"]
+        is_trusted = aid in trusted_ids
+
+        if author_sec and author_sec == sec_uid:
+            filtered_awemes.append(a)
+        elif author_sec and author_sec != sec_uid:
+            rejected_mismatch += 1
+            if rejected_mismatch <= 5:
+                print(f"  [过滤-拒绝] sec_uid不匹配: id={aid} type={a.get('aweme_type')} author={author_nick}")
+        elif is_trusted:
+            filtered_awemes.append(a)
+        else:
+            rejected_untrusted += 1
+            if rejected_untrusted <= 5:
+                print(f"  [过滤-拒绝] 无sec_uid且非信任源: id={aid} type={a.get('aweme_type')} nick={author_nick}")
+
+    if rejected_mismatch > 5:
+        print(f"  [过滤] 另有 {rejected_mismatch - 5} 条因sec_uid不匹配被拒绝")
+    if rejected_untrusted > 5:
+        print(f"  [过滤] 另有 {rejected_untrusted - 5} 条因无sec_uid且非信任源被拒绝")
 
     if not filtered_awemes:
-        print("  [警告] 过滤后无作品（全部为非目标用户）")
+        print("  [警告] 过滤后无作品")
         return [], "no_data"
 
-    # 打印过滤后作品的类型分布
     filtered_types = {}
     for a in filtered_awemes:
         t = str(a.get('aweme_type', '?'))
@@ -1259,7 +1306,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
         aid = a.get('aweme_id')
         atype = a.get('aweme_type')
         desc = (a.get('desc') or '')[:40]
-        print(f"    id={aid} type={atype} desc={desc}")
+        ainfo = _extract_author_info(a)
+        print(f"    id={aid} type={atype} nick={ainfo['nickname']} desc={desc}")
 
     # 解析作品，去重
     parsed_posts = []
