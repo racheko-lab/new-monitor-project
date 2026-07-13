@@ -263,6 +263,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     captured_awemes = []
     seen_raw_ids = set()
     max_posts = 50
+    last_cursor = [0]  # 可变容器，保存最近一次 API 返回的 max_cursor
 
     def make_on_response(tag: str):
         def on_response(resp):
@@ -272,6 +273,9 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     data = resp.json()
                     aweme_list = data.get("aweme_list") or data.get("awemes") or []
                     has_more = data.get("has_more", False)
+                    cursor = data.get("max_cursor", 0)
+                    if cursor:
+                        last_cursor[0] = cursor
                     if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
                         new_count = 0
                         for a in aweme_list:
@@ -286,7 +290,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                 aid = a.get("aweme_id", "?")
                                 desc = (a.get("desc") or "")[:25]
                                 print(f"    [{tag}] type={atype} id={aid} desc={desc}")
-                            print(f"  [{tag}] 捕获 +{new_count} 条 (累计 {len(captured_awemes)}), has_more={has_more}")
+                            print(f"  [{tag}] +{new_count} (累计 {len(captured_awemes)}), has_more={has_more}, cursor={cursor}")
                 except Exception:
                     pass
         return on_response
@@ -295,9 +299,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                  'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1')
 
     def fetch_from_share_page(browser, host: str, tag: str):
-        """从移动端分享页抓取作品，通过 response 拦截获取 API 数据。
-        尝试点击不同 tab（作品/视频）以获取所有类型的作品。
-        """
+        """从移动端分享页抓取作品，通过 response 拦截 + 分页 API 获取所有类型作品。"""
         try:
             before = len(captured_awemes)
             print(f"  [{tag}] 访问 {host}/share/user/...")
@@ -312,43 +314,63 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             page.on('response', make_on_response(tag))
             page.goto(f'https://{host}/share/user/{sec_uid}',
                        wait_until='domcontentloaded', timeout=45000)
-            for _ in range(12):
+            # 等待初始 API 响应
+            for _ in range(15):
                 if len(captured_awemes) > before:
                     break
                 page.wait_for_timeout(1000)
-            # 用 Playwright locator 点击 tab（比 evaluate 更可靠）
-            for tab_text in ['作品', '视频']:
-                try:
-                    before_tab = len(captured_awemes)
-                    tab = page.locator(f'text="{tab_text}"').first
-                    tab.click(timeout=3000)
-                    print(f"  [{tag}] 点击tab: {tab_text}")
-                    page.wait_for_timeout(3000)
-                    prev = len(captured_awemes)
-                    for _ in range(5):
-                        try:
-                            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                        except Exception:
-                            page.mouse.wheel(0, 3000)
-                        page.wait_for_timeout(2000)
-                        if len(captured_awemes) == prev:
-                            break
-                        prev = len(captured_awemes)
-                    if len(captured_awemes) > before_tab:
-                        print(f"  [{tag}] tab={tab_text} 新增 {len(captured_awemes) - before_tab} 条")
-                except Exception:
-                    pass
-            # 默认滚动加载
+
+            # 滚动加载更多（用 mouse.wheel 更真实）
             prev = len(captured_awemes)
-            for _ in range(6):
-                try:
-                    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                except Exception:
-                    page.mouse.wheel(0, 3000)
+            for _ in range(5):
+                page.mouse.wheel(0, 3000)
                 page.wait_for_timeout(2000)
                 if len(captured_awemes) == prev:
                     break
                 prev = len(captured_awemes)
+
+            # 用 page.evaluate 分页获取更多作品
+            # 从 iesdouyin.com 页面上下文调用 v2 API，带 sec_user_id 参数，安全可靠
+            if last_cursor[0] and len(captured_awemes) < max_posts:
+                print(f"  [{tag}] 尝试分页获取更多作品 (cursor={last_cursor[0]})...")
+                try:
+                    extra = page.evaluate("""async (params) => {
+                        const results = [];
+                        let cursor = params.cursor;
+                        for (let i = 0; i < 5; i++) {
+                            const url = '/web/api/v2/aweme/post/?sec_user_id=' + params.secUid +
+                                '&count=21&max_cursor=' + cursor;
+                            try {
+                                const resp = await fetch(url, {method:'GET', credentials:'include'});
+                                const data = await resp.json();
+                                const list = data.aweme_list || data.awemes || [];
+                                if (!list.length) break;
+                                for (const item of list) {
+                                    results.push(item);
+                                }
+                                if (!data.has_more || !data.max_cursor) break;
+                                cursor = data.max_cursor;
+                            } catch(e) { break; }
+                        }
+                        return results;
+                    }""", {"secUid": sec_uid, "cursor": last_cursor[0]})
+                    if extra and isinstance(extra, list):
+                        added = 0
+                        for a in extra:
+                            aid = str(a.get("aweme_id", ""))
+                            # 严格验证 sec_uid 防止串号
+                            author = a.get("author", {}) or {}
+                            author_sec = author.get("sec_uid") or ""
+                            if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
+                                if not author_sec or author_sec == sec_uid:
+                                    captured_awemes.append(a)
+                                    seen_raw_ids.add(aid)
+                                    added += 1
+                        if added:
+                            print(f"  [{tag}] 分页 +{added} (累计 {len(captured_awemes)})")
+                except Exception as e:
+                    print(f"  [{tag}] 分页异常: {e}")
+
             print(f"  [{tag}] 完成，新增 {len(captured_awemes) - before} 条")
             ctx.close()
         except Exception as e:
