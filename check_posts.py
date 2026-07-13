@@ -254,7 +254,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
     status 为 'ok' / 'no_data' / 'error'。
 
-    策略：先访问PC端 douyin.com/user/{sec_uid} 拦截 aweme/v1/web/aweme/post
+    策略：PC端 douyin.com/user/{sec_uid} 拦截 aweme/v1/web/aweme/post
     （新接口，含图文笔记 type=68，浏览器自动生成 a_bogus 签名）。
     若PC端无数据，回退到移动端 m.douyin.com/share/user/{sec_uid}。
     """
@@ -277,8 +277,9 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
 
         def on_response(resp):
             url = resp.url
-            # 只拦截作品列表API，排除详情/发布等其他接口
-            if ('aweme/v1/web/aweme/post' in url or 'aweme/post' in url) and 'iteminfo' not in url:
+            if any(kw in url for kw in ['aweme/post', 'aweme/v1/web/aweme/post']):
+                if 'iteminfo' in url or 'publish' in url:
+                    return
                 try:
                     data = resp.json()
                     aweme_list = data.get("aweme_list") or data.get("awemes") or []
@@ -300,8 +301,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 except Exception:
                     pass
 
-        # ===== 尝试1：PC端 douyin.com/user/ =====
-        print("  [PC端] 访问用户主页...")
+        # PC端 + 移动端同时开context，PC端先跑
+        # PC端 context
         ctx_p = browser.new_context(
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                        '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -318,36 +319,62 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
         page_p.on('response', on_response)
 
         try:
-            # 先访问首页建立session/cookie
-            print("  [PC端] 先访问douyin.com首页...")
+            # 先访问首页
+            print("  [PC端] 访问douyin.com首页...")
             try:
                 page_p.goto('https://www.douyin.com/', wait_until='domcontentloaded', timeout=30000)
                 page_p.wait_for_timeout(3000)
             except Exception:
                 pass
 
-            # 再访问用户主页
+            # 访问用户主页，用 networkidle 等待SPA完全加载
             print(f"  [PC端] 跳转到用户主页...")
-            page_p.goto(f'https://www.douyin.com/user/{sec_uid}',
-                        wait_until='domcontentloaded', timeout=45000)
-            # 等待API触发（PC端需要更长时间加载SPA）
+            try:
+                page_p.goto(f'https://www.douyin.com/user/{sec_uid}',
+                            wait_until='networkidle', timeout=60000)
+            except PlaywrightTimeoutError:
+                print("  [PC端] networkidle超时，继续检查已捕获数据")
+            except Exception as e:
+                print(f"  [PC端] 页面异常: {e}")
+
+            # 额外等待API
             for _ in range(15):
                 if captured_awemes:
                     break
                 page_p.wait_for_timeout(1000)
-            # 滚动加载
+
             if captured_awemes:
+                # 滚动加载更多
                 for _ in range(2):
                     page_p.mouse.wheel(0, 2000)
                     page_p.wait_for_timeout(2000)
-            if not captured_awemes:
+                print(f"  [PC端] 成功捕获 {len(captured_awemes)} 条")
+            else:
                 print(f"  [PC端] 未捕获API，页面标题: {page_p.title()}")
+                # 打印所有捕获的请求URL用于调试
+                print("  [PC端] 尝试点击作品tab...")
+                try:
+                    # 可能在"喜欢"tab，需要点击"作品"tab
+                    tabs = page_p.query_selector_all('a, button, span, div')
+                    for tab in tabs[:50]:
+                        text = (tab.inner_text() or '').strip()
+                        if text == '作品':
+                            tab.click()
+                            page_p.wait_for_timeout(5000)
+                            print(f"  [PC端] 点击了作品tab，等待API...")
+                            for _ in range(10):
+                                if captured_awemes:
+                                    break
+                                page_p.wait_for_timeout(1000)
+                            break
+                except Exception:
+                    pass
         except Exception as e:
             print(f"  [PC端] 异常: {e}")
         finally:
             ctx_p.close()
 
-        # ===== 尝试2：移动端（PC端无数据时回退） =====
+        # 移动端回退
         if not captured_awemes:
             print("  [移动端] PC端无数据，回退到移动端分享页...")
             ctx_m = browser.new_context(
