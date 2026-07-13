@@ -406,15 +406,28 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             """)
             page = ctx.new_page()
             page.on('response', make_on_response('pc'))
-            page.goto(f'https://www.douyin.com/user/{sec_uid}',
-                      wait_until='domcontentloaded', timeout=45000)
+            try:
+                page.goto(f'https://www.douyin.com/user/{sec_uid}',
+                          wait_until='domcontentloaded', timeout=30000)
+            except Exception as e:
+                print(f"  [pc] goto异常(可忽略): {e}")
 
             print(f"  [pc] 页面URL: {page.url}")
-            try:
-                title = page.title()
-                print(f"  [pc] 页面标题: {title}")
-            except Exception:
-                pass
+            # 等待页面标题出现（表示JS渲染完成），最多等20秒
+            for _ in range(20):
+                try:
+                    t = page.title()
+                    if t and '抖音' in t:
+                        print(f"  [pc] 页面标题: {t}")
+                        break
+                except Exception:
+                    pass
+                page.wait_for_timeout(1000)
+            else:
+                try:
+                    print(f"  [pc] 页面标题(未达预期): {page.title()}")
+                except Exception:
+                    pass
 
             for _ in range(25):
                 if len(captured_awemes) > before:
@@ -443,40 +456,72 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                         }
                     } catch(e) { result.sources.SIGI_STATE_ERR = String(e); }
 
-                    // 2. 尝试从 RENDER_DATA script标签提取
+                    // 2. 尝试从 RENDER_DATA script标签提取（Douyin PC端SSR数据）
                     try {
                         const rd = document.getElementById('RENDER_DATA');
                         if (rd) {
-                            result.sources.RENDER_DATA = rd.textContent.substring(0, 200);
+                            result.sources.RENDER_DATA_len = rd.textContent.length;
+                            result.sources.RENDER_DATA = rd.textContent.substring(0, 300);
                             try {
                                 const decoded = decodeURIComponent(rd.textContent);
                                 const data = JSON.parse(decoded);
-                                // 在RENDER_DATA中查找aweme列表
-                                function findAwemes(obj, depth) {
-                                    if (!obj || depth > 5 || typeof obj !== 'object') return [];
+                                result.renderDataKeys = Object.keys(data).slice(0, 20);
+                                // 深度递归搜索所有含aweme_id的对象
+                                const foundAwemes = [];
+                                const seenAwemeIds = new Set();
+                                function deepSearch(obj, depth, path) {
+                                    if (!obj || depth > 12 || typeof obj !== 'object') return;
+                                    if (foundAwemes.length >= 20) return;
                                     if (Array.isArray(obj)) {
-                                        if (obj.length > 0 && obj[0] && obj[0].aweme_id) return obj;
-                                        for (const item of obj) {
-                                            const found = findAwemes(item, depth+1);
-                                            if (found.length) return found;
+                                        // 检查数组是否是aweme列表
+                                        if (obj.length > 0 && obj[0] && typeof obj[0] === 'object' && obj[0].aweme_id) {
+                                            for (const item of obj) {
+                                                if (item && item.aweme_id && !seenAwemeIds.has(item.aweme_id)) {
+                                                    seenAwemeIds.add(String(item.aweme_id));
+                                                    foundAwemes.push(item);
+                                                    if (foundAwemes.length >= 20) return;
+                                                }
+                                            }
+                                            return;
+                                        }
+                                        for (let i = 0; i < obj.length; i++) {
+                                            deepSearch(obj[i], depth+1, path+'['+i+']');
+                                            if (foundAwemes.length >= 20) return;
                                         }
                                     } else {
+                                        // 如果当前对象本身有aweme_id，它就是一个aweme
+                                        if (obj.aweme_id && !seenAwemeIds.has(obj.aweme_id)) {
+                                            seenAwemeIds.add(String(obj.aweme_id));
+                                            foundAwemes.push(obj);
+                                            if (foundAwemes.length >= 20) return;
+                                        }
                                         for (const key of Object.keys(obj)) {
-                                            if (key === 'aweme_list' || key === 'awemes') {
-                                                const val = obj[key];
-                                                if (Array.isArray(val) && val.length > 0 && val[0] && val[0].aweme_id) return val;
+                                            // 优先检查可能包含作品列表的键
+                                            if (key === 'aweme_list' || key === 'awemes' || key === 'post' ||
+                                                key === 'data' || key === 'list' || key === 'awemeDetail' ||
+                                                key === 'item_list' || key === 'items') {
+                                                deepSearch(obj[key], depth+1, path+'.'+key);
                                             }
-                                            const found = findAwemes(obj[key], depth+1);
-                                            if (found.length) return found;
+                                        }
+                                        if (foundAwemes.length < 20) {
+                                            for (const key of Object.keys(obj)) {
+                                                if (key === 'aweme_list' || key === 'awemes' || key === 'post' ||
+                                                    key === 'data' || key === 'list' || key === 'awemeDetail' ||
+                                                    key === 'item_list' || key === 'items') continue;
+                                                deepSearch(obj[key], depth+1, path+'.'+key);
+                                                if (foundAwemes.length >= 20) return;
+                                            }
                                         }
                                     }
-                                    return [];
                                 }
-                                const awemes = findAwemes(data, 0);
-                                if (awemes.length) {
-                                    result.renderAwemes = awemes.slice(0, 20);
+                                deepSearch(data, 0, 'root');
+                                if (foundAwemes.length) {
+                                    result.renderAwemes = foundAwemes;
+                                    result.renderAwemePaths = foundAwemes.map(a => ({id: a.aweme_id, type: a.aweme_type, desc: (a.desc||'').substring(0,30)}));
                                 }
-                            } catch(e2) { result.sources.RENDER_DATA_PARSE_ERR = String(e2); }
+                            } catch(e2) { result.sources.RENDER_DATA_PARSE_ERR = String(e2).substring(0,200); }
+                        } else {
+                            result.sources.NO_RENDER_DATA = true;
                         }
                     } catch(e) { result.sources.RENDER_DATA_ERR = String(e); }
 
@@ -589,6 +634,10 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     return result;
                 }""")
                 print(f"  [pc] 页面数据来源: {list(page_data.get('sources', {}).keys())}")
+                if page_data.get('renderDataKeys'):
+                    print(f"  [pc] RENDER_DATA keys: {page_data['renderDataKeys'][:15]}")
+                if page_data.get('renderAwemePaths'):
+                    print(f"  [pc] RENDER_DATA awemes: {page_data['renderAwemePaths']}")
                 if page_data.get('sigiAwemes'):
                     cnt = add_awemes(page_data['sigiAwemes'], 'pc-sigi')
                     print(f"  [pc-sigi] 从SIGI_STATE提取 {cnt} 条")
