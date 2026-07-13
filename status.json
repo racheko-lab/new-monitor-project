@@ -5,11 +5,11 @@
     "name": "峰哥亡命天涯",
     "uname": "峰哥亡命天涯",
     "avatar": "https://i2.hdslb.com/bfs/face/ae439693d6fd79a55b1b5f935ed6474ae6fba35b.jpg",
-    "status": "live",
+    "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-13T06:38:25.442827",
-    "duration": 0
+    "last_check": "2026-07-13T06:40:48.163114",
+    "duration": 271
   },
   "bilibili_3381141": {
     "platform": "bilibili",
@@ -20,7 +20,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-13T06:38:26.569329",
+    "last_check": "2026-07-13T06:40:48.918710",
     "duration": 12810
   },
   "douyin_ludamobiubiu": {
@@ -28,11 +28,11 @@
     "id": "ludamobiubiu",
     "name": "鲁大魔",
     "uname": "鲁大魔",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1538749da661a0405c0aef5f0123b769.jpeg?from=3067671334",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1538749da661a0405c0aef5f0123b769.jpeg?from=3067671334",
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-13T06:38:28.763446",
+    "last_check": "2026-07-13T06:40:50.543772",
     "duration": 859
   },
   "douyin_misssiir": {
@@ -44,7 +44,7 @@
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-13T06:38:29.789152",
+    "last_check": "2026-07-13T06:40:51.830723",
     "duration": 883
   }
 }
