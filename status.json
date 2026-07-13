@@ -8,7 +8,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-13T03:06:23.657982",
+    "last_check": "2026-07-13T03:08:28.730065",
     "duration": 0
   },
   "bilibili_3381141": {
@@ -20,7 +20,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-13T03:06:24.464099",
+    "last_check": "2026-07-13T03:08:29.682892",
     "duration": 12810
   },
   "douyin_ludamobiubiu": {
@@ -32,7 +32,7 @@
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-13T03:06:25.894354",
+    "last_check": "2026-07-13T03:08:32.505926",
     "duration": 859
   },
   "douyin_misssiir": {
@@ -44,7 +44,7 @@
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-13T03:06:27.737139",
+    "last_check": "2026-07-13T03:08:35.405751",
     "duration": 883
   }
 }
