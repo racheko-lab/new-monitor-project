@@ -221,6 +221,14 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
         url_list = cover_obj.get("url_list") or []
         if url_list:
             cover = url_list[0]
+        if not cover:
+            images = post.get("images") or post.get("image_list") or []
+            if images and len(images) > 0:
+                img0 = images[0]
+                if isinstance(img0, dict):
+                    img_urls = img0.get("url_list") or img0.get("download_url_list") or []
+                    if img_urls:
+                        cover = img_urls[0]
         # 作者头像（用于前端卡片展示，多字段兼容）
         author = post.get("author", {}) or {}
         avatar_obj = (author.get("avatar_thumb") or author.get("avatar_medium")
@@ -228,7 +236,20 @@ def parse_aweme(post: Dict, room_name: str) -> Optional[Dict]:
                       or author.get("avatar_300x300") or {})
         avatar_urls = avatar_obj.get("url_list") or []
         author_avatar = avatar_urls[0] if avatar_urls else None
-        post_url = f"https://www.douyin.com/video/{aweme_id}"
+        aweme_type = post.get("aweme_type", 0)
+        is_note = False
+        if aweme_type == 68:
+            is_note = True
+        elif aweme_type in (0, 2, 4, 55, 61, 150):
+            is_note = False
+        else:
+            images = post.get("images") or post.get("image_list") or []
+            if images and not video.get("play_addr"):
+                is_note = True
+        if is_note:
+            post_url = f"https://www.douyin.com/note/{aweme_id}"
+        else:
+            post_url = f"https://www.douyin.com/video/{aweme_id}"
         # 移动端 API 无 create_time，用 aweme_id 数值大小近似排序（snowflake ID 时间递增）
         sort_key = int(create_time) if create_time else int(aweme_id)
         return {
@@ -334,7 +355,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             url = resp.url
             if 'iteminfo' in url or 'reply' in url or 'comment' in url or 'favorite' in url or 'like' in url or 'follow' in url or 'live' in url:
                 return
-            if 'publish' in url or 'hot' in url or 'recommend' in url or 'feed' in url:
+            if 'publish' in url or 'hot' in url or 'recommend' in url or 'feed' in url or 'related' in url or 'similar' in url:
                 return
             is_aweme = '/aweme/' in url or 'aweme/post' in url
             if not is_aweme:
@@ -365,6 +386,14 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     inner = data["data"]
                     if not aweme_list:
                         aweme_list = inner.get("aweme_list") or inner.get("awemes") or []
+                    if not aweme_list and isinstance(inner.get("aweme_detail"), dict):
+                        ad = inner["aweme_detail"]
+                        if ad.get("aweme_id"):
+                            aweme_list = [ad]
+                if not aweme_list and isinstance(data.get("aweme_detail"), dict):
+                    ad = data["aweme_detail"]
+                    if ad.get("aweme_id"):
+                        aweme_list = [ad]
                 has_more = data.get("has_more", False)
                 cursor = data.get("max_cursor", 0)
                 if cursor:
@@ -407,6 +436,12 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                         let list = data.aweme_list || data.awemes;
                         if (!list && data.data && typeof data.data === 'object') {
                             list = data.data.aweme_list || data.data.awemes;
+                            if (!list && data.data.aweme_detail && data.data.aweme_detail.aweme_id) {
+                                list = [data.data.aweme_detail];
+                            }
+                        }
+                        if (!list && data.aweme_detail && data.aweme_detail.aweme_id) {
+                            list = [data.aweme_detail];
                         }
                         if (Array.isArray(list)) {
                             const valid = list.filter(x => x && x.aweme_id);
@@ -430,6 +465,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     if (url.includes('hot')) return false;
                     if (url.includes('recommend')) return false;
                     if (url.includes('feed')) return false;
+                    if (url.includes('related')) return false;
+                    if (url.includes('similar')) return false;
                     return url.includes('/aweme/') || url.includes('aweme/post');
                 }
 
@@ -686,12 +723,14 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     pass
 
     def fetch_individual_post(browser, aweme_id: str, tag: str = 'detail'):
-        """快速访问单个作品分享页，提取aweme数据。优化速度：短超时、少URL。"""
+        """快速访问单个作品分享页，提取aweme数据。同时尝试video和note两种URL。"""
         ctx = None
         urls_to_try = [
+            f'https://www.douyin.com/note/{aweme_id}',
+            f'https://www.douyin.com/video/{aweme_id}',
+            f'https://m.douyin.com/share/note/{aweme_id}',
             f'https://m.douyin.com/share/video/{aweme_id}',
             f'https://www.iesdouyin.com/share/video/{aweme_id}',
-            f'https://www.douyin.com/video/{aweme_id}',
         ]
         for url in urls_to_try:
             is_mobile = 'm.douyin' in url or 'iesdouyin' in url
@@ -839,6 +878,12 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                         let list = data.aweme_list || data.awemes;
                         if (!list && data.data && typeof data.data === 'object') {
                             list = data.data.aweme_list || data.data.awemes;
+                            if (!list && data.data.aweme_detail && data.data.aweme_detail.aweme_id) {
+                                list = [data.data.aweme_detail];
+                            }
+                        }
+                        if (!list && data.aweme_detail && data.aweme_detail.aweme_id) {
+                            list = [data.aweme_detail];
                         }
                         if (Array.isArray(list) && list.length > 0 && list[0] && list[0].aweme_id) {
                             window.__captured_awemes.push(...list.filter(x => x && x.aweme_id));
@@ -851,7 +896,8 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     return url.includes('iteminfo') || url.includes('reply') || url.includes('comment') ||
                            url.includes('favorite') || url.includes('like') || url.includes('follow') ||
                            url.includes('live') || url.includes('publish') || url.includes('hot') ||
-                           url.includes('recommend') || url.includes('feed');
+                           url.includes('recommend') || url.includes('feed') || url.includes('related') ||
+                           url.includes('similar');
                 }
 
                 // Hook fetch
