@@ -254,16 +254,16 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
     status 为 'ok' / 'no_data' / 'error'。
 
-    方案：移动端 m.douyin.com/share/user/{sec_uid}
-    - 移动端 API 同步更及时，新作品立即可见（PC 端 douyin.com 有 24h+ 延迟）
-    - 反爬较弱，无需 a_bogus 签名
-    - 拦截 /web/api/v2/aweme/post/ 接口响应获取作品列表
+    策略：先访问PC端 douyin.com/user/{sec_uid} 拦截 aweme/v1/web/aweme/post
+    （新接口，含图文笔记 type=68，浏览器自动生成 a_bogus 签名）。
+    若PC端无数据，回退到移动端 m.douyin.com/share/user/{sec_uid}。
     """
     if not PLAYWRIGHT_AVAILABLE:
         return None, "error"
 
     captured_awemes = []
-    max_posts = 50
+    seen_raw_ids = set()
+    max_posts = 30
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -274,82 +274,93 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 '--disable-dev-shm-usage',
             ],
         )
-        # 模拟 iPhone Safari 移动端
-        context = browser.new_context(
-            user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
-                       'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-            viewport={'width': 390, 'height': 844},
-            locale='zh-CN',
-            timezone_id='Asia/Shanghai',
-            is_mobile=True,
-            has_touch=True,
-        )
-        context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
-        page = context.new_page()
 
         def on_response(resp):
-            # 拦截移动端作品 API：m.douyin.com/web/api/v2/aweme/post/
-            if ('aweme/post' in resp.url or 'aweme/v1/web/aweme/post' in resp.url) and len(captured_awemes) < max_posts:
+            url = resp.url
+            # 只拦截作品列表API，排除详情/发布等其他接口
+            if ('aweme/v1/web/aweme/post' in url or 'aweme/post' in url) and 'iteminfo' not in url:
                 try:
                     data = resp.json()
-                    # 移动端 status_code 可能是 0 或不存在
                     aweme_list = data.get("aweme_list") or data.get("awemes") or []
                     if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
+                        new_count = 0
                         for a in aweme_list:
-                            if len(captured_awemes) < max_posts:
+                            aid = str(a.get("aweme_id", ""))
+                            if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
                                 captured_awemes.append(a)
-                        # 打印每个作品的类型和ID，用于排查图文笔记
-                        for a in aweme_list:
-                            atype = a.get("aweme_type", "?")
-                            aid = a.get("aweme_id", "?")
-                            desc = (a.get("desc") or "")[:25]
-                            ct = a.get("create_time", "无")
-                            print(f"    type={atype} id={aid} time={ct} desc={desc}")
-                        print(f"  捕获作品 API: +{len(aweme_list)} 条 (累计 {len(captured_awemes)})")
+                                seen_raw_ids.add(aid)
+                                new_count += 1
+                        if new_count:
+                            for a in aweme_list[:3]:
+                                atype = a.get("aweme_type", "?")
+                                aid = a.get("aweme_id", "?")
+                                desc = (a.get("desc") or "")[:25]
+                                print(f"    type={atype} id={aid} desc={desc}")
+                            print(f"  捕获 +{new_count} 条 (累计 {len(captured_awemes)})")
                 except Exception:
                     pass
 
-        page.on('response', on_response)
+        # ===== 尝试1：PC端 douyin.com/user/ =====
+        print("  [PC端] 访问用户主页...")
+        ctx_p = browser.new_context(
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                       '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            viewport={'width': 1280, 'height': 800},
+            locale='zh-CN', timezone_id='Asia/Shanghai',
+        )
+        ctx_p.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+        page_p = ctx_p.new_page()
+        page_p.on('response', on_response)
 
         try:
-            # 直接访问移动端用户主页（移动端反爬较弱，无需先访问首页）
-            user_url = f'https://m.douyin.com/share/user/{sec_uid}'
-            for attempt in range(2):
-                print(f"  访问移动端用户主页 (尝试 {attempt+1}/2)...")
-                try:
-                    page.goto(user_url, wait_until='domcontentloaded', timeout=45000)
-                except PlaywrightTimeoutError:
-                    print("  页面加载超时，继续等待 API")
-                except Exception as e:
-                    print(f"  页面加载异常: {e}")
+            page_p.goto(f'https://www.douyin.com/user/{sec_uid}',
+                        wait_until='domcontentloaded', timeout=45000)
+            # 等待API触发
+            for _ in range(10):
+                if captured_awemes:
+                    break
+                page_p.wait_for_timeout(1000)
+            # 滚动加载
+            if captured_awemes:
+                for _ in range(2):
+                    page_p.mouse.wheel(0, 2000)
+                    page_p.wait_for_timeout(2000)
+        except Exception as e:
+            print(f"  [PC端] 异常: {e}")
+        finally:
+            ctx_p.close()
 
-                # 等待作品 API 触发
+        # ===== 尝试2：移动端（PC端无数据时回退） =====
+        if not captured_awemes:
+            print("  [移动端] PC端无数据，回退到移动端分享页...")
+            ctx_m = browser.new_context(
+                user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
+                           'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+                viewport={'width': 390, 'height': 844},
+                locale='zh-CN', timezone_id='Asia/Shanghai',
+                is_mobile=True, has_touch=True,
+            )
+            ctx_m.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+            page_m = ctx_m.new_page()
+            page_m.on('response', on_response)
+
+            try:
+                page_m.goto(f'https://m.douyin.com/share/user/{sec_uid}',
+                            wait_until='domcontentloaded', timeout=45000)
                 for _ in range(10):
                     if captured_awemes:
                         break
-                    page.wait_for_timeout(1000)
-
-                # 始终滚动加载更多作品（即使已有数据，可能还有更新的在下一页）
-                prev_count = 0
-                for scroll_round in range(5):
-                    page.mouse.wheel(0, 2000)
-                    page.wait_for_timeout(2000)
-                    curr_count = len(captured_awemes)
-                    if curr_count == prev_count and scroll_round > 0:
-                        print(f"  滚动 {scroll_round+1} 轮，无新数据，停止")
-                        break
-                    prev_count = curr_count
-                    print(f"  滚动 {scroll_round+1} 轮，累计 {curr_count} 条")
-
-                if captured_awemes:
-                    break
+                    page_m.wait_for_timeout(1000)
                 if not captured_awemes:
-                    print(f"  本次未捕获，页面标题: {page.title()}")
-                    page.wait_for_timeout(2000)
-        except Exception as e:
-            print(f"  Playwright 抓取异常: {e}")
-        finally:
-            browser.close()
+                    for _ in range(3):
+                        page_m.mouse.wheel(0, 1000)
+                        page_m.wait_for_timeout(1500)
+            except Exception as e:
+                print(f"  [移动端] 异常: {e}")
+            finally:
+                ctx_m.close()
+
+        browser.close()
 
     if not captured_awemes:
         return [], "no_data"
