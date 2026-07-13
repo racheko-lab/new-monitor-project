@@ -254,9 +254,10 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
     status 为 'ok' / 'no_data' / 'error'。
 
-    策略：依次访问两个移动端分享页，拦截 aweme/post API 响应，合并结果。
-    1. iesdouyin.com/share/user/{sec_uid}（旧版分享页，可能返回更全的作品）
-    2. m.douyin.com/share/user/{sec_uid}（新版分享页，作为补充）
+    策略：
+    1. m.douyin.com/share/user/{sec_uid}（新版移动端分享页，主动滚动加载多页）
+    2. www.iesdouyin.com/share/user/{sec_uid}（旧版分享页，补充）
+    3. 从最新作品详情页 SSR 数据中补充（兜底）
     合并去重后按 sort_key 倒序，并过滤掉作者 sec_uid 不匹配的作品（防止串号）。
     """
     if not PLAYWRIGHT_AVAILABLE:
@@ -264,7 +265,37 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
 
     captured_awemes = []
     seen_raw_ids = set()
-    max_posts = 30
+    max_posts = 50
+
+    def make_on_response(tag: str):
+        def on_response(resp):
+            url = resp.url
+            if 'aweme/post' in url and 'iteminfo' not in url and 'publish' not in url:
+                try:
+                    data = resp.json()
+                    aweme_list = data.get("aweme_list") or data.get("awemes") or []
+                    has_more = data.get("has_more", False)
+                    if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
+                        new_count = 0
+                        for a in aweme_list:
+                            aid = str(a.get("aweme_id", ""))
+                            if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
+                                captured_awemes.append(a)
+                                seen_raw_ids.add(aid)
+                                new_count += 1
+                        if new_count:
+                            for a in aweme_list[:3]:
+                                atype = a.get("aweme_type", "?")
+                                aid = a.get("aweme_id", "?")
+                                desc = (a.get("desc") or "")[:25]
+                                print(f"    [{tag}] type={atype} id={aid} desc={desc}")
+                            print(f"  [{tag}] 捕获 +{new_count} 条 (累计 {len(captured_awemes)}), has_more={has_more}")
+                except Exception:
+                    pass
+        return on_response
+
+    mobile_ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
+                 'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1')
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -276,38 +307,9 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             ],
         )
 
-        def make_on_response(tag: str):
-            def on_response(resp):
-                url = resp.url
-                if 'aweme/post' in url and 'iteminfo' not in url and 'publish' not in url:
-                    try:
-                        data = resp.json()
-                        aweme_list = data.get("aweme_list") or data.get("awemes") or []
-                        if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
-                            new_count = 0
-                            for a in aweme_list:
-                                aid = str(a.get("aweme_id", ""))
-                                if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
-                                    captured_awemes.append(a)
-                                    seen_raw_ids.add(aid)
-                                    new_count += 1
-                            if new_count:
-                                for a in aweme_list[:3]:
-                                    atype = a.get("aweme_type", "?")
-                                    aid = a.get("aweme_id", "?")
-                                    desc = (a.get("desc") or "")[:25]
-                                    print(f"    [{tag}] type={atype} id={aid} desc={desc}")
-                                print(f"  [{tag}] 捕获 +{new_count} 条 (累计 {len(captured_awemes)})")
-                    except Exception:
-                        pass
-            return on_response
-
-        mobile_ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
-                     'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1')
-
-        # === 来源1: iesdouyin.com 分享页 ===
+        # === 来源1: m.douyin.com 分享页（主源，主动滚动加载多页） ===
         try:
-            print("  [iesdouyin] 访问分享页...")
+            print("  [m.douyin] 访问分享页...")
             ctx1 = browser.new_context(
                 user_agent=mobile_ua,
                 viewport={'width': 390, 'height': 844},
@@ -316,27 +318,29 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             )
             ctx1.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
             page1 = ctx1.new_page()
-            page1.on('response', make_on_response('ies'))
-            page1.goto(f'https://www.iesdouyin.com/share/user/{sec_uid}',
-                       wait_until='domcontentloaded', timeout=30000)
-            for _ in range(8):
+            page1.on('response', make_on_response('m'))
+            page1.goto(f'https://m.douyin.com/share/user/{sec_uid}',
+                       wait_until='domcontentloaded', timeout=45000)
+            for _ in range(10):
                 if captured_awemes:
                     break
                 page1.wait_for_timeout(1000)
-            if not captured_awemes:
-                for _ in range(2):
-                    page1.mouse.wheel(0, 1000)
-                    page1.wait_for_timeout(1500)
+            prev_count = 0
+            for scroll_round in range(5):
+                page1.mouse.wheel(0, 2000)
+                page1.wait_for_timeout(2000)
+                if len(captured_awemes) == prev_count:
+                    break
+                prev_count = len(captured_awemes)
+            print(f"  [m.douyin] 滚动加载完成，累计 {len(captured_awemes)} 条")
             ctx1.close()
         except Exception as e:
-            print(f"  [iesdouyin] 异常: {e}")
+            print(f"  [m.douyin] 异常: {e}")
 
-        # === 来源2: m.douyin.com 分享页（补充） ===
+        # === 来源2: iesdouyin.com 分享页（补充） ===
         try:
-            if captured_awemes:
-                print(f"  [m.douyin] 已有 {len(captured_awemes)} 条，尝试补充更多...")
-            else:
-                print("  [m.douyin] iesdouyin无数据，访问m.douyin.com分享页...")
+            before_count = len(captured_awemes)
+            print(f"  [iesdouyin] 已有 {before_count} 条，尝试补充更多...")
             ctx2 = browser.new_context(
                 user_agent=mobile_ua,
                 viewport={'width': 390, 'height': 844},
@@ -345,20 +349,20 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             )
             ctx2.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
             page2 = ctx2.new_page()
-            page2.on('response', make_on_response('m'))
-            page2.goto(f'https://m.douyin.com/share/user/{sec_uid}',
-                       wait_until='domcontentloaded', timeout=45000)
-            for _ in range(10):
-                if captured_awemes:
+            page2.on('response', make_on_response('ies'))
+            page2.goto(f'https://www.iesdouyin.com/share/user/{sec_uid}',
+                       wait_until='domcontentloaded', timeout=30000)
+            for _ in range(8):
+                if len(captured_awemes) > before_count:
                     break
                 page2.wait_for_timeout(1000)
-            if not captured_awemes:
-                for _ in range(3):
-                    page2.mouse.wheel(0, 1000)
-                    page2.wait_for_timeout(1500)
+            for _ in range(3):
+                page2.mouse.wheel(0, 2000)
+                page2.wait_for_timeout(1500)
+            print(f"  [iesdouyin] 完成，新增 {len(captured_awemes) - before_count} 条")
             ctx2.close()
         except Exception as e:
-            print(f"  [m.douyin] 异常: {e}")
+            print(f"  [iesdouyin] 异常: {e}")
 
         browser.close()
 
