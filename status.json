@@ -8,7 +8,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-13T03:46:30.164452",
+    "last_check": "2026-07-13T03:55:54.192171",
     "duration": 0
   },
   "bilibili_3381141": {
@@ -20,7 +20,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-07-13T03:46:31.279458",
+    "last_check": "2026-07-13T03:55:56.338784",
     "duration": 12810
   },
   "douyin_ludamobiubiu": {
@@ -28,11 +28,11 @@
     "id": "ludamobiubiu",
     "name": "鲁大魔",
     "uname": "鲁大魔",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1538749da661a0405c0aef5f0123b769.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1538749da661a0405c0aef5f0123b769.jpeg?from=3067671334",
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-13T03:46:33.797538",
+    "last_check": "2026-07-13T03:55:58.276988",
     "duration": 859
   },
   "douyin_misssiir": {
@@ -40,11 +40,11 @@
     "id": "misssiir",
     "name": "樱桃哥🍒（众包大王外卖技巧分享）",
     "uname": "樱桃哥🍒（众包大王外卖技巧分享）",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_d42b3d572f223c06c63c291b6b3635d9.jpeg?from=3067671334",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_d42b3d572f223c06c63c291b6b3635d9.jpeg?from=3067671334",
     "status": "offline",
     "title": "舞蹈",
     "viewers": null,
-    "last_check": "2026-07-13T03:46:35.267374",
+    "last_check": "2026-07-13T03:55:59.568148",
     "duration": 883
   }
 }
