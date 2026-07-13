@@ -254,16 +254,17 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
     status 为 'ok' / 'no_data' / 'error'。
 
-    方案：移动端 m.douyin.com/share/user/{sec_uid}
-    - 移动端 API 同步更及时，新作品立即可见（PC 端 douyin.com 有 24h+ 延迟）
-    - 反爬较弱，无需 a_bogus 签名
-    - 拦截 /web/api/v2/aweme/post/ 接口响应获取作品列表
+    双源抓取策略：
+    1. 移动端 m.douyin.com/share/user/{sec_uid} — 实时同步，但可能只返回视频
+    2. PC端 douyin.com/user/{sec_uid} — 包含视频+图文笔记，带 create_time
+    合并两源数据，按 create_time（优先）或 aweme_id 排序
     """
     if not PLAYWRIGHT_AVAILABLE:
         return None, "error"
 
     captured_awemes = []
-    max_posts = 30
+    seen_raw_ids = set()
+    max_posts = 50
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -274,69 +275,85 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 '--disable-dev-shm-usage',
             ],
         )
-        # 模拟 iPhone Safari 移动端
-        context = browser.new_context(
+
+        def make_response_handler(label):
+            def handler(resp):
+                if ('aweme/post' in resp.url or 'aweme/v1/web/aweme/post' in resp.url) and len(captured_awemes) < max_posts:
+                    try:
+                        data = resp.json()
+                        aweme_list = data.get("aweme_list") or data.get("awemes") or []
+                        if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
+                            new_count = 0
+                            for a in aweme_list:
+                                aid = str(a.get("aweme_id", ""))
+                                if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
+                                    captured_awemes.append(a)
+                                    seen_raw_ids.add(aid)
+                                    new_count += 1
+                            if new_count:
+                                print(f"  [{label}] 捕获 +{new_count} 条 (累计 {len(captured_awemes)})")
+                    except Exception:
+                        pass
+            return handler
+
+        # ===== 源1：移动端分享页（实时视频） =====
+        print("  [移动端] 访问分享页...")
+        ctx_m = browser.new_context(
             user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
                        'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
             viewport={'width': 390, 'height': 844},
-            locale='zh-CN',
-            timezone_id='Asia/Shanghai',
-            is_mobile=True,
-            has_touch=True,
+            locale='zh-CN', timezone_id='Asia/Shanghai',
+            is_mobile=True, has_touch=True,
         )
-        context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
-        page = context.new_page()
-
-        def on_response(resp):
-            # 拦截移动端作品 API：m.douyin.com/web/api/v2/aweme/post/
-            if ('aweme/post' in resp.url or 'aweme/v1/web/aweme/post' in resp.url) and len(captured_awemes) < max_posts:
-                try:
-                    data = resp.json()
-                    # 移动端 status_code 可能是 0 或不存在
-                    aweme_list = data.get("aweme_list") or data.get("awemes") or []
-                    if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
-                        for a in aweme_list:
-                            if len(captured_awemes) < max_posts:
-                                captured_awemes.append(a)
-                        print(f"  捕获作品 API: +{len(aweme_list)} 条 (累计 {len(captured_awemes)})")
-                except Exception:
-                    pass
-
-        page.on('response', on_response)
+        ctx_m.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+        page_m = ctx_m.new_page()
+        page_m.on('response', make_response_handler('移动端'))
 
         try:
-            # 直接访问移动端用户主页（移动端反爬较弱，无需先访问首页）
-            user_url = f'https://m.douyin.com/share/user/{sec_uid}'
-            for attempt in range(2):
+            page_m.goto(f'https://m.douyin.com/share/user/{sec_uid}',
+                        wait_until='domcontentloaded', timeout=45000)
+            for _ in range(8):
                 if captured_awemes:
                     break
-                print(f"  访问移动端用户主页 (尝试 {attempt+1}/2)...")
-                try:
-                    page.goto(user_url, wait_until='domcontentloaded', timeout=45000)
-                except PlaywrightTimeoutError:
-                    print("  页面加载超时，继续等待 API")
-                except Exception as e:
-                    print(f"  页面加载异常: {e}")
-
-                # 等待作品 API 触发
-                for _ in range(10):
-                    if captured_awemes:
-                        break
-                    page.wait_for_timeout(1000)
-
-                # 滚动触发加载
-                if not captured_awemes:
-                    for _ in range(3):
-                        page.mouse.wheel(0, 1000)
-                        page.wait_for_timeout(1500)
-
-                if not captured_awemes:
-                    print(f"  本次未捕获，页面标题: {page.title()}")
-                    page.wait_for_timeout(2000)
+                page_m.wait_for_timeout(1000)
+            if not captured_awemes:
+                for _ in range(3):
+                    page_m.mouse.wheel(0, 1000)
+                    page_m.wait_for_timeout(1500)
         except Exception as e:
-            print(f"  Playwright 抓取异常: {e}")
+            print(f"  [移动端] 异常: {e}")
         finally:
-            browser.close()
+            ctx_m.close()
+
+        # ===== 源2：PC端用户主页（视频+图文笔记） =====
+        print("  [PC端] 访问用户主页...")
+        ctx_p = browser.new_context(
+            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                       '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            viewport={'width': 1280, 'height': 800},
+            locale='zh-CN', timezone_id='Asia/Shanghai',
+        )
+        ctx_p.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+        page_p = ctx_p.new_page()
+        page_p.on('response', make_response_handler('PC端'))
+
+        try:
+            page_p.goto(f'https://www.douyin.com/user/{sec_uid}',
+                        wait_until='domcontentloaded', timeout=45000)
+            for _ in range(8):
+                if len(captured_awemes) >= 10:
+                    break
+                page_p.wait_for_timeout(1000)
+            # 滚动加载更多
+            for _ in range(3):
+                page_p.mouse.wheel(0, 1500)
+                page_p.wait_for_timeout(1500)
+        except Exception as e:
+            print(f"  [PC端] 异常: {e}")
+        finally:
+            ctx_p.close()
+
+        browser.close()
 
     if not captured_awemes:
         return [], "no_data"
