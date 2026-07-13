@@ -297,6 +297,9 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     mobile_ua = ('Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
                  'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1')
 
+    pc_ua = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+             '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -307,40 +310,47 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             ],
         )
 
-        # === 来源1: m.douyin.com 分享页（主源，主动滚动加载多页） ===
+        # === 来源1: PC端 douyin.com 用户主页（主源，数据最全） ===
         try:
-            print("  [m.douyin] 访问分享页...")
-            ctx1 = browser.new_context(
-                user_agent=mobile_ua,
-                viewport={'width': 390, 'height': 844},
+            print("  [PC端] 访问用户主页...")
+            ctx_pc = browser.new_context(
+                user_agent=pc_ua,
+                viewport={'width': 1280, 'height': 800},
                 locale='zh-CN', timezone_id='Asia/Shanghai',
-                is_mobile=True, has_touch=True,
             )
-            ctx1.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
-            page1 = ctx1.new_page()
-            page1.on('response', make_on_response('m'))
-            page1.goto(f'https://m.douyin.com/share/user/{sec_uid}',
-                       wait_until='domcontentloaded', timeout=45000)
+            ctx_pc.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+            page_pc = ctx_pc.new_page()
+            page_pc.on('response', make_on_response('pc'))
+            page_pc.goto(f'https://www.douyin.com/user/{sec_uid}',
+                         wait_until='domcontentloaded', timeout=45000)
             for _ in range(10):
                 if captured_awemes:
                     break
-                page1.wait_for_timeout(1000)
-            prev_count = 0
-            for scroll_round in range(5):
-                page1.mouse.wheel(0, 2000)
-                page1.wait_for_timeout(2000)
-                if len(captured_awemes) == prev_count:
-                    break
+                page_pc.wait_for_timeout(1000)
+            if not captured_awemes:
+                print("  [PC端] 初始未捕获API，尝试滚动...")
+                for _ in range(5):
+                    page_pc.mouse.wheel(0, 1500)
+                    page_pc.wait_for_timeout(2000)
+                    if captured_awemes:
+                        break
+            if captured_awemes:
                 prev_count = len(captured_awemes)
-            print(f"  [m.douyin] 滚动加载完成，累计 {len(captured_awemes)} 条")
-            ctx1.close()
+                for _ in range(5):
+                    page_pc.mouse.wheel(0, 2000)
+                    page_pc.wait_for_timeout(2000)
+                    if len(captured_awemes) == prev_count:
+                        break
+                    prev_count = len(captured_awemes)
+            print(f"  [PC端] 完成，累计 {len(captured_awemes)} 条")
+            ctx_pc.close()
         except Exception as e:
-            print(f"  [m.douyin] 异常: {e}")
+            print(f"  [PC端] 异常: {e}")
 
-        # === 来源2: iesdouyin.com 分享页（补充） ===
+        # === 来源2: m.douyin.com 分享页（补充/兜底） ===
         try:
             before_count = len(captured_awemes)
-            print(f"  [iesdouyin] 已有 {before_count} 条，尝试补充更多...")
+            print(f"  [m.douyin] 已有 {before_count} 条，尝试补充更多...")
             ctx2 = browser.new_context(
                 user_agent=mobile_ua,
                 viewport={'width': 390, 'height': 844},
@@ -349,18 +359,49 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             )
             ctx2.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
             page2 = ctx2.new_page()
-            page2.on('response', make_on_response('ies'))
-            page2.goto(f'https://www.iesdouyin.com/share/user/{sec_uid}',
+            page2.on('response', make_on_response('m'))
+            page2.goto(f'https://m.douyin.com/share/user/{sec_uid}',
+                       wait_until='domcontentloaded', timeout=45000)
+            for _ in range(10):
+                if len(captured_awemes) > before_count:
+                    break
+                page2.wait_for_timeout(1000)
+            prev_count = len(captured_awemes)
+            for _ in range(5):
+                page2.mouse.wheel(0, 2000)
+                page2.wait_for_timeout(2000)
+                if len(captured_awemes) == prev_count:
+                    break
+                prev_count = len(captured_awemes)
+            print(f"  [m.douyin] 完成，新增 {len(captured_awemes) - before_count} 条")
+            ctx2.close()
+        except Exception as e:
+            print(f"  [m.douyin] 异常: {e}")
+
+        # === 来源3: iesdouyin.com 分享页（兜底） ===
+        try:
+            before_count = len(captured_awemes)
+            print(f"  [iesdouyin] 已有 {before_count} 条，尝试补充更多...")
+            ctx3 = browser.new_context(
+                user_agent=mobile_ua,
+                viewport={'width': 390, 'height': 844},
+                locale='zh-CN', timezone_id='Asia/Shanghai',
+                is_mobile=True, has_touch=True,
+            )
+            ctx3.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+            page3 = ctx3.new_page()
+            page3.on('response', make_on_response('ies'))
+            page3.goto(f'https://www.iesdouyin.com/share/user/{sec_uid}',
                        wait_until='domcontentloaded', timeout=30000)
             for _ in range(8):
                 if len(captured_awemes) > before_count:
                     break
-                page2.wait_for_timeout(1000)
+                page3.wait_for_timeout(1000)
             for _ in range(3):
-                page2.mouse.wheel(0, 2000)
-                page2.wait_for_timeout(1500)
+                page3.mouse.wheel(0, 2000)
+                page3.wait_for_timeout(1500)
             print(f"  [iesdouyin] 完成，新增 {len(captured_awemes) - before_count} 条")
-            ctx2.close()
+            ctx3.close()
         except Exception as e:
             print(f"  [iesdouyin] 异常: {e}")
 
