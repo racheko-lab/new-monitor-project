@@ -329,36 +329,47 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     break
                 prev = len(captured_awemes)
 
-            # 用 page.evaluate 分页获取更多作品
-            # 从 iesdouyin.com 页面上下文调用 v2 API，带 sec_user_id 参数，安全可靠
-            if last_cursor[0] and len(captured_awemes) < max_posts:
-                print(f"  [{tag}] 尝试分页获取更多作品 (cursor={last_cursor[0]})...")
+            # 用 page.evaluate 调用 v2 API 获取不同类型的作品
+            # 从分享页上下文调用，带 sec_user_id 参数，并用 sec_uid 过滤确保安全
+            if len(captured_awemes) < max_posts:
+                print(f"  [{tag}] 尝试用不同 aweme_type 获取作品...")
                 try:
-                    extra = page.evaluate("""async (params) => {
+                    extra = page.evaluate("""async (secUid) => {
                         const results = [];
-                        let cursor = params.cursor;
-                        for (let i = 0; i < 5; i++) {
-                            const url = '/web/api/v2/aweme/post/?sec_user_id=' + params.secUid +
-                                '&count=21&max_cursor=' + cursor;
-                            try {
-                                const resp = await fetch(url, {method:'GET', credentials:'include'});
-                                const data = await resp.json();
-                                const list = data.aweme_list || data.awemes || [];
-                                if (!list.length) break;
-                                for (const item of list) {
-                                    results.push(item);
-                                }
-                                if (!data.has_more || !data.max_cursor) break;
-                                cursor = data.max_cursor;
-                            } catch(e) { break; }
+                        const seen = new Set();
+                        // 尝试不同 aweme_type 参数获取不同类型的作品
+                        // aweme_type 不传或=0: 默认（可能是图文或视频）
+                        // aweme_type=2: 视频
+                        // aweme_type=68: 图文
+                        const types = ['', '&aweme_type=2', '&aweme_type=68'];
+                        for (const at of types) {
+                            let cursor = 0;
+                            for (let page = 0; page < 3; page++) {
+                                const url = '/web/api/v2/aweme/post/?sec_user_id=' + secUid +
+                                    '&count=21&max_cursor=' + cursor + at;
+                                try {
+                                    const resp = await fetch(url, {method:'GET', credentials:'include'});
+                                    const data = await resp.json();
+                                    const list = data.aweme_list || data.awemes || [];
+                                    if (!list.length) break;
+                                    for (const item of list) {
+                                        if (item.aweme_id && !seen.has(item.aweme_id)) {
+                                            seen.add(item.aweme_id);
+                                            results.push(item);
+                                        }
+                                    }
+                                    if (!data.has_more || !data.max_cursor) break;
+                                    cursor = data.max_cursor;
+                                } catch(e) { break; }
+                            }
                         }
                         return results;
-                    }""", {"secUid": sec_uid, "cursor": last_cursor[0]})
+                    }""", sec_uid)
                     if extra and isinstance(extra, list):
                         added = 0
+                        filtered_out = 0
                         for a in extra:
                             aid = str(a.get("aweme_id", ""))
-                            # 严格验证 sec_uid 防止串号
                             author = a.get("author", {}) or {}
                             author_sec = author.get("sec_uid") or ""
                             if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
@@ -366,10 +377,14 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                     captured_awemes.append(a)
                                     seen_raw_ids.add(aid)
                                     added += 1
+                                else:
+                                    filtered_out += 1
                         if added:
-                            print(f"  [{tag}] 分页 +{added} (累计 {len(captured_awemes)})")
+                            print(f"  [{tag}] API +{added} (累计 {len(captured_awemes)})")
+                        if filtered_out:
+                            print(f"  [{tag}] 过滤掉 {filtered_out} 条非目标用户作品")
                 except Exception as e:
-                    print(f"  [{tag}] 分页异常: {e}")
+                    print(f"  [{tag}] API异常: {e}")
 
             print(f"  [{tag}] 完成，新增 {len(captured_awemes) - before} 条")
             ctx.close()
