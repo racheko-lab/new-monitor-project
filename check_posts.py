@@ -434,10 +434,32 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 if len(captured_awemes) > before_count:
                     break
                 page2.wait_for_timeout(1000)
-            prev_count = len(captured_awemes)
-            for _ in range(5):
-                page2.mouse.wheel(0, 2000)
+            # 尝试点击各种tab（作品/图文/视频等），获取更多类型的作品
+            print("  [m.douyin] 尝试点击不同的tab...")
+            try:
+                page2.evaluate("""() => {
+                    // 尝试查找并点击tab元素
+                    const tabTexts = ['作品', '视频', '图文', '全部'];
+                    for (const text of tabTexts) {
+                        const els = document.querySelectorAll('div, span, a, li');
+                        for (const el of els) {
+                            if (el.textContent.trim() === text) {
+                                el.click();
+                                break;
+                            }
+                        }
+                    }
+                }""")
                 page2.wait_for_timeout(2000)
+            except Exception:
+                pass
+            prev_count = len(captured_awemes)
+            for scroll_round in range(8):
+                try:
+                    page2.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                except Exception:
+                    page2.mouse.wheel(0, 3000)
+                page2.wait_for_timeout(2500)
                 if len(captured_awemes) == prev_count:
                     break
                 prev_count = len(captured_awemes)
