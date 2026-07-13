@@ -337,20 +337,18 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                     extra = page.evaluate("""async (secUid) => {
                         const results = [];
                         const seen = new Set();
-                        // 尝试不同 aweme_type 参数获取不同类型的作品
-                        // aweme_type 不传或=0: 默认（可能是图文或视频）
-                        // aweme_type=2: 视频
-                        // aweme_type=68: 图文
+                        const debug = [];
                         const types = ['', '&aweme_type=2', '&aweme_type=68'];
                         for (const at of types) {
                             let cursor = 0;
-                            for (let page = 0; page < 3; page++) {
+                            for (let pg = 0; pg < 3; pg++) {
                                 const url = '/web/api/v2/aweme/post/?sec_user_id=' + secUid +
                                     '&count=21&max_cursor=' + cursor + at;
                                 try {
                                     const resp = await fetch(url, {method:'GET', credentials:'include'});
                                     const data = await resp.json();
                                     const list = data.aweme_list || data.awemes || [];
+                                    debug.push('type=' + (at||'default') + ' status=' + resp.status + ' count=' + list.length + ' has_more=' + data.has_more);
                                     if (!list.length) break;
                                     for (const item of list) {
                                         if (item.aweme_id && !seen.has(item.aweme_id)) {
@@ -360,15 +358,22 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                     }
                                     if (!data.has_more || !data.max_cursor) break;
                                     cursor = data.max_cursor;
-                                } catch(e) { break; }
+                                } catch(e) {
+                                    debug.push('type=' + (at||'default') + ' error=' + e.message);
+                                    break;
+                                }
                             }
                         }
-                        return results;
+                        return {results: results, debug: debug};
                     }""", sec_uid)
-                    if extra and isinstance(extra, list):
+                    if extra:
+                        debug_info = extra.get("debug", []) if isinstance(extra, dict) else []
+                        for d in debug_info:
+                            print(f"  [{tag}] {d}")
+                        items = extra.get("results", []) if isinstance(extra, dict) else (extra if isinstance(extra, list) else [])
                         added = 0
                         filtered_out = 0
-                        for a in extra:
+                        for a in items:
                             aid = str(a.get("aweme_id", ""))
                             author = a.get("author", {}) or {}
                             author_sec = author.get("sec_uid") or ""
