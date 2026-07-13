@@ -254,18 +254,16 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
     返回 (parsed_posts, status)：parsed_posts 为解析后的作品列表（可能为空），
     status 为 'ok' / 'no_data' / 'error'。
 
-    策略：
-    1. 移动端 m.douyin.com/share/user/{sec_uid} 拦截 API 获取视频（带完整元数据）
-    2. PC端 douyin.com/user/{sec_uid} 从DOM提取所有作品链接（含图文笔记）
-    3. 合并：API数据优先，DOM补充缺失的笔记
+    方案：移动端 m.douyin.com/share/user/{sec_uid}
+    - 移动端 API 同步更及时，新作品立即可见（PC 端 douyin.com 有 24h+ 延迟）
+    - 反爬较弱，无需 a_bogus 签名
+    - 拦截 /web/api/v2/aweme/post/ 接口响应获取作品列表
     """
     if not PLAYWRIGHT_AVAILABLE:
         return None, "error"
 
     captured_awemes = []
-    seen_raw_ids = set()
-    max_posts = 50
-    dom_post_ids = []  # [(aweme_id, title_text), ...]
+    max_posts = 30
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -276,161 +274,88 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 '--disable-dev-shm-usage',
             ],
         )
-
-        def make_response_handler(label):
-            def handler(resp):
-                if ('aweme/post' in resp.url or 'aweme/v1/web/aweme/post' in resp.url) and len(captured_awemes) < max_posts:
-                    try:
-                        data = resp.json()
-                        aweme_list = data.get("aweme_list") or data.get("awemes") or []
-                        if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
-                            new_count = 0
-                            for a in aweme_list:
-                                aid = str(a.get("aweme_id", ""))
-                                if aid and aid not in seen_raw_ids and len(captured_awemes) < max_posts:
-                                    captured_awemes.append(a)
-                                    seen_raw_ids.add(aid)
-                                    new_count += 1
-                            if new_count:
-                                print(f"  [{label}] API捕获 +{new_count} 条 (累计 {len(captured_awemes)})")
-                    except Exception:
-                        pass
-            return handler
-
-        # ===== 源1：移动端分享页（实时视频 + DOM链接） =====
-        print("  [移动端] 访问分享页...")
-        ctx_m = browser.new_context(
+        # 模拟 iPhone Safari 移动端
+        context = browser.new_context(
             user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
                        'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
             viewport={'width': 390, 'height': 844},
-            locale='zh-CN', timezone_id='Asia/Shanghai',
-            is_mobile=True, has_touch=True,
+            locale='zh-CN',
+            timezone_id='Asia/Shanghai',
+            is_mobile=True,
+            has_touch=True,
         )
-        ctx_m.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
-        page_m = ctx_m.new_page()
-        page_m.on('response', make_response_handler('移动端'))
+        context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
+        page = context.new_page()
+
+        def on_response(resp):
+            # 拦截移动端作品 API：m.douyin.com/web/api/v2/aweme/post/
+            if ('aweme/post' in resp.url or 'aweme/v1/web/aweme/post' in resp.url) and len(captured_awemes) < max_posts:
+                try:
+                    data = resp.json()
+                    # 移动端 status_code 可能是 0 或不存在
+                    aweme_list = data.get("aweme_list") or data.get("awemes") or []
+                    if aweme_list and isinstance(aweme_list[0], dict) and "aweme_id" in aweme_list[0]:
+                        for a in aweme_list:
+                            if len(captured_awemes) < max_posts:
+                                captured_awemes.append(a)
+                        # 打印每个作品的类型和ID，用于排查图文笔记
+                        for a in aweme_list:
+                            atype = a.get("aweme_type", "?")
+                            aid = a.get("aweme_id", "?")
+                            desc = (a.get("desc") or "")[:25]
+                            ct = a.get("create_time", "无")
+                            print(f"    type={atype} id={aid} time={ct} desc={desc}")
+                        print(f"  捕获作品 API: +{len(aweme_list)} 条 (累计 {len(captured_awemes)})")
+                except Exception:
+                    pass
+
+        page.on('response', on_response)
 
         try:
-            page_m.goto(f'https://m.douyin.com/share/user/{sec_uid}',
-                        wait_until='domcontentloaded', timeout=45000)
-            for _ in range(8):
+            # 直接访问移动端用户主页（移动端反爬较弱，无需先访问首页）
+            user_url = f'https://m.douyin.com/share/user/{sec_uid}'
+            for attempt in range(2):
                 if captured_awemes:
                     break
-                page_m.wait_for_timeout(1000)
-            if not captured_awemes:
-                for _ in range(3):
-                    page_m.mouse.wheel(0, 1000)
-                    page_m.wait_for_timeout(1500)
+                print(f"  访问移动端用户主页 (尝试 {attempt+1}/2)...")
+                try:
+                    page.goto(user_url, wait_until='domcontentloaded', timeout=45000)
+                except PlaywrightTimeoutError:
+                    print("  页面加载超时，继续等待 API")
+                except Exception as e:
+                    print(f"  页面加载异常: {e}")
 
-            # 从DOM提取所有作品链接（包括笔记）
-            try:
-                links = page_m.query_selector_all('a[href*="/video/"], a[href*="/note/"]')
-                for link in links:
-                    href = link.get_attribute('href') or ''
-                    for pattern in ['/video/', '/note/']:
-                        if pattern in href:
-                            parts = href.split(pattern)
-                            if len(parts) > 1:
-                                aid = parts[1].split('?')[0].split('/')[0]
-                                if aid.isdigit():
-                                    link_text = (link.inner_text() or '').strip()[:80]
-                                    existing_ids = {x[0] for x in dom_post_ids}
-                                    if aid not in existing_ids:
-                                        dom_post_ids.append((aid, link_text))
-                                        print(f"  [移动端DOM] {aid} text={link_text[:30]}")
-                if dom_post_ids:
-                    print(f"  [移动端] DOM提取 {len(dom_post_ids)} 个作品链接")
-            except Exception as e:
-                print(f"  [移动端] DOM提取异常: {e}")
+                # 等待作品 API 触发
+                for _ in range(10):
+                    if captured_awemes:
+                        break
+                    page.wait_for_timeout(1000)
+
+                # 滚动触发加载
+                if not captured_awemes:
+                    for _ in range(3):
+                        page.mouse.wheel(0, 1000)
+                        page.wait_for_timeout(1500)
+
+                if not captured_awemes:
+                    print(f"  本次未捕获，页面标题: {page.title()}")
+                    page.wait_for_timeout(2000)
         except Exception as e:
-            print(f"  [移动端] 异常: {e}")
+            print(f"  Playwright 抓取异常: {e}")
         finally:
-            ctx_m.close()
+            browser.close()
 
-        # ===== 源2：PC端用户主页（DOM提取笔记） =====
-        print("  [PC端] 访问用户主页...")
-        ctx_p = browser.new_context(
-            user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                       '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            viewport={'width': 1280, 'height': 800},
-            locale='zh-CN', timezone_id='Asia/Shanghai',
-        )
-        ctx_p.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined});")
-        page_p = ctx_p.new_page()
-        page_p.on('response', make_response_handler('PC端'))
+    if not captured_awemes:
+        return [], "no_data"
 
-        try:
-            page_p.goto(f'https://www.douyin.com/user/{sec_uid}',
-                        wait_until='domcontentloaded', timeout=45000)
-            page_p.wait_for_timeout(3000)
-            # 滚动加载
-            for _ in range(3):
-                page_p.mouse.wheel(0, 1500)
-                page_p.wait_for_timeout(1500)
-
-            # 从PC DOM提取所有作品链接
-            try:
-                links = page_p.query_selector_all('a[href*="/video/"], a[href*="/note/"]')
-                existing_ids = {x[0] for x in dom_post_ids}
-                pc_count = 0
-                for link in links:
-                    href = link.get_attribute('href') or ''
-                    for pattern in ['/video/', '/note/']:
-                        if pattern in href:
-                            parts = href.split(pattern)
-                            if len(parts) > 1:
-                                aid = parts[1].split('?')[0].split('/')[0]
-                                if aid.isdigit() and aid not in existing_ids:
-                                    link_text = (link.inner_text() or '').strip()[:80]
-                                    dom_post_ids.append((aid, link_text))
-                                    existing_ids.add(aid)
-                                    pc_count += 1
-                                    print(f"  [PC端DOM] {aid} text={link_text[:30]}")
-                if pc_count:
-                    print(f"  [PC端] DOM提取 {pc_count} 个作品链接")
-            except Exception as e:
-                print(f"  [PC端] DOM提取异常: {e}")
-        except Exception as e:
-            print(f"  [PC端] 异常: {e}")
-        finally:
-            ctx_p.close()
-
-        browser.close()
-
-    # 合并：API数据 + DOM补充
+    # 解析作品，去重
     parsed_posts = []
     seen_ids = set()
-
-    # 先解析API捕获的完整数据
     for a in captured_awemes:
         parsed = parse_aweme(a, display_name)
         if parsed and parsed["id"] not in seen_ids:
             parsed_posts.append(parsed)
             seen_ids.add(parsed["id"])
-
-    # 补充DOM提取但API未返回的作品（如图文笔记）
-    for aid, link_text in dom_post_ids:
-        if aid not in seen_ids:
-            # 统一用 /video/ 路径，抖音会自动重定向到note
-            post_url = f"https://www.douyin.com/video/{aid}"
-            parsed_posts.append({
-                "id": str(aid),
-                "platform": "douyin",
-                "name": display_name,
-                "title": link_text or "点击查看",
-                "views": 0,
-                "likes": 0,
-                "cover": None,
-                "avatar": None,
-                "url": post_url,
-                "time": datetime.now().isoformat(),
-                "sort_key": int(aid),
-            })
-            seen_ids.add(aid)
-            print(f"  [DOM补充] 添加作品 {aid} title={link_text[:30]}")
-
-    if not parsed_posts:
-        return [], "no_data"
 
     # 按 sort_key 倒序（create_time 或 aweme_id 数值）
     parsed_posts.sort(key=lambda x: x.get("sort_key", 0), reverse=True)
