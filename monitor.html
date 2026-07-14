@@ -73,23 +73,23 @@
         .refresh-bar {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 9px 14px;
+            gap: 7px;
+            padding: 5px 10px;
             background: var(--surface);
-            border-radius: var(--r-sm);
-            margin-bottom: 20px;
-            font-size: 0.8125rem;
+            border-radius: var(--r-xs);
+            margin-bottom: 14px;
+            font-size: 0.6875rem;
         }
 
         .refresh-dot {
-            width: 8px; height: 8px;
+            width: 6px; height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
             transition: all 0.3s var(--ease);
         }
-        .refresh-dot.healthy { background: var(--green); box-shadow: 0 0 7px var(--green); animation: pulse-green 2.5s ease-in-out infinite; }
-        .refresh-dot.stale { background: var(--warn); box-shadow: 0 0 7px var(--warn); animation: pulse-warn 1.5s ease-in-out infinite; }
-        .refresh-dot.dead { background: var(--live); box-shadow: 0 0 7px var(--live); }
+        .refresh-dot.healthy { background: var(--green); box-shadow: 0 0 5px var(--green); animation: pulse-green 2.5s ease-in-out infinite; }
+        .refresh-dot.stale { background: var(--warn); box-shadow: 0 0 5px var(--warn); animation: pulse-warn 1.5s ease-in-out infinite; }
+        .refresh-dot.dead { background: var(--live); box-shadow: 0 0 5px var(--live); }
 
         @keyframes pulse-green { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes pulse-warn { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
@@ -100,14 +100,14 @@
             color: var(--text);
             font-weight: 500;
         }
-        .refresh-text .r-status { margin-left: 6px; font-weight: 500; }
+        .refresh-text .r-status { margin-left: 5px; font-weight: 500; }
         .refresh-text .r-status.healthy { color: var(--green); }
         .refresh-text .r-status.stale { color: var(--warn); }
         .refresh-text .r-status.dead { color: var(--live); }
 
         .refresh-btn {
-            width: 30px; height: 30px;
-            border-radius: var(--r-xs);
+            width: 22px; height: 22px;
+            border-radius: 6px;
             border: none; background: none;
             color: var(--text-4);
             cursor: pointer;
@@ -117,7 +117,7 @@
         }
         .refresh-btn:hover { background: var(--surface-2); color: var(--text-2); }
         .refresh-btn:active { transform: scale(0.92); }
-        .refresh-btn svg { width: 14px; height: 14px; }
+        .refresh-btn svg { width: 11px; height: 11px; }
         .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
