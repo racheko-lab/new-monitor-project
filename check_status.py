@@ -94,6 +94,18 @@ def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int], Opt
             uid = info.get("uid")
             uname = None
             avatar = None
+
+            # room_init API下播时不返回title，从直播间HTML页面提取
+            if not title:
+                try:
+                    h_resp = requests.get(f"https://live.bilibili.com/{room_id}", headers=HEADERS, timeout=10)
+                    html = h_resp.text
+                    t_match = re.search(r'"room_id":\d+,"short_id":\d+,"title":"([^"]+)"', html)
+                    if t_match:
+                        title = t_match.group(1).encode('utf-8').decode('unicode_escape') if '\\u' in t_match.group(1) else t_match.group(1)
+                except Exception:
+                    pass
+
             if uid:
                 try:
                     u_resp = requests.get(
