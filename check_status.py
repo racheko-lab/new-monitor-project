@@ -172,7 +172,6 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
         room_id_match = re.search(r'"roomId":"([^"]*)"', room_block)
         stream_match = re.search(r'"web_stream_url"\s*:\s*(null|"[^"]*"|\{)', room_block)
         nick_match = re.search(r'"nickname":"([^"]+)"', room_block)
-        title_match = re.search(r'"title":"([^"]+)"', room_block)
         count_match = re.search(r'"user_count"\s*:\s*(\d+)', room_block)
         if not count_match:
             count_match = re.search(r'"watching_count"\s*:\s*(\d+)', room_block)
@@ -190,13 +189,16 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
             except Exception:
                 uname = nick_match.group(1)
 
-        # 标题（排除广告占位）
+        # 标题：在 roomInfo 上下文中精确匹配，避免误匹配分类标签(如"舞蹈")
         title = None
-        if title_match and title_match.group(1) != "广告投放":
+        room_title_match = re.search(r'"status_str":"\d*","title":"([^"]+)"', room_block)
+        if not room_title_match:
+            room_title_match = re.search(r'"roomInfo":\{[^}]*"title":"([^"]+)"', room_block)
+        if room_title_match and room_title_match.group(1) not in ("广告投放", "$undefined"):
             try:
-                title = title_match.group(1).encode('latin1').decode('utf-8')
+                title = room_title_match.group(1).encode('latin1').decode('utf-8')
             except Exception:
-                title = title_match.group(1)
+                title = room_title_match.group(1)
 
         viewers = int(count_match.group(1)) if count_match else None
 
