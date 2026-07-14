@@ -59,12 +59,12 @@ jobs:
           git pull --rebase origin main 2>/dev/null || true
           git push || echo "push skipped (no changes or conflict)"
 
-      # - name: Schedule next run
-      #   if: always()
-      #   run: |
-      #     sleep 300
-      #     curl -s -X POST \
-      #       -H "Accept: application/vnd.github+json" \
-      #       -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-      #       https://api.github.com/repos/${{ github.repository }}/actions/workflows/check.yml/dispatches \
-      #       -d '{"ref":"main"}'
+      - name: Schedule next run
+        if: always()
+        run: |
+          sleep 300
+          curl -s -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/check.yml/dispatches \
+            -d '{"ref":"main"}'
