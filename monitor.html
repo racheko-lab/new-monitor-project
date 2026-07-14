@@ -50,7 +50,7 @@
         .app {
             max-width: 680px;
             margin: 0 auto;
-            padding: 48px 24px 96px;
+            padding: 48px 24px 80px;
         }
 
         /* ===== Header Zone ===== */
@@ -148,7 +148,19 @@
             padding: 3px;
             background: var(--surface);
             border-radius: var(--r-sm);
-            margin-bottom: 28px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            z-index: 100;
         }
 
         .seg {
@@ -595,7 +607,6 @@
             .app { padding: 32px 16px 80px; }
             .hdr { margin-bottom: 26px; }
             .hdr-title { font-size: 1.45rem; }
-            .seg-ctrl { margin-bottom: 22px; }
             .row { padding: 14px 16px; gap: 12px; }
             .av, .av-link { width: 40px; height: 40px; }
             .row-del { opacity: 1; }
@@ -624,12 +635,6 @@
             </button>
         </div>
 
-        <nav class="seg-ctrl">
-            <button class="seg active" id="tab-live" onclick="switchTab('live')">直播<span class="seg-n" id="live-n"></span></button>
-            <button class="seg" id="tab-posts" onclick="switchTab('posts')">作品<span class="seg-n" id="posts-n"></span></button>
-            <button class="seg" id="tab-history" onclick="switchTab('history')">历史</button>
-        </nav>
-
         <section id="live-section" class="panel active">
             <div id="live-groups"></div>
         </section>
@@ -641,6 +646,12 @@
         <section id="history-section" class="panel">
             <div class="surface" id="history-surface"></div>
         </section>
+
+        <nav class="seg-ctrl bottom-nav">
+            <button class="seg active" id="tab-live" onclick="switchTab('live')">直播<span class="seg-n" id="live-n"></span></button>
+            <button class="seg" id="tab-posts" onclick="switchTab('posts')">作品<span class="seg-n" id="posts-n"></span></button>
+            <button class="seg" id="tab-history" onclick="switchTab('history')">历史</button>
+        </nav>
     </div>
 
     <div class="overlay" id="add-modal">
@@ -1003,9 +1014,10 @@
             }
             arr.push({platform: p, id, name});
             if (await saveRooms(arr, ip ? `添加作品: ${name}` : `添加主播: ${name}`, tf)) {
-                toast('已添加'); closeAdd(); await trigger();
-                if (ip) { await loadPosts(); setTimeout(loadPosts, 15000); setTimeout(loadPosts, 40000); }
-                else { await loadData(); setTimeout(loadData, 15000); setTimeout(loadData, 40000); }
+                toast('已添加，正在检测…'); closeAdd(); await trigger();
+                const fn = ip ? loadPosts : loadData;
+                await fn();
+                for (let i = 1; i <= 10; i++) setTimeout(fn, i * 30000);
             }
         }
 
@@ -1041,6 +1053,7 @@
         loadData();
         updateRefreshStatus();
         setInterval(loadData, 300000);
+        setInterval(loadPosts, 300000);
         setInterval(updateRefreshStatus, 60000);
     </script>
 </body>
