@@ -13,7 +13,7 @@ HISTORY_FILE = "history.json"
 ROOMS_FILE = "rooms.json"
 HISTORY_MAX = 200
 
-BILIBILI_API = "https://api.live.bilibili.com/room/v1/Room/room_init?id={}"
+BILIBILI_API = "https://api.live.bilibili.com/xlive/web-room/v1/index/getRoomBaseInfo"
 DOUYIN_URL = "https://live.douyin.com/{}"
 
 HEADERS = {
@@ -83,29 +83,31 @@ def add_history(message: str, event_type: str = "status"):
 
 
 def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str], Optional[str]]:
+    """检测B站直播状态。
+
+    使用 getRoomBaseInfo 接口：无论开播/下播都返回 title、uname、online 等字段，
+    无需像 room_init 方案那样下播时再抓 HTML 兜底。
+    """
     try:
-        resp = requests.get(BILIBILI_API.format(room_id), headers=HEADERS, timeout=10)
+        resp = requests.get(
+            BILIBILI_API,
+            params={"req_biz": "web_room_componet", "room_ids": room_id},
+            headers=HEADERS, timeout=10)
         data = resp.json()
         if data.get("code") == 0:
-            info = data.get("data", {})
-            status = "live" if info.get("live_status") == 1 else "offline"
+            info = data.get("data", {}).get("by_room_ids", {}).get(str(room_id), {})
+            if not info:
+                return "error", None, None, None, None
+            # live_status: 0=offline 1=live 2=replay
+            status_code = info.get("live_status", 0)
+            status = "live" if status_code == 1 else "offline"
             title = info.get("title")
             viewers = info.get("online")
             uid = info.get("uid")
-            uname = None
+            uname = info.get("uname")
             avatar = None
 
-            # room_init API下播时不返回title，从直播间HTML页面提取
-            if not title:
-                try:
-                    h_resp = requests.get(f"https://live.bilibili.com/{room_id}", headers=HEADERS, timeout=10)
-                    html = h_resp.text
-                    t_match = re.search(r'"room_id":\d+,"short_id":\d+,"title":"([^"]+)"', html)
-                    if t_match:
-                        title = t_match.group(1).encode('utf-8').decode('unicode_escape') if '\\u' in t_match.group(1) else t_match.group(1)
-                except Exception:
-                    pass
-
+            # getRoomBaseInfo 不返回头像，从 Master/info 接口取（用 uid）
             if uid:
                 try:
                     u_resp = requests.get(
@@ -114,7 +116,7 @@ def check_bilibili(room_id: str) -> Tuple[str, Optional[str], Optional[int], Opt
                     u_data = u_resp.json()
                     if u_data.get("code") == 0:
                         uinfo = u_data.get("data", {}).get("info", {})
-                        uname = uinfo.get("uname")
+                        uname = uinfo.get("uname") or uname
                         avatar = uinfo.get("face")
                 except Exception:
                     pass
