@@ -1414,14 +1414,21 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
         latest_post["avatar"] = avatar
 
     # Step 3: 新作品检测
+    # 首次添加账号时 seen_posts 为空 —— 此时只初始化 seen_posts（记录已抓到的历史作品），
+    # 不推送通知，避免把全部历史作品当成"新作品"批量推送（曾导致一次推送十几条）。
+    # 后续检测 seen_posts 非空时，真正的新作品才推送。
     state = load_state()
     key = f"douyin_posts_{room_id}"
     seen_posts = state.get(key, {}).get("seen_posts", [])
+    is_first_check = not seen_posts
 
     for p in parsed_posts:
         if p.get("id") and p["id"] not in seen_posts:
-            new_posts_data.append(p)
             seen_posts.append(p["id"])
+            if is_first_check:
+                # 首次检测：仅记录，不推送
+                continue
+            new_posts_data.append(p)
             title = p.get("title", "")[:50] or "新作品"
             time_str = ""
             try:
@@ -1435,13 +1442,12 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
             notifications.append(msg)
             add_history(msg, "new_post")
 
-    if new_posts_data:
-        seen_posts = seen_posts[-50:]
-        state[key] = {
-            "seen_posts": seen_posts,
-            "last_check": datetime.now().isoformat(),
-        }
-        save_state(state)
+    seen_posts = seen_posts[-50:]
+    state[key] = {
+        "seen_posts": seen_posts,
+        "last_check": datetime.now().isoformat(),
+    }
+    save_state(state)
 
     return sec_uid, display_name, avatar, latest_post, new_posts_data, notifications
 
