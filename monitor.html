@@ -1003,9 +1003,10 @@
             }
             arr.push({platform: p, id, name});
             if (await saveRooms(arr, ip ? `添加作品: ${name}` : `添加主播: ${name}`, tf)) {
-                toast('已添加'); closeAdd(); await trigger();
-                if (ip) { await loadPosts(); setTimeout(loadPosts, 15000); setTimeout(loadPosts, 40000); }
-                else { await loadData(); setTimeout(loadData, 15000); setTimeout(loadData, 40000); }
+                toast('已添加，正在检测…'); closeAdd(); await trigger();
+                const fn = ip ? loadPosts : loadData;
+                await fn();
+                for (let i = 1; i <= 10; i++) setTimeout(fn, i * 30000);
             }
         }
 
@@ -1041,6 +1042,7 @@
         loadData();
         updateRefreshStatus();
         setInterval(loadData, 300000);
+        setInterval(loadPosts, 300000);
         setInterval(updateRefreshStatus, 60000);
     </script>
 </body>
