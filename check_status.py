@@ -307,12 +307,16 @@ def check_all() -> Tuple[List[Dict], List[str]]:
                 msg = f"⚠️ {name} 检测失败"
                 add_history(msg, "error")
 
+        # 下播且API未返回标题时，保留上次直播的标题
+        if not title and status == "offline":
+            title = current_status.get(key, {}).get("title")
+
         current_status[key] = {
             "platform": platform,
             "id": room_id,
             "name": name,
             "uname": uname or name,
-            "avatar": avatar,
+            "avatar": avatar or current_status.get(key, {}).get("avatar"),
             "status": status,
             "title": title,
             "viewers": viewers,
