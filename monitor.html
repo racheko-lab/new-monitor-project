@@ -218,14 +218,32 @@
             color: var(--text-3);
             letter-spacing: 0.08em;
             text-transform: uppercase;
+            animation: labelIn 0.4s var(--ease-out) backwards;
+        }
+        @keyframes labelIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .group-label .g-dot {
             width: 6px; height: 6px;
             border-radius: 50%;
             flex-shrink: 0;
+            position: relative;
         }
         .group-label .g-dot.live { background: var(--live); box-shadow: 0 0 6px var(--live); }
+        .group-label .g-dot.live::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50%;
+            border: 1px solid var(--live);
+            animation: dotRipple 2s ease-out infinite;
+        }
+        @keyframes dotRipple {
+            0% { transform: scale(0.8); opacity: 0.7; }
+            100% { transform: scale(2.6); opacity: 0; }
+        }
         .group-label .g-dot.offline { background: var(--text-4); }
         .group-label .g-dot.pending { background: var(--blue); }
 
@@ -239,6 +257,12 @@
             flex: 1;
             height: 1px;
             background: var(--divider);
+            transform: scaleX(0);
+            transform-origin: left center;
+            animation: lineGrow 0.5s var(--ease-out) 0.12s forwards;
+        }
+        @keyframes lineGrow {
+            to { transform: scaleX(1); }
         }
 
         /* ===== Surface ===== */
@@ -255,18 +279,60 @@
             gap: 14px;
             padding: 16px 18px;
             cursor: pointer;
-            transition: background 0.15s var(--ease);
+            transition: background 0.2s var(--ease), transform 0.2s var(--ease-out);
             position: relative;
+            animation: rowIn 0.42s var(--ease-out) backwards;
         }
         .row + .row { border-top: 1px solid var(--divider); }
         .row:hover { background: var(--surface-2); }
         .row:hover .row-del { opacity: 1; }
+
+        /* 行入场 stagger：数据刷新时分级淡入 */
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .row:nth-child(1) { animation-delay: 0.02s; }
+        .row:nth-child(2) { animation-delay: 0.05s; }
+        .row:nth-child(3) { animation-delay: 0.08s; }
+        .row:nth-child(4) { animation-delay: 0.11s; }
+        .row:nth-child(5) { animation-delay: 0.14s; }
+        .row:nth-child(6) { animation-delay: 0.17s; }
+        .row:nth-child(7) { animation-delay: 0.20s; }
+        .row:nth-child(8) { animation-delay: 0.23s; }
+        .row:nth-child(n+9) { animation-delay: 0.26s; }
+
+        /* hover 左侧指示条 */
+        .row::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 8%; bottom: 8%;
+            width: 2px;
+            background: var(--border-2);
+            border-radius: 2px;
+            transform: scaleY(0);
+            transform-origin: center;
+            transition: transform 0.25s var(--ease-out), background 0.2s;
+        }
+        .row:hover::before { transform: scaleY(1); }
 
         .row.is-live {
             background: linear-gradient(90deg, var(--live-soft) 0%, transparent 35%);
         }
         .row.is-live:hover {
             background: linear-gradient(90deg, var(--live-glow) 0%, var(--surface-2) 35%);
+        }
+
+        /* 直播中：常驻呼吸左边框 + hover 指示条变红 */
+        .row.is-live::before {
+            background: var(--live);
+            box-shadow: 0 0 8px var(--live);
+            transform: scaleY(1);
+            animation: liveBar 2s ease-in-out infinite;
+        }
+        @keyframes liveBar {
+            0%, 100% { opacity: 0.55; }
+            50% { opacity: 1; }
         }
 
         /* Avatar */
