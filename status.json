@@ -2,11 +2,11 @@
   "bilibili_22230707": {
     "platform": "bilibili",
     "id": "22230707",
-    "name": "峰哥亡命天涯",
-    "uname": "峰哥亡命天涯",
+    "name": "å³°å¥äº¡å½å¤©æ¶¯",
+    "uname": "å³°å¥äº¡å½å¤©æ¶¯",
     "avatar": "https://i2.hdslb.com/bfs/face/ae439693d6fd79a55b1b5f935ed6474ae6fba35b.jpg",
     "status": "offline",
-    "title": "魔王来踢馆，峰雨舞组谁称王！",
+    "title": "é­çæ¥è¸¢é¦ï¼å³°é¨èç»è°ç§°çï¼",
     "viewers": 0,
     "last_check": "2026-07-15T09:18:45.506295",
     "duration": 10209
@@ -14,35 +14,23 @@
   "bilibili_3381141": {
     "platform": "bilibili",
     "id": "3381141",
-    "name": "sak药",
-    "uname": "sak药",
+    "name": "sakè¯",
+    "uname": "sakè¯",
     "avatar": "https://i2.hdslb.com/bfs/face/f5ef1f7f5edf657eb4892a297236e31edeae3603.jpg",
     "status": "offline",
-    "title": "【theshy专属ob】",
+    "title": "ãtheshyä¸å±obã",
     "viewers": 0,
     "last_check": "2026-07-15T09:18:46.034556",
     "duration": 26385
   },
-  "douyin_ludamobiubiu": {
-    "platform": "douyin",
-    "id": "ludamobiubiu",
-    "name": "鲁大魔",
-    "uname": "鲁大魔",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1538749da661a0405c0aef5f0123b769.jpeg?from=3067671334",
-    "status": "offline",
-    "title": "搞薯条！",
-    "viewers": null,
-    "last_check": "2026-07-15T09:18:48.149876",
-    "duration": 859
-  },
   "douyin_misssiir": {
     "platform": "douyin",
     "id": "misssiir",
-    "name": "樱桃哥🍒（众包大王外卖技巧分享）",
-    "uname": "樱桃哥🍒（众包大王外卖技巧分享）",
+    "name": "æ¨±æ¡å¥ðï¼ä¼åå¤§çå¤åæå·§åäº«ï¼",
+    "uname": "æ¨±æ¡å¥ðï¼ä¼åå¤§çå¤åæå·§åäº«ï¼",
     "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_d42b3d572f223c06c63c291b6b3635d9.jpeg?from=3067671334",
     "status": "offline",
-    "title": "聊 5 毛钱的",
+    "title": "è 5 æ¯é±ç",
     "viewers": null,
     "last_check": "2026-07-15T09:18:49.369180",
     "duration": 883
@@ -50,11 +38,11 @@
   "douyin_83134194400": {
     "platform": "douyin",
     "id": "83134194400",
-    "name": "27～",
-    "uname": "27～",
+    "name": "27ï½",
+    "uname": "27ï½",
     "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
     "status": "offline",
-    "title": "正在直播",
+    "title": "æ­£å¨ç´æ­",
     "viewers": null,
     "last_check": "2026-07-15T09:18:50.828656",
     "duration": 0
@@ -62,11 +50,11 @@
   "douyin_JACROX001": {
     "platform": "douyin",
     "id": "JACROX001",
-    "name": "薛大兵",
-    "uname": "薛大兵",
+    "name": "èå¤§åµ",
+    "uname": "èå¤§åµ",
     "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7c4af679ce501c560bf231949784f7ab.jpeg?from=3067671334",
     "status": "offline",
-    "title": "新品白嫖局",
+    "title": "æ°åç½å«å±",
     "viewers": null,
     "last_check": "2026-07-15T09:18:52.397184",
     "duration": 0
@@ -74,11 +62,11 @@
   "douyin_vHan09233": {
     "platform": "douyin",
     "id": "vHan09233",
-    "name": "韩冰",
-    "uname": "韩冰",
+    "name": "é©å°",
+    "uname": "é©å°",
     "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
     "status": "live",
-    "title": "正在直播",
+    "title": "æ­£å¨ç´æ­",
     "viewers": null,
     "last_check": "2026-07-15T09:18:53.608420",
     "duration": 5195
