@@ -806,8 +806,19 @@
                     if (r.ok) return await r.json();
                 } catch {}
             }
-            try { const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${f}?t=${Date.now()}`, {cache:'no-store'}); return await r.json(); }
+            // raw CDN 可能缓存 404（如文件曾被短暂删除）→ 回退到 Contents API（api.github.com 不走 raw CDN）
+            try {
+                const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${f}?ref=${BRANCH}`, {
+                    headers: { Authorization: `token ${tok()}`, Accept: 'application/vnd.github+json' }, cache: 'no-store'
+                });
+                if (r.ok) {
+                    const j = await r.json();
+                    if (j && j.content) return JSON.parse(b64ToUtf8(j.content.replace(/\s/g,'')));
+                }
+            } catch {}
+            try { const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${f}?t=${Date.now()}`, {cache:'no-store'}); if (r.ok) return await r.json(); }
             catch { return null; }
+            return null;
         }
         async function saveRooms(arr, msg, fp) {
             try { const f = await ghGet(fp); await ghPut(fp, JSON.stringify(arr,null,2), f.sha, msg); return true; }
