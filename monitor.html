@@ -773,13 +773,6 @@
         let rooms = [], status = {}, prooms = [], pstatus = {};
         let pendingDel = null, delCtx = 'live', addCtx = 'live';
 
-        function b64ToUtf8(b64) {
-            // 正确解码 base64 编码的 UTF-8 字节，避免 escape() 导致中文乱码
-            const bin = atob(b64);
-            const bytes = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-            return new TextDecoder('utf-8').decode(bytes);
-        }
         async function ghGet(p) {
             const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${p}?ref=${BRANCH}`, {
                 headers: { Authorization: `token ${tok()}`, Accept: 'application/vnd.github+json' }
@@ -799,26 +792,14 @@
         async function fetchJ(f) {
             if (tok()) {
                 try {
-                    // 用 raw URL + token，浏览器自动按 UTF-8 解码，避免 base64 手动解码导致中文乱码
-                    const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${f}?t=${Date.now()}`, {
-                        headers: { Authorization: `token ${tok()}` }, cache: 'no-store'
+                    const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${f}?ref=${BRANCH}`, {
+                        headers: { Authorization: `token ${tok()}`, Accept: 'application/vnd.github+json' }, cache: 'no-store'
                     });
-                    if (r.ok) return await r.json();
+                    if (r.ok) { const d = await r.json(); return JSON.parse(decodeURIComponent(escape(atob(d.content)))); }
                 } catch {}
             }
-            // raw CDN 可能缓存 404（如文件曾被短暂删除）→ 回退到 Contents API（api.github.com 不走 raw CDN）
-            try {
-                const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${f}?ref=${BRANCH}`, {
-                    headers: { Authorization: `token ${tok()}`, Accept: 'application/vnd.github+json' }, cache: 'no-store'
-                });
-                if (r.ok) {
-                    const j = await r.json();
-                    if (j && j.content) return JSON.parse(b64ToUtf8(j.content.replace(/\s/g,'')));
-                }
-            } catch {}
-            try { const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${f}?t=${Date.now()}`, {cache:'no-store'}); if (r.ok) return await r.json(); }
+            try { const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${f}?t=${Date.now()}`, {cache:'no-store'}); return await r.json(); }
             catch { return null; }
-            return null;
         }
         async function saveRooms(arr, msg, fp) {
             try { const f = await ghGet(fp); await ghPut(fp, JSON.stringify(arr,null,2), f.sha, msg); return true; }
@@ -1043,24 +1024,13 @@
         }
 
         async function loadData() {
-            // 先用 localStorage 缓存瞬时渲染（避免刷新时长时间空白）
-            try {
-                const c = JSON.parse(localStorage.getItem('cache_live') || 'null');
-                if (c) { status = c.status || {}; rooms = c.rooms || []; renderRooms(); renderHistory(c.history || []); }
-            } catch {}
             const [s,h,rl] = await Promise.all([fetchJ('status.json'), fetchJ('history.json'), fetchJ('rooms.json')]);
             status = s || {}; rooms = rl || [];
             renderRooms(); renderHistory(h||[]);
-            try { localStorage.setItem('cache_live', JSON.stringify({status, rooms, history:h||[]})); } catch {}
         }
         async function loadPosts() {
-            try {
-                const c = JSON.parse(localStorage.getItem('cache_posts') || 'null');
-                if (c) { pstatus = c.pstatus || {}; prooms = c.prooms || []; renderPosts(); }
-            } catch {}
             const [ps,pr] = await Promise.all([fetchJ('posts_status.json'), fetchJ('posts_rooms.json')]);
             pstatus = ps || {}; prooms = pr || []; renderPosts();
-            try { localStorage.setItem('cache_posts', JSON.stringify({pstatus, prooms})); } catch {}
         }
         async function loadHistory() { const h = await fetchJ('history.json'); renderHistory(h||[]); }
 
@@ -1123,46 +1093,28 @@
             const tf = ip ? 'posts_rooms.json' : 'rooms.json',
                   sf = ip ? 'posts_status.json' : 'status.json',
                   dk = `${p}_${id}`;
-            // 乐观更新：立即从本地数据移除并重渲染 + toast，不等任何网络请求
-            if (ip) {
-                prooms = prooms.filter(r => !(r.platform === p && r.id === id));
-                delete pstatus[dk];
-                renderPosts();
-            } else {
-                rooms = rooms.filter(r => !(r.platform === p && r.id === id));
-                delete status[dk];
-                renderRooms();
-            }
-            toast('已删除'); closeDel();
-            // 后台异步：提交删除 + 清理 status 残留 + 重拉对齐（全部不阻塞 UI）
-            const fn = ip ? loadPosts : loadData;
-            (async () => {
+            const arr = (await fetchJ(tf)) || [],
+                  nr = arr.filter(r => !(r.platform === p && r.id === id));
+            if (await saveRooms(nr, ip ? `删除作品: ${p}/${id}` : `删除主播: ${p}/${id}`, tf)) {
+                // 清理对应 status：sha 冲突时重试一次（CI 可能并发推送导致 sha 过期）
                 try {
-                    const arr = (await fetchJ(tf)) || [],
-                          nr = arr.filter(r => !(r.platform === p && r.id === id));
-                    const ok = await saveRooms(nr, ip ? `删除作品: ${p}/${id}` : `删除主播: ${p}/${id}`, tf);
-                    if (!ok) { toast('保存失败，重载中…'); setTimeout(fn, 1500); return; }
-                    setTimeout(fn, 1500); // 提交成功后重拉对齐远端
-                    // 清理 status 残留（CI 的 cleanup_status 也会兜底）
-                    try {
-                        for (let attempt = 0; attempt < 2; attempt++) {
-                            const f = await ghGet(sf); let o = {};
-                            try { o = JSON.parse(b64ToUtf8(f.content)); } catch {}
-                            if (!o[dk]) break;
-                            delete o[dk];
-                            try {
-                                await ghPut(sf, JSON.stringify(o,null,2), f.sha, `清理: ${p}/${id}`);
-                                break;
-                            } catch (e) {
-                                if (attempt === 1) console.warn('清理 status 失败:', e);
-                            }
+                    for (let attempt = 0; attempt < 2; attempt++) {
+                        const f = await ghGet(sf); let o = {};
+                        try { o = JSON.parse(atob(f.content)); } catch {}
+                        if (!o[dk]) break;
+                        delete o[dk];
+                        try {
+                            await ghPut(sf, JSON.stringify(o,null,2), f.sha, `清理: ${p}/${id}`);
+                            break;
+                        } catch (e) {
+                            if (attempt === 1) console.warn('清理 status 失败:', e);
                         }
-                    } catch {}
-                } catch (e) {
-                    console.warn('删除提交失败:', e);
-                    toast('删除提交失败，重载中…'); setTimeout(fn, 1500);
-                }
-            })();
+                    }
+                } catch {}
+                toast('已删除'); closeDel();
+                if (ip) { await loadPosts(); setTimeout(loadPosts, 2000); }
+                else { await loadData(); setTimeout(loadData, 2000); }
+            }
         }
 
         document.querySelectorAll('.overlay').forEach(ov => {
