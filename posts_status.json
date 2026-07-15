@@ -2,14 +2,14 @@
   "douyin_vHan09233": {
     "platform": "douyin",
     "id": "vHan09233",
-    "name": "Ã©ÂÂ©Ã¥ÂÂ°",
+    "name": "ÃÂ©ÃÂÃÂ©ÃÂ¥ÃÂÃÂ°",
     "sec_uid": "MS4wLjABAAAAUXBNFnWLvl9T8ylgAbD1auR_o5FL3dF7ic0KMYN9_88",
     "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
     "latest_post": {
       "id": "7662645452571342259",
       "platform": "douyin",
-      "name": "Ã©ÂÂ©Ã¥ÂÂ°",
-      "title": "Ã¦ÂÂÃ¦ÂÂÃ¦ÂÂ³Ã¥Â¤ÂªÃ¥ÂÂÃ¤ÂºÂÃ¥Â¯Â¹Ã¤Â½Â Ã¦Â²Â¡Ã¥Â¥Â½Ã¥Â¤ÂÃ¥ÂÂ",
+      "name": "ÃÂ©ÃÂÃÂ©ÃÂ¥ÃÂÃÂ°",
+      "title": "ÃÂ¦ÃÂÃÂÃÂ¦ÃÂÃÂÃÂ¦ÃÂÃÂ³ÃÂ¥ÃÂ¤ÃÂªÃÂ¥ÃÂÃÂÃÂ¤ÃÂºÃÂÃÂ¥ÃÂ¯ÃÂ¹ÃÂ¤ÃÂ½ÃÂ ÃÂ¦ÃÂ²ÃÂ¡ÃÂ¥ÃÂ¥ÃÂ½ÃÂ¥ÃÂ¤ÃÂÃÂ¥ÃÂÃÂ",
       "views": 0,
       "likes": 95269,
       "cover": "https://p11-sign.douyinpic.com/tos-cn-i-0813/oQLAYibBgwACQeTifAq9AAA0EWXO2VIty39BEN~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1784156400&x-signature=iqYcYgaF8X12yAMRB9binPgwLLo%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=2026071601245273AE38C872603C6D92D2",
@@ -19,30 +19,6 @@
       "sort_key": 7662645452571342000
     },
     "total_seen": 25,
-    "new_count": 0,
-    "last_check": "2026-07-15T17:24:45.060931",
-    "status": "ok"
-  },
-  "douyin_FengBro": {
-    "platform": "douyin",
-    "id": "FengBro",
-    "name": "Ã¥Â³Â°Ã¥ÂÂ¥Ã¤ÂºÂ¡Ã¥ÂÂ½Ã¥Â¤Â©Ã¦Â¶Â¯",
-    "sec_uid": "MS4wLjABAAAAXrcPvX8QchAY5irWMAxU379DgfCBEOoztZoCcOUqi8I",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_2d6f0000113c4daec8515.jpeg?from=3067671334",
-    "latest_post": {
-      "id": "7660491790876851825",
-      "platform": "douyin",
-      "name": "Ã¥Â³Â°Ã¥ÂÂ¥Ã¤ÂºÂ¡Ã¥ÂÂ½Ã¥Â¤Â©Ã¦Â¶Â¯",
-      "title": "Ã¥Â³Â°Ã¥ÂÂ¥Ã¥ÂÂ¨Ã¥ÂÂÃ©Â¦ÂÃ¥Â°ÂÃ¥ÂÂÃ¥Â°ÂÃ©ÂÂ©Ã§ÂÂÃ§ÂÂ¤Ã¨ÂÂ #Ã©ÂÂ©Ã¥ÂÂ½Ã¥ÂÂÃ¤Â»ÂÃ¤Â¹Â #Ã©ÂÂ©Ã¥ÂÂ½Ã§Â¾ÂÃ©Â£ÂÃ¦ÂÂ¨Ã¨ÂÂ #Ã©ÂÂ©Ã¥ÂÂ½Ã§ÂÂ¹Ã¨ÂÂ²Ã§Â¾ÂÃ©Â£Â",
-      "views": 0,
-      "likes": 82840,
-      "cover": "https://p26-sign.douyinpic.com/tos-cn-i-0813c000-ce/owLAEJsnWIAedAFPXiiIPPACHwi3KCBB1EceAi~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1784156400&x-signature=G%2BLK0lP6WnzFE0T%2FHmdTDLr4%2FyM%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=2026071601291771D0F0CBC224D46C4C05",
-      "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_2d6f0000113c4daec8515.jpeg?from=3067671334",
-      "url": "https://www.douyin.com/video/7660491790876851825",
-      "time": "2026-07-15T17:33:40.616736",
-      "sort_key": 7660491790876852000
-    },
-    "total_seen": 20,
     "new_count": 0,
     "last_check": "2026-07-15T17:24:45.060931",
     "status": "ok"
