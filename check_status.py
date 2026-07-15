@@ -301,11 +301,20 @@ def check_all() -> Tuple[List[Dict], List[str]]:
         previous_status = current_status.get(key, {}).get("status")
         if previous_status != status:
             if status == "live":
+                # 直播间跳转链接
+                if platform == "bilibili":
+                    live_url = f"https://live.bilibili.com/{room_id}"
+                elif platform == "douyin":
+                    live_url = f"https://live.douyin.com/{room_id}"
+                else:
+                    live_url = ""
                 msg = f"🎉 {name} 开播了！"
                 if title:
-                    msg += f" 标题: {title}"
+                    msg += f"\n标题: {title}"
                 if viewers:
-                    msg += f" 观看人数: {viewers}"
+                    msg += f"\n观看人数: {viewers}"
+                if live_url:
+                    msg += f"\n🔗 {live_url}"
                 notifications.append(msg)
                 add_history(msg, "live_start")
             elif status == "offline":

@@ -1430,15 +1430,28 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
                 continue
             new_posts_data.append(p)
             title = p.get("title", "")[:50] or "新作品"
+            post_url = p.get("url", "")
+            views = p.get("views")
+            likes = p.get("likes")
             time_str = ""
             try:
                 t = datetime.fromisoformat(p["time"])
                 time_str = t.strftime("%H:%M")
             except Exception:
                 pass
-            msg = f"🎵 {display_name} 发布了新作品: {title}"
+            msg = f"🎵 {display_name} 发布了新作品"
+            msg += f"\n标题: {title}"
             if time_str:
                 msg += f" ({time_str})"
+            stats_parts = []
+            if views is not None:
+                stats_parts.append(f"播放 {views}")
+            if likes is not None:
+                stats_parts.append(f"点赞 {likes}")
+            if stats_parts:
+                msg += f"\n{' · '.join(stats_parts)}"
+            if post_url:
+                msg += f"\n🔗 {post_url}"
             notifications.append(msg)
             add_history(msg, "new_post")
 

@@ -22,7 +22,18 @@ def push_bark(config: Dict, title: str, content: str):
         return
     group = config.get("group", "")
     try:
-        requests.get(f"{url}/{title}/{content}?group={group}", timeout=10)
+        # POST JSON 方式，避免 URL 路径含换行/特殊字符导致请求失败
+        payload = {
+            "title": title,
+            "body": content,
+            "group": group,
+        }
+        # 如果 content 里有 🔊 url 行，提取作为跳转链接
+        import re
+        link_match = re.search(r'^🔗 (.+)$', content, flags=re.MULTILINE)
+        if link_match:
+            payload["url"] = link_match.group(1)
+        requests.post(url, json=payload, timeout=10)
     except Exception:
         pass
 
@@ -38,13 +49,19 @@ def push_wecom(config: Dict, title: str, content: str):
         pass
 
 
+def _to_markdown(content: str) -> str:
+    """把 '🔗 url' 行转成 Markdown 链接，便于支持 MD 的渠道渲染。"""
+    import re
+    return re.sub(r'^🔗 (.+)$', r'🔗 [点击查看](\1)', content, flags=re.MULTILINE)
+
+
 def push_serverchan(config: Dict, title: str, content: str):
     sendkey = config.get("sendkey")
     if not sendkey:
         return
     try:
         requests.post(f"https://sctapi.ftqq.com/{sendkey}.send",
-                      data={"title": title, "desp": content}, timeout=10)
+                      data={"title": title, "desp": _to_markdown(content)}, timeout=10)
     except Exception:
         pass
 
@@ -56,7 +73,8 @@ def push_pushplus(config: Dict, title: str, content: str):
     topic = config.get("topic", "")
     try:
         requests.post("http://www.pushplus.plus/send",
-                      data={"token": token, "title": title, "content": content, "topic": topic},
+                      data={"token": token, "title": title, "content": _to_markdown(content),
+                            "topic": topic, "template": "markdown"},
                       timeout=10)
     except Exception:
         pass
@@ -67,9 +85,13 @@ def push_telegram(config: Dict, title: str, content: str):
     chat = config.get("chat")
     if not token or not chat:
         return
+    # Telegram 用 HTML 链接，更可点
+    import re
+    html = re.sub(r'^🔗 (.+)$', r'🔗 <a href="\1">点击查看</a>', content, flags=re.MULTILINE)
     try:
         requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                      data={"chat_id": chat, "text": f"{title}\n{content}"}, timeout=10)
+                      data={"chat_id": chat, "text": f"{title}\n{html}",
+                            "parse_mode": "HTML"}, timeout=10)
     except Exception:
         pass
 
