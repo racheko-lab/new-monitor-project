@@ -1032,13 +1032,24 @@
         }
 
         async function loadData() {
+            // 先用 localStorage 缓存瞬时渲染（避免刷新时长时间空白）
+            try {
+                const c = JSON.parse(localStorage.getItem('cache_live') || 'null');
+                if (c) { status = c.status || {}; rooms = c.rooms || []; renderRooms(); renderHistory(c.history || []); }
+            } catch {}
             const [s,h,rl] = await Promise.all([fetchJ('status.json'), fetchJ('history.json'), fetchJ('rooms.json')]);
             status = s || {}; rooms = rl || [];
             renderRooms(); renderHistory(h||[]);
+            try { localStorage.setItem('cache_live', JSON.stringify({status, rooms, history:h||[]})); } catch {}
         }
         async function loadPosts() {
+            try {
+                const c = JSON.parse(localStorage.getItem('cache_posts') || 'null');
+                if (c) { pstatus = c.pstatus || {}; prooms = c.prooms || []; renderPosts(); }
+            } catch {}
             const [ps,pr] = await Promise.all([fetchJ('posts_status.json'), fetchJ('posts_rooms.json')]);
             pstatus = ps || {}; prooms = pr || []; renderPosts();
+            try { localStorage.setItem('cache_posts', JSON.stringify({pstatus, prooms})); } catch {}
         }
         async function loadHistory() { const h = await fetchJ('history.json'); renderHistory(h||[]); }
 
@@ -1101,15 +1112,27 @@
             const tf = ip ? 'posts_rooms.json' : 'rooms.json',
                   sf = ip ? 'posts_status.json' : 'status.json',
                   dk = `${p}_${id}`;
-            const arr = (await fetchJ(tf)) || [],
-                  nr = arr.filter(r => !(r.platform === p && r.id === id));
-            if (await saveRooms(nr, ip ? `删除作品: ${p}/${id}` : `删除主播: ${p}/${id}`, tf)) {
-                toast('已删除'); closeDel();
-                // 立即重渲染（用本地已更新的 rooms，不等 CI）
-                if (ip) { await loadPosts(); setTimeout(loadPosts, 2000); }
-                else { await loadData(); setTimeout(loadData, 2000); }
-                // 后台异步清理 status 残留（不阻塞 UI；CI 的 cleanup_status 也会兜底）
-                (async () => {
+            // 乐观更新：立即从本地数据移除并重渲染 + toast，不等任何网络请求
+            if (ip) {
+                prooms = prooms.filter(r => !(r.platform === p && r.id === id));
+                delete pstatus[dk];
+                renderPosts();
+            } else {
+                rooms = rooms.filter(r => !(r.platform === p && r.id === id));
+                delete status[dk];
+                renderRooms();
+            }
+            toast('已删除'); closeDel();
+            // 后台异步：提交删除 + 清理 status 残留 + 重拉对齐（全部不阻塞 UI）
+            const fn = ip ? loadPosts : loadData;
+            (async () => {
+                try {
+                    const arr = (await fetchJ(tf)) || [],
+                          nr = arr.filter(r => !(r.platform === p && r.id === id));
+                    const ok = await saveRooms(nr, ip ? `删除作品: ${p}/${id}` : `删除主播: ${p}/${id}`, tf);
+                    if (!ok) { toast('保存失败，重载中…'); setTimeout(fn, 1500); return; }
+                    setTimeout(fn, 1500); // 提交成功后重拉对齐远端
+                    // 清理 status 残留（CI 的 cleanup_status 也会兜底）
                     try {
                         for (let attempt = 0; attempt < 2; attempt++) {
                             const f = await ghGet(sf); let o = {};
@@ -1124,8 +1147,11 @@
                             }
                         }
                     } catch {}
-                })();
-            }
+                } catch (e) {
+                    console.warn('删除提交失败:', e);
+                    toast('删除提交失败，重载中…'); setTimeout(fn, 1500);
+                }
+            })();
         }
 
         document.querySelectorAll('.overlay').forEach(ov => {
