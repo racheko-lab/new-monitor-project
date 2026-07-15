@@ -770,7 +770,7 @@
         const tok = () => TK;
 
         let tab = 'live';
-        let rooms = [], status = {}, prooms = [], pstatus = [];
+        let rooms = [], status = {}, prooms = [], pstatus = {};
         let pendingDel = null, delCtx = 'live', addCtx = 'live';
 
         async function ghGet(p) {
@@ -1096,10 +1096,20 @@
             const arr = (await fetchJ(tf)) || [],
                   nr = arr.filter(r => !(r.platform === p && r.id === id));
             if (await saveRooms(nr, ip ? `删除作品: ${p}/${id}` : `删除主播: ${p}/${id}`, tf)) {
+                // 清理对应 status：sha 冲突时重试一次（CI 可能并发推送导致 sha 过期）
                 try {
-                    const f = await ghGet(sf); let o = {};
-                    try { o = JSON.parse(atob(f.content)); } catch {}
-                    if (o[dk]) { delete o[dk]; await ghPut(sf, JSON.stringify(o,null,2), f.sha, `清理: ${p}/${id}`); }
+                    for (let attempt = 0; attempt < 2; attempt++) {
+                        const f = await ghGet(sf); let o = {};
+                        try { o = JSON.parse(atob(f.content)); } catch {}
+                        if (!o[dk]) break;
+                        delete o[dk];
+                        try {
+                            await ghPut(sf, JSON.stringify(o,null,2), f.sha, `清理: ${p}/${id}`);
+                            break;
+                        } catch (e) {
+                            if (attempt === 1) console.warn('清理 status 失败:', e);
+                        }
+                    }
                 } catch {}
                 toast('已删除'); closeDel();
                 if (ip) { await loadPosts(); setTimeout(loadPosts, 2000); }
