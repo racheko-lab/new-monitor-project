@@ -8,7 +8,7 @@
     "status": "offline",
     "title": "be一下",
     "viewers": 0,
-    "last_check": "2026-07-16T19:44:12.840656",
+    "last_check": "2026-07-16T20:10:27.468343",
     "duration": 19995
   },
   "douyin_vHan09233": {
@@ -17,10 +17,10 @@
     "name": "韩冰",
     "uname": "韩冰",
     "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
-    "status": "offline",
-    "title": "正在直播",
+    "status": "error",
+    "title": null,
     "viewers": null,
-    "last_check": "2026-07-16T19:44:14.899099",
+    "last_check": "2026-07-16T20:10:43.993288",
     "duration": 15179
   }
 }
