@@ -5,11 +5,11 @@
     "name": "峰哥亡命天涯",
     "uname": "峰哥亡命天涯",
     "avatar": "https://i2.hdslb.com/bfs/face/ae439693d6fd79a55b1b5f935ed6474ae6fba35b.jpg",
-    "status": "live",
+    "status": "offline",
     "title": "be一下",
-    "viewers": 444816,
-    "last_check": "2026-07-16T16:39:52.444393",
-    "duration": 10209
+    "viewers": 0,
+    "last_check": "2026-07-16T16:55:54.101086",
+    "duration": 19995
   },
   "douyin_vHan09233": {
     "platform": "douyin",
@@ -20,7 +20,7 @@
     "status": "offline",
     "title": "正在直播",
     "viewers": null,
-    "last_check": "2026-07-16T16:39:54.223522",
+    "last_check": "2026-07-16T16:55:56.797606",
     "duration": 15179
   }
 }
