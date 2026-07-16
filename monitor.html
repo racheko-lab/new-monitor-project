@@ -917,6 +917,14 @@
         let rooms = [], status = {}, prooms = [], pstatus = {};
         let pendingDel = null, delCtx = 'live', addCtx = 'live';
 
+        // base64 → UTF-8 字符串（TextDecoder 可靠处理多字节，替代已废弃的 escape/atob 拼装）
+        function b64ToUtf8(b64) {
+            const bin = atob(b64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            return new TextDecoder('utf-8').decode(bytes);
+        }
+
         async function ghGet(p) {
             const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${p}?ref=${BRANCH}`, {
                 headers: { Authorization: `token ${tok()}`, Accept: 'application/vnd.github+json' }
@@ -939,7 +947,7 @@
                     const r = await fetch(`https://api.github.com/repos/${REPO}/contents/${f}?ref=${BRANCH}`, {
                         headers: { Authorization: `token ${tok()}`, Accept: 'application/vnd.github+json' }, cache: 'no-store'
                     });
-                    if (r.ok) { const d = await r.json(); return JSON.parse(decodeURIComponent(escape(atob(d.content)))); }
+                    if (r.ok) { const d = await r.json(); return JSON.parse(b64ToUtf8(d.content)); }
                 } catch {}
             }
             try { const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${f}?t=${Date.now()}`, {cache:'no-store'}); return await r.json(); }
@@ -1244,7 +1252,7 @@
                 try {
                     for (let attempt = 0; attempt < 2; attempt++) {
                         const f = await ghGet(sf); let o = {};
-                        try { o = JSON.parse(atob(f.content)); } catch {}
+                        try { o = JSON.parse(b64ToUtf8(f.content)); } catch {}
                         if (!o[dk]) break;
                         delete o[dk];
                         try {
