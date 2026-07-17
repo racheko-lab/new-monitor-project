@@ -8,7 +8,7 @@
     "status": "offline",
     "title": "be一下",
     "viewers": 0,
-    "last_check": "2026-07-17T20:13:58.939238",
+    "last_check": "2026-07-17T20:27:11.729573",
     "duration": 19995
   },
   "douyin_64865306": {
@@ -20,7 +20,7 @@
     "status": "offline",
     "title": "无为大润发旺卤集市 来看看哦",
     "viewers": null,
-    "last_check": "2026-07-17T20:14:00.402954",
+    "last_check": "2026-07-17T20:27:14.986747",
     "duration": 0
   },
   "douyin_woshixiaoqumt": {
@@ -32,7 +32,7 @@
     "status": "offline",
     "title": "与美萌女孩们聊天",
     "viewers": null,
-    "last_check": "2026-07-17T20:14:01.696483",
+    "last_check": "2026-07-17T20:27:17.429185",
     "duration": 0
   },
   "douyin_83134194400": {
@@ -40,11 +40,11 @@
     "id": "83134194400",
     "name": "27～",
     "uname": "27～",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
     "status": "offline",
     "title": "正在直播",
     "viewers": null,
-    "last_check": "2026-07-17T20:14:02.773037",
+    "last_check": "2026-07-17T20:27:19.647065",
     "duration": 0
   },
   "douyin_hmh1020l.": {
@@ -52,11 +52,23 @@
     "id": "hmh1020l.",
     "name": "piiiiikiepie",
     "uname": "piiiiikiepie",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_22ba23ef91602c9c7ceb8ed354a35bc0.jpeg?from=3067671334",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_22ba23ef91602c9c7ceb8ed354a35bc0.jpeg?from=3067671334",
     "status": "offline",
     "title": "piiiiikiepie正在直播",
     "viewers": null,
-    "last_check": "2026-07-17T20:14:03.788934",
+    "last_check": "2026-07-17T20:27:21.742080",
+    "duration": 0
+  },
+  "douyin_32062056217": {
+    "platform": "douyin",
+    "id": "32062056217",
+    "name": "32062056217",
+    "uname": "32062056217",
+    "avatar": null,
+    "status": "error",
+    "title": null,
+    "viewers": null,
+    "last_check": "2026-07-17T20:27:37.006805",
     "duration": 0
   }
 }
