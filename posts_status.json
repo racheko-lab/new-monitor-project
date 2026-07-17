@@ -16,7 +16,7 @@
       "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
       "url": "https://www.douyin.com/video/7663121380891943561",
       "time": "2026-07-17T10:54:04.599656",
-      "sort_key": 7663121380891943561
+      "sort_key": 7663121380891944000
     },
     "total_seen": 26,
     "new_count": 0,
@@ -40,31 +40,7 @@
       "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_2d6f0000113c4daec8515.jpeg?from=3067671334",
       "url": "https://www.douyin.com/video/7660491790876851825",
       "time": "2026-07-17T10:57:52.864763",
-      "sort_key": 7660491790876851825
-    },
-    "total_seen": 20,
-    "new_count": 0,
-    "last_check": "2026-07-17T10:51:02.921127",
-    "status": "ok"
-  },
-  "douyin_llqq192": {
-    "platform": "douyin",
-    "id": "llqq192",
-    "name": "栗子鸡",
-    "sec_uid": "MS4wLjABAAAAPBP113is5zbadFY77J3HQRZ72SDrhQZC3m6qQcOY5f0sI4M0suqH5QrUQKM3_iWi",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c001_oAzuB7B8IAH6CQQAEvAwiAAXAeiF9DfB3giBgi.jpeg?from=3067671334",
-    "latest_post": {
-      "id": "7663008420907882726",
-      "platform": "douyin",
-      "name": "栗子鸡",
-      "title": "哦吧欧巴喔",
-      "views": 0,
-      "likes": 429,
-      "cover": "https://p26-sign.douyinpic.com/tos-cn-i-0813/oMmWDfyOAEoCQYe3PAqgFCnwI59HAAK4CA6AQM~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1784304000&x-signature=E7BnUY5T9YNqOnHOtoEAbG2chyg%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=202607171857577A9EE5FB7EF98A9746F8",
-      "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c001_oAzuB7B8IAH6CQQAEvAwiAAXAeiF9DfB3giBgi.jpeg?from=3067671334",
-      "url": "https://www.douyin.com/video/7663008420907882726",
-      "time": "2026-07-17T11:01:41.815441",
-      "sort_key": 7663008420907882726
+      "sort_key": 7660491790876852000
     },
     "total_seen": 20,
     "new_count": 0,
@@ -88,7 +64,7 @@
       "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
       "url": "https://www.douyin.com/note/7661633491398949498",
       "time": "2026-07-17T11:06:18.303909",
-      "sort_key": 7661633491398949498
+      "sort_key": 7661633491398950000
     },
     "total_seen": 17,
     "new_count": 0,
