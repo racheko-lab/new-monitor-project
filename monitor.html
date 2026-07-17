@@ -45,6 +45,35 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 背景光斑（毛玻璃才有内容可透） */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: -20%;
+            background:
+                radial-gradient(circle at 18% 22%, rgba(59,130,246,0.14), transparent 38%),
+                radial-gradient(circle at 82% 28%, rgba(244,63,94,0.11), transparent 40%),
+                radial-gradient(circle at 50% 88%, rgba(34,197,94,0.07), transparent 42%);
+            z-index: -1;
+            pointer-events: none;
+            animation: bgDrift 24s ease-in-out infinite alternate;
+        }
+        @keyframes bgDrift {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-3%, 2%) scale(1.06); }
+        }
+
+        /* 毛玻璃通用工具类 */
+        .glass {
+            background: rgba(255,255,255,0.045);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.07);
         }
 
         .app {
@@ -75,7 +104,10 @@
             align-items: center;
             gap: 9px;
             padding: 7px 12px;
-            background: var(--surface);
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: var(--r-sm);
             margin-bottom: 16px;
             font-size: 0.8125rem;
@@ -124,8 +156,10 @@
         .add-btn {
             width: 40px; height: 40px;
             border-radius: var(--r-sm);
-            border: 1px solid var(--border);
-            background: var(--surface);
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
             color: var(--text-2);
             cursor: pointer;
             display: flex; align-items: center; justify-content: center;
@@ -133,9 +167,9 @@
             flex-shrink: 0;
         }
         .add-btn:hover {
-            background: var(--surface-2);
+            background: rgba(255,255,255,0.1);
             color: var(--text);
-            border-color: var(--border-2);
+            border-color: rgba(255,255,255,0.14);
             transform: translateY(-1px);
         }
         .add-btn:active { transform: translateY(0) scale(0.97); }
@@ -146,7 +180,10 @@
             display: flex;
             gap: 2px;
             padding: 3px;
-            background: var(--surface);
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: var(--r-sm);
         }
 
@@ -158,8 +195,10 @@
             max-width: 680px;
             margin: 0 auto;
             padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
-            background: var(--bg);
-            border-top: 1px solid var(--border);
+            background: rgba(8,8,10,0.65);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border-top: 1px solid rgba(255,255,255,0.07);
             z-index: 100;
         }
 
@@ -181,7 +220,7 @@
         .seg:hover { color: var(--text-2); }
         .seg.active {
             color: var(--text);
-            background: var(--surface-2);
+            background: rgba(255,255,255,0.1);
             box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
@@ -267,9 +306,13 @@
 
         /* ===== Surface ===== */
         .surface {
-            background: var(--surface);
+            background: rgba(255,255,255,0.045);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: var(--r);
             overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
         }
 
         /* ===== Row ===== */
@@ -284,7 +327,7 @@
             animation: rowIn 0.42s var(--ease-out) backwards;
         }
         .row + .row { border-top: 1px solid var(--divider); }
-        .row:hover { background: var(--surface-2); }
+        .row:hover { background: rgba(255,255,255,0.06); }
         .row:hover .row-del { opacity: 1; }
 
         /* 行入场 stagger：数据刷新时分级淡入 */
@@ -317,10 +360,10 @@
         .row:hover::before { transform: scaleY(1); }
 
         .row.is-live {
-            background: linear-gradient(90deg, var(--live-soft) 0%, transparent 35%);
+            background: linear-gradient(90deg, rgba(244,63,94,0.1) 0%, transparent 35%);
         }
         .row.is-live:hover {
-            background: linear-gradient(90deg, var(--live-glow) 0%, var(--surface-2) 35%);
+            background: linear-gradient(90deg, rgba(244,63,94,0.18) 0%, rgba(255,255,255,0.06) 35%);
         }
 
         /* 直播中：常驻呼吸左边框 + hover 指示条变红 */
@@ -492,7 +535,7 @@
             padding: 13px 18px;
             transition: background 0.15s var(--ease);
         }
-        .tl-item:hover { background: var(--surface-2); }
+        .tl-item:hover { background: rgba(255,255,255,0.06); }
         .tl-item + .tl-item { border-top: 1px solid var(--divider); }
 
         .tl-time {
@@ -557,8 +600,10 @@
         .overlay.show { opacity: 1; visibility: visible; }
 
         .modal {
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: rgba(20,20,26,0.72);
+            backdrop-filter: blur(32px) saturate(180%);
+            -webkit-backdrop-filter: blur(32px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: var(--r);
             padding: 28px;
             width: 100%;
@@ -651,8 +696,10 @@
             bottom: 32px;
             left: 50%;
             transform: translateX(-50%) translateY(16px);
-            background: var(--surface-3);
-            border: 1px solid var(--border-2);
+            background: rgba(40,40,52,0.7);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.12);
             color: var(--text);
             padding: 11px 20px;
             border-radius: var(--r-sm);
