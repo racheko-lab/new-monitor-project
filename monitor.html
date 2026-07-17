@@ -6,6 +6,22 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta name="theme-color" id="meta-theme-color" content="#08080a">
     <meta name="color-scheme" content="dark light">
+    <script>
+    // 主题初始化提前到 head：避免浏览器用默认深色 theme-color 渲染顶部状态栏/底部 chrome
+    (function(){
+        try {
+            var t = localStorage.getItem('monitor-theme');
+            if (t !== 'light' && t !== 'dark') {
+                t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+            }
+            if (t === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                var m = document.getElementById('meta-theme-color');
+                if (m) m.setAttribute('content', '#f5f6f8');
+            }
+        } catch(e){}
+    })();
+    </script>
     <title>Monitor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1042,12 +1058,7 @@
             applyTheme(next);
             try { localStorage.setItem('monitor-theme', next); } catch {}
         }
-        // 初始化主题（优先 localStorage，其次跟随系统）
-        try {
-            const saved = localStorage.getItem('monitor-theme');
-            if (saved === 'light' || saved === 'dark') applyTheme(saved);
-            else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) applyTheme('light');
-        } catch {}
+        // 主题初始化已提前到 <head> 内联执行，避免底部 chrome 用默认深色渲染
 
         let tab = 'live';
         let rooms = [], status = {}, prooms = [], pstatus = {};
