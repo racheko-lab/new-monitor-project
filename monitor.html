@@ -27,11 +27,52 @@
             --blue: #3b82f6;
             --warn: #f59e0b;
             --green: #22c55e;
+            --glass-bg: rgba(255,255,255,0.045);
+            --glass-border: rgba(255,255,255,0.07);
+            --glass-hover: rgba(255,255,255,0.06);
+            --glass-active: rgba(255,255,255,0.1);
+            --glass-modal: rgba(20,20,26,0.72);
+            --glass-toast: rgba(40,40,52,0.7);
+            --glass-nav: rgba(8,8,10,0.65);
+            --bg-orb-1: rgba(59,130,246,0.14);
+            --bg-orb-2: rgba(244,63,94,0.11);
+            --bg-orb-3: rgba(34,197,94,0.07);
             --ease: cubic-bezier(0.4,0,0.2,1);
             --ease-out: cubic-bezier(0.16,1,0.3,1);
             --r: 16px;
             --r-sm: 11px;
             --r-xs: 8px;
+        }
+
+        /* 浅色主题 */
+        [data-theme="light"] {
+            --bg: #f5f6f8;
+            --surface: #ffffff;
+            --surface-2: #f0f1f4;
+            --surface-3: #e8eaee;
+            --divider: rgba(0,0,0,0.06);
+            --border: rgba(0,0,0,0.08);
+            --border-2: rgba(0,0,0,0.12);
+            --text: #0f1115;
+            --text-2: #4b5360;
+            --text-3: #7a8290;
+            --text-4: #b0b8c4;
+            --live: #e11d48;
+            --live-soft: rgba(225,29,72,0.08);
+            --live-glow: rgba(225,29,72,0.15);
+            --blue: #2563eb;
+            --warn: #d97706;
+            --green: #16a34a;
+            --glass-bg: rgba(255,255,255,0.55);
+            --glass-border: rgba(0,0,0,0.08);
+            --glass-hover: rgba(0,0,0,0.04);
+            --glass-active: rgba(0,0,0,0.06);
+            --glass-modal: rgba(255,255,255,0.78);
+            --glass-toast: rgba(255,255,255,0.82);
+            --glass-nav: rgba(245,246,248,0.75);
+            --bg-orb-1: rgba(59,130,246,0.18);
+            --bg-orb-2: rgba(244,63,94,0.14);
+            --bg-orb-3: rgba(34,197,94,0.1);
         }
 
         *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
@@ -56,9 +97,9 @@
             position: fixed;
             inset: -20%;
             background:
-                radial-gradient(circle at 18% 22%, rgba(59,130,246,0.14), transparent 38%),
-                radial-gradient(circle at 82% 28%, rgba(244,63,94,0.11), transparent 40%),
-                radial-gradient(circle at 50% 88%, rgba(34,197,94,0.07), transparent 42%);
+                radial-gradient(circle at 18% 22%, var(--bg-orb-1), transparent 38%),
+                radial-gradient(circle at 82% 28%, var(--bg-orb-2), transparent 40%),
+                radial-gradient(circle at 50% 88%, var(--bg-orb-3), transparent 42%);
             z-index: -1;
             pointer-events: none;
             animation: bgDrift 24s ease-in-out infinite alternate;
@@ -104,10 +145,10 @@
             align-items: center;
             gap: 9px;
             padding: 7px 12px;
-            background: rgba(255,255,255,0.05);
+            background: var(--glass-bg);
             backdrop-filter: blur(20px) saturate(160%);
             -webkit-backdrop-filter: blur(20px) saturate(160%);
-            border: 1px solid rgba(255,255,255,0.07);
+            border: 1px solid var(--glass-border);
             border-radius: var(--r-sm);
             margin-bottom: 16px;
             font-size: 0.8125rem;
@@ -156,8 +197,8 @@
         .add-btn {
             width: 40px; height: 40px;
             border-radius: var(--r-sm);
-            border: 1px solid rgba(255,255,255,0.07);
-            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg);
             backdrop-filter: blur(20px) saturate(160%);
             -webkit-backdrop-filter: blur(20px) saturate(160%);
             color: var(--text-2);
@@ -167,23 +208,32 @@
             flex-shrink: 0;
         }
         .add-btn:hover {
-            background: rgba(255,255,255,0.1);
+            background: var(--glass-active);
             color: var(--text);
-            border-color: rgba(255,255,255,0.14);
+            border-color: var(--border-2);
             transform: translateY(-1px);
         }
         .add-btn:active { transform: translateY(0) scale(0.97); }
         .add-btn svg { width: 16px; height: 16px; }
+
+        .hdr-actions { display: flex; gap: 8px; }
+        .theme-toggle .icon-sun { display: none; }
+        .theme-toggle .icon-moon { display: block; }
+        [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+        [data-theme="light"] .theme-toggle .icon-moon { display: none; }
+        .theme-toggle:hover svg { transition: transform 0.5s var(--ease-out); }
+        .theme-toggle:hover .icon-sun { transform: rotate(45deg); }
+        .theme-toggle:hover .icon-moon { transform: rotate(-30deg); }
 
         /* ===== Segmented ===== */
         .seg-ctrl {
             display: flex;
             gap: 2px;
             padding: 3px;
-            background: rgba(255,255,255,0.05);
+            background: var(--glass-bg);
             backdrop-filter: blur(20px) saturate(160%);
             -webkit-backdrop-filter: blur(20px) saturate(160%);
-            border: 1px solid rgba(255,255,255,0.07);
+            border: 1px solid var(--glass-border);
             border-radius: var(--r-sm);
         }
 
@@ -195,10 +245,10 @@
             max-width: 680px;
             margin: 0 auto;
             padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
-            background: rgba(8,8,10,0.65);
+            background: var(--glass-nav);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border-top: 1px solid rgba(255,255,255,0.07);
+            border-top: 1px solid var(--glass-border);
             z-index: 100;
         }
 
@@ -220,7 +270,7 @@
         .seg:hover { color: var(--text-2); }
         .seg.active {
             color: var(--text);
-            background: rgba(255,255,255,0.1);
+            background: var(--glass-active);
             box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
@@ -306,10 +356,10 @@
 
         /* ===== Surface ===== */
         .surface {
-            background: rgba(255,255,255,0.045);
+            background: var(--glass-bg);
             backdrop-filter: blur(20px) saturate(160%);
             -webkit-backdrop-filter: blur(20px) saturate(160%);
-            border: 1px solid rgba(255,255,255,0.07);
+            border: 1px solid var(--glass-border);
             border-radius: var(--r);
             overflow: hidden;
             box-shadow: 0 8px 32px rgba(0,0,0,0.18);
@@ -327,7 +377,7 @@
             animation: rowIn 0.42s var(--ease-out) backwards;
         }
         .row + .row { border-top: 1px solid var(--divider); }
-        .row:hover { background: rgba(255,255,255,0.06); }
+        .row:hover { background: var(--glass-hover); }
         .row:hover .row-del { opacity: 1; }
 
         /* 行入场 stagger：数据刷新时分级淡入 */
@@ -363,7 +413,7 @@
             background: linear-gradient(90deg, rgba(244,63,94,0.1) 0%, transparent 35%);
         }
         .row.is-live:hover {
-            background: linear-gradient(90deg, rgba(244,63,94,0.18) 0%, rgba(255,255,255,0.06) 35%);
+            background: linear-gradient(90deg, rgba(244,63,94,0.18) 0%, var(--glass-hover) 35%);
         }
 
         /* 直播中：常驻呼吸左边框 + hover 指示条变红 */
@@ -535,7 +585,7 @@
             padding: 13px 18px;
             transition: background 0.15s var(--ease);
         }
-        .tl-item:hover { background: rgba(255,255,255,0.06); }
+        .tl-item:hover { background: var(--glass-hover); }
         .tl-item + .tl-item { border-top: 1px solid var(--divider); }
 
         .tl-time {
@@ -600,10 +650,10 @@
         .overlay.show { opacity: 1; visibility: visible; }
 
         .modal {
-            background: rgba(20,20,26,0.72);
+            background: var(--glass-modal);
             backdrop-filter: blur(32px) saturate(180%);
             -webkit-backdrop-filter: blur(32px) saturate(180%);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--glass-border);
             border-radius: var(--r);
             padding: 28px;
             width: 100%;
@@ -696,10 +746,10 @@
             bottom: 32px;
             left: 50%;
             transform: translateX(-50%) translateY(16px);
-            background: rgba(40,40,52,0.7);
+            background: var(--glass-toast);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border: 1px solid rgba(255,255,255,0.12);
+            border: 1px solid var(--glass-border);
             color: var(--text);
             padding: 11px 20px;
             border-radius: var(--r-sm);
@@ -876,9 +926,15 @@
     <div class="app">
         <header class="hdr">
             <h1 class="hdr-title">Monitor</h1>
-            <button class="add-btn" onclick="showAddModal()" aria-label="添加">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            </button>
+            <div class="hdr-actions">
+                <button class="add-btn theme-toggle" onclick="toggleTheme()" aria-label="切换主题" title="切换深/浅色">
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                </button>
+                <button class="add-btn" onclick="showAddModal()" aria-label="添加">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+            </div>
         </header>
 
         <div class="refresh-bar">
@@ -959,6 +1015,24 @@
         const BRANCH = 'main';
         const TK = 'ghp_' + 'v4XmZ6xQ' + '32Pq5TII4' + 'sOcaBH500' + 'JCL44dHicP';
         const tok = () => TK;
+
+        // ===== 主题切换 =====
+        function applyTheme(t) {
+            if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+            else document.documentElement.removeAttribute('data-theme');
+        }
+        function toggleTheme() {
+            const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            const next = cur === 'light' ? 'dark' : 'light';
+            applyTheme(next);
+            try { localStorage.setItem('monitor-theme', next); } catch {}
+        }
+        // 初始化主题（优先 localStorage，其次跟随系统）
+        try {
+            const saved = localStorage.getItem('monitor-theme');
+            if (saved === 'light' || saved === 'dark') applyTheme(saved);
+            else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) applyTheme('light');
+        } catch {}
 
         let tab = 'live';
         let rooms = [], status = {}, prooms = [], pstatus = {};
