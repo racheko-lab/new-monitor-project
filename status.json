@@ -8,7 +8,7 @@
     "status": "offline",
     "title": "be一下",
     "viewers": 0,
-    "last_check": "2026-07-18T04:03:03.002512",
+    "last_check": "2026-07-18T04:36:23.206747",
     "duration": 19995
   },
   "douyin_64865306": {
@@ -20,7 +20,7 @@
     "status": "offline",
     "title": "无为大润发旺卤集市 来看看哦",
     "viewers": null,
-    "last_check": "2026-07-18T04:03:05.133487",
+    "last_check": "2026-07-18T04:36:24.922457",
     "duration": 0
   },
   "douyin_woshixiaoqumt": {
@@ -29,10 +29,10 @@
     "name": "小曲开心",
     "uname": "小曲开心",
     "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_8335485847dacf48ebe6be2b4d419ea7.jpeg?from=3067671334",
-    "status": "offline",
-    "title": "与美萌女孩们聊天",
+    "status": "error",
+    "title": null,
     "viewers": null,
-    "last_check": "2026-07-18T04:03:06.220080",
+    "last_check": "2026-07-18T04:36:40.609973",
     "duration": 0
   },
   "douyin_83134194400": {
@@ -44,7 +44,7 @@
     "status": "offline",
     "title": "正在直播",
     "viewers": null,
-    "last_check": "2026-07-18T04:03:07.164834",
+    "last_check": "2026-07-18T04:36:42.574608",
     "duration": 0
   },
   "douyin_hmh1020l.": {
@@ -56,7 +56,7 @@
     "status": "offline",
     "title": "piiiiikiepie正在直播",
     "viewers": null,
-    "last_check": "2026-07-18T04:03:08.337475",
+    "last_check": "2026-07-18T04:36:44.929488",
     "duration": 0
   },
   "douyin_32062056217": {
@@ -64,11 +64,11 @@
     "id": "32062056217",
     "name": "Sayonal_",
     "uname": "Sayonal_",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_602c5d8ee34311549115864959f13e48.jpeg?from=3067671334",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_602c5d8ee34311549115864959f13e48.jpeg?from=3067671334",
     "status": "offline",
     "title": "TRNA",
     "viewers": null,
-    "last_check": "2026-07-18T04:03:09.489162",
+    "last_check": "2026-07-18T04:37:00.630070",
     "duration": 0
   }
 }
