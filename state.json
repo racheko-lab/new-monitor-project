@@ -279,5 +279,10 @@
     "last_live_start": null,
     "duration": 0,
     "last_live_time": null
+  },
+  "bilibili_6": {
+    "last_live_start": null,
+    "duration": 0,
+    "last_live_time": null
   }
 }
