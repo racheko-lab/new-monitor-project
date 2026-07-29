@@ -1,5 +1,18 @@
 [
   {
+    "id": "7667629420483624539",
+    "platform": "douyin",
+    "name": "韩冰",
+    "title": "如巧克力般丝滑#AI广告爆改大赛#抖音电商#即梦AI#和李诞争当AI界新梗王",
+    "views": 0,
+    "likes": 636,
+    "cover": "https://p3-sign.douyinpic.com/tos-cn-i-0813/ogBAIFBOiAspN5o9Ae1JAC2Ay88EINAfg1H7yi~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1785315600&x-signature=VGO0ifWBb1k8WprDNkOv3WnP6qY%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=20260729110343F2C22DCD7CD5749FA58E",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
+    "url": "https://www.douyin.com/video/7667629420483624539",
+    "time": "2026-07-29T03:07:01.808613",
+    "sort_key": 7667629420483624539
+  },
+  {
     "id": "7667565741135210427",
     "platform": "douyin",
     "name": "27～",
@@ -1272,18 +1285,5 @@
     "url": "https://www.douyin.com/video/7646759666575676857",
     "time": "2026-07-12T18:39:47.526203",
     "sort_key": 7646759666575676857
-  },
-  {
-    "id": "7646388394113746361",
-    "platform": "douyin",
-    "name": "27～",
-    "title": "🌴。#芒市加州",
-    "views": 0,
-    "likes": 1102,
-    "cover": "https://p11-sign.douyinpic.com/tos-cn-i-0813c000-ce/o0sOM8MhBQF8Qy2fmAUgWEp6Ih7tAAfYAJGAKe~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1784019600&x-signature=3ku3oQjqHQLe0bRbO9Di%2FhVxhGs%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=202607141132472A055B1524A3B13B119C",
-    "avatar": null,
-    "url": "https://www.douyin.com/note/7646388394113746361",
-    "time": "2026-07-14T03:37:16.053986",
-    "sort_key": 7646388394113746361
   }
 ]
