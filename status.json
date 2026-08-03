@@ -178,17 +178,5 @@
     "viewers": null,
     "last_check": "2026-08-03T22:14:25.589807",
     "duration": 0
-  },
-  "bilibili_6": {
-    "platform": "bilibili",
-    "id": "6",
-    "name": "6",
-    "uname": "6",
-    "avatar": null,
-    "status": "error",
-    "title": null,
-    "viewers": null,
-    "last_check": "2026-08-03T22:14:25.969905",
-    "duration": 0
   }
 }
