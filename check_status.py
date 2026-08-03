@@ -288,6 +288,16 @@ def check_all() -> Tuple[List[Dict], List[str]]:
         key = get_status_key(platform, room_id)
 
         status, title, viewers, uname, avatar = get_status(platform, room_id)
+
+        # 检测失败：仅记录历史，保留上次有效状态，不污染下次状态变化判断
+        # （否则 error 会覆盖 status，下次恢复检测时误判为状态变化，重复推送下播/开播通知）
+        if status == "error":
+            msg = f"⚠️ {name} 检测失败"
+            add_history(msg, "error")
+            if key in current_status:
+                current_status[key]["last_check"] = datetime.now().isoformat()
+            continue
+
         is_live = status == "live"
 
         # 自动获取真实昵称：若 rooms.json 里 name 还是房间号/ID，则用获取到的 uname 替换
@@ -326,9 +336,6 @@ def check_all() -> Tuple[List[Dict], List[str]]:
                     msg += f"，本次直播时长: {hours}小时{minutes}分钟"
                 notifications.append(msg)
                 add_history(msg, "live_end")
-            elif status == "error":
-                msg = f"⚠️ {name} 检测失败"
-                add_history(msg, "error")
 
         # 下播且API未返回标题时，保留上次直播的标题
         if not title and status == "offline":
