@@ -1,10 +1,5 @@
 [
   {
-    "time": "2026-07-19T18:37:47.038125",
-    "type": "live_end",
-    "message": "🏁 村口一娜 下播了"
-  },
-  {
     "time": "2026-07-19T23:49:37.827408",
     "type": "error",
     "message": "⚠️ D.my 检测失败"
@@ -998,5 +993,10 @@
     "time": "2026-08-08T04:13:15.702638",
     "type": "live_start",
     "message": "🎉 郑少雯子 开播了！\n标题: 你在就好了\n🔗 https://live.douyin.com/ZSWZ111"
+  },
+  {
+    "time": "2026-08-08T04:23:58.320499",
+    "type": "live_end",
+    "message": "🏁 郑少雯子 下播了"
   }
 ]
