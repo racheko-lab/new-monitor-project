@@ -1,55 +1,55 @@
 {
-  "time": "2026-08-08T19:32:41.245807",
+  "time": "2026-08-08T19:40:13.528077",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
     "douyin_vHan09233": {
-      "status": "stale",
+      "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-08T19:32:41.246158"
+      "last_check": "2026-08-08T19:40:13.528425"
     },
     "douyin_FengBro": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-08T19:32:41.246158"
+      "last_check": "2026-08-08T19:40:13.528425"
     },
     "douyin_83134194400": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-08T19:32:41.246158"
+      "last_check": "2026-08-08T19:40:13.528425"
     },
     "douyin_33716689672": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-08T19:32:41.246158"
+      "last_check": "2026-08-08T19:40:13.528425"
     },
     "douyin_32062056217": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-08T19:32:41.246158"
+      "last_check": "2026-08-08T19:40:13.528425"
     },
     "kuaishou_pineapple2005": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-08-08T19:32:41.246158"
+      "last_check": "2026-08-08T19:40:13.528425"
     },
     "kuaishou_HUizi-G-H": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-08-08T19:32:41.246158"
+      "last_check": "2026-08-08T19:40:13.528425"
     },
     "kuaishou_Sandy88888": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2117550",
-      "last_check": "2026-08-08T19:32:41.246158"
+      "last_check": "2026-08-08T19:40:13.528425"
     }
   },
   "fetch_diag": [
@@ -59,8 +59,9 @@
       "live_sec_uid_ok": true,
       "sec_uid_ok": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWLvl9T8",
-      "pw_status": "no_data",
-      "parsed_count": 0
+      "pw_status": "ok",
+      "parsed_count": 15,
+      "latest_post_id": "7671242630693278702"
     },
     {
       "room_id": "FengBro",
