@@ -22,7 +22,7 @@
   "bilibili_22230707": {
     "last_live_start": "2026-08-08T13:04:13.058610",
     "duration": 78244,
-    "last_live_time": "2026-08-08T14:05:07.865188"
+    "last_live_time": "2026-08-08T15:04:16.803878"
   },
   "bilibili_3381141": {
     "last_live_start": null,
@@ -347,5 +347,10 @@
       "3x92ux4mgtq8f2c"
     ],
     "last_check": "2026-08-08T15:00:38.866234"
+  },
+  "kuaishou_HUizi-G-H": {
+    "last_live_start": null,
+    "duration": 0,
+    "last_live_time": null
   }
 }
