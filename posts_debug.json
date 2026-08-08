@@ -1,5 +1,5 @@
 {
-  "time": "2026-08-08T18:34:49.421179",
+  "time": "2026-08-08T18:42:59.087271",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
@@ -7,43 +7,43 @@
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-08T18:34:49.421485"
+      "last_check": "2026-08-08T18:42:59.097585"
     },
     "douyin_FengBro": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-08T18:34:49.421485"
+      "last_check": "2026-08-08T18:42:59.097585"
     },
     "douyin_83134194400": {
-      "status": "stale",
+      "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-08T18:34:49.421485"
+      "last_check": "2026-08-08T18:42:59.097585"
     },
     "douyin_33716689672": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-08T18:34:49.421485"
+      "last_check": "2026-08-08T18:42:59.097585"
     },
     "douyin_32062056217": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-08T18:34:49.421485"
+      "last_check": "2026-08-08T18:42:59.097585"
     },
     "kuaishou_pineapple2005": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-08-08T18:34:49.421485"
+      "last_check": "2026-08-08T18:42:59.097585"
     },
     "kuaishou_HUizi-G-H": {
       "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-08-08T18:34:49.421485"
+      "last_check": "2026-08-08T18:42:59.097585"
     }
   },
   "fetch_diag": [
@@ -73,8 +73,9 @@
       "live_sec_uid_ok": true,
       "sec_uid_ok": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9HAtkd",
-      "pw_status": "no_data",
-      "parsed_count": 0
+      "pw_status": "ok",
+      "parsed_count": 15,
+      "latest_post_id": "7671312198745174201"
     },
     {
       "room_id": "33716689672",
