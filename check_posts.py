@@ -1424,9 +1424,9 @@ def parse_ks_feed(item: Dict, room_name: str) -> Optional[Dict]:
 def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[Dict], List[Dict], List[str]]:
     """检测一个快手账号的新作品，返回 (user_id, display_name, avatar, latest_post, new_posts, notifications)。
 
-    用 requests 调 live.kuaishou.com/graphql 的 publicFeedsQuery，
-    返回 list 字段含 photoId/caption/viewCount/likeCount/timestamp。
-    不需要 Playwright。
+    用 Playwright 访问 kuaishou.com/profile/{room_id}，拦截 /graphql 响应，
+    解析 publicFeedsQuery 返回的 list 字段（含 photoId/caption/viewCount/likeCount/timestamp）。
+    和抖音同策略，绕过 graphql 直接请求被限流的问题。
     """
     notifications = []
     new_posts_data = []
@@ -1435,70 +1435,100 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
     avatar = None
     user_id = None
 
-    sess = requests.Session()
-    sess.headers.update({
-        "User-Agent": HEADERS["User-Agent"],
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-    })
-    # 访问首页拿 did cookie
-    try:
-        sess.get("https://live.kuaishou.com/", timeout=10)
-    except Exception:
-        pass
+    if not PLAYWRIGHT_AVAILABLE:
+        print(f"快手作品检测需要 Playwright {room_id}")
+        return None, display_name, None, None, [], []
 
-    query = (
-        "query publicFeedsQuery($principalId: String, $pcursor: String, $count: Int) {"
-        " publicFeeds(principalId: $principalId, pcursor: $pcursor, count: $count) {"
-        " pcursor live { liveStreamId user { id eid kwaiId name avatar } }"
-        " list { photoId caption thumbnailUrl poster viewCount likeCount commentCount timestamp"
-        " user { id name profile } } } }"
-    )
-    payload = {
-        "operationName": "publicFeedsQuery",
-        "variables": {"principalId": room_id, "pcursor": "", "count": 30},
-        "query": query,
-    }
+    captured_feeds = []  # 拦截到的 raw feed items
+    captured_user = {}   # 拦截到的用户信息
+
+    def on_response(resp):
+        url = resp.url
+        if '/graphql' not in url and 'graphql' not in url:
+            return
+        try:
+            data = resp.json()
+            # 快手 graphql 响应格式：{"data":{"publicFeeds":{...}}}
+            feeds_data = (data.get("data") or {}).get("publicFeeds") or {}
+            feed_list = feeds_data.get("list") or []
+            if feed_list:
+                for item in feed_list:
+                    if isinstance(item, dict) and item.get("photoId"):
+                        captured_feeds.append(item)
+            live = feeds_data.get("live") or {}
+            live_user = live.get("user") or {}
+            if live_user.get("name"):
+                captured_user.update(live_user)
+            # userInfoQuery 响应
+            ui = (data.get("data") or {}).get("userInfo") or {}
+            if ui.get("name"):
+                captured_user.update(ui)
+        except Exception:
+            pass
+
     try:
-        resp = sess.post(
-            "https://live.kuaishou.com/graphql",
-            json=payload,
-            headers={
-                "Content-Type": "application/json",
-                "Referer": f"https://live.kuaishou.com/profile/{room_id}",
-                "Origin": "https://live.kuaishou.com",
-            },
-            timeout=15,
-        )
-        data = resp.json()
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            ctx = browser.new_context(
+                user_agent=('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                            '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'),
+                viewport={'width': 1280, 'height': 800},
+                locale='zh-CN', timezone_id='Asia/Shanghai',
+            )
+            ctx.add_init_script("Object.defineProperty(navigator,'webdriver',{get:()=>undefined});")
+            page = ctx.new_page()
+            page.on("response", on_response)
+
+            # 访问用户主页
+            print(f"  [快手] 访问 profile/{room_id}...")
+            try:
+                page.goto(f"https://www.kuaishou.com/profile/{room_id}",
+                          wait_until="domcontentloaded", timeout=20000)
+            except PlaywrightTimeoutError:
+                print(f"  [快手] 页面加载超时，尝试继续")
+            except Exception as e:
+                print(f"  [快手] 页面加载异常: {e}")
+
+            # 等待 graphql 响应
+            try:
+                page.wait_for_timeout(5000)
+            except Exception:
+                pass
+
+            # 滚动加载更多
+            for _ in range(2):
+                try:
+                    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                    page.wait_for_timeout(2000)
+                except Exception:
+                    break
+
+            browser.close()
     except Exception as e:
-        print(f"快手作品检测异常 {room_id}: {e}")
+        print(f"快手作品检测 Playwright 异常 {room_id}: {e}")
         return None, display_name, None, None, [], []
 
-    if data.get("result") not in (1, None, 0):
-        print(f"快手作品graphql异常 {room_id}: {data.get('error_msg') or data}")
-        return None, display_name, None, None, [], []
-
-    feeds = (data.get("data") or {}).get("publicFeeds") or {}
-    raw_list = feeds.get("list") or []
-    live = feeds.get("live") or {}
-    live_user = live.get("user") or {}
+    print(f"  [快手] 拦截到 {len(captured_feeds)} 条作品, user={captured_user.get('name','?')}")
 
     # 用户信息
-    user_id = live_user.get("id") or live_user.get("eid") or live_user.get("kwaiId")
-    nick = live_user.get("name")
+    user_id = captured_user.get("id") or captured_user.get("eid") or captured_user.get("kwaiId") or room_id
+    nick = captured_user.get("name")
     if nick:
         display_name = nick
-    avatar = live_user.get("avatar")
+    avatar = captured_user.get("avatar") or captured_user.get("profile")
 
     # 解析作品
     parsed_posts = []
-    for item in raw_list:
-        p = parse_ks_feed(item, display_name)
-        if p:
-            if not p.get("avatar") and avatar:
-                p["avatar"] = avatar
-            parsed_posts.append(p)
+    seen_ids = set()
+    for item in captured_feeds:
+        pid = item.get("photoId")
+        if pid and pid not in seen_ids:
+            seen_ids.add(pid)
+            p = parse_ks_feed(item, display_name)
+            if p:
+                if not p.get("avatar") and avatar:
+                    p["avatar"] = avatar
+                parsed_posts.append(p)
 
     if not parsed_posts:
         return user_id, display_name, avatar, None, [], []
