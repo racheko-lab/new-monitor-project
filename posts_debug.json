@@ -1,5 +1,5 @@
 {
-  "time": "2026-08-08T22:28:53.107598",
+  "time": "2026-08-08T22:35:33.415050",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
@@ -7,49 +7,49 @@
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-08T22:28:53.107951"
+      "last_check": "2026-08-08T22:35:33.415500"
     },
     "douyin_FengBro": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-08T22:28:53.107951"
+      "last_check": "2026-08-08T22:35:33.415500"
     },
     "douyin_83134194400": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-08T22:28:53.107951"
+      "last_check": "2026-08-08T22:35:33.415500"
     },
     "douyin_33716689672": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-08T22:28:53.107951"
+      "last_check": "2026-08-08T22:35:33.415500"
     },
     "douyin_32062056217": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-08T22:28:53.107951"
+      "last_check": "2026-08-08T22:35:33.415500"
     },
     "kuaishou_pineapple2005": {
-      "status": "stale",
+      "status": "ok",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-08-08T22:28:53.107951"
+      "last_check": "2026-08-08T22:35:33.415500"
     },
     "kuaishou_HUizi-G-H": {
-      "status": "stale",
+      "status": "ok",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-08-08T22:28:53.107951"
+      "last_check": "2026-08-08T22:35:33.415500"
     },
     "kuaishou_Sandy88888": {
-      "status": "stale",
+      "status": "ok",
       "has_latest_post": true,
       "sec_uid": "2117550",
-      "last_check": "2026-08-08T22:28:53.107951"
+      "last_check": "2026-08-08T22:35:33.415500"
     }
   },
   "fetch_diag": [
