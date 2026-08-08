@@ -6,9 +6,9 @@
     "sec_uid": null,
     "avatar": null,
     "latest_post": null,
-    "total_seen": 34,
+    "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-03T08:50:08.502795",
+    "last_check": "2026-08-08T05:08:04.194763",
     "status": "error"
   },
   "douyin_FengBro": {
@@ -18,9 +18,9 @@
     "sec_uid": null,
     "avatar": null,
     "latest_post": null,
-    "total_seen": 24,
+    "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-03T08:50:08.502795",
+    "last_check": "2026-08-08T05:08:04.194763",
     "status": "error"
   },
   "douyin_83134194400": {
@@ -30,9 +30,9 @@
     "sec_uid": null,
     "avatar": null,
     "latest_post": null,
-    "total_seen": 23,
+    "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-03T08:50:08.502795",
+    "last_check": "2026-08-08T05:08:04.194763",
     "status": "error"
   },
   "douyin_33716689672": {
@@ -42,9 +42,9 @@
     "sec_uid": null,
     "avatar": null,
     "latest_post": null,
-    "total_seen": 7,
+    "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-03T08:50:08.502795",
+    "last_check": "2026-08-08T05:08:04.194763",
     "status": "error"
   },
   "douyin_32062056217": {
@@ -54,9 +54,21 @@
     "sec_uid": null,
     "avatar": null,
     "latest_post": null,
-    "total_seen": 15,
+    "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-03T08:50:08.502795",
+    "last_check": "2026-08-08T05:08:04.194763",
+    "status": "error"
+  },
+  "kuaishou_pineapple2005": {
+    "platform": "kuaishou",
+    "id": "pineapple2005",
+    "name": "魅力驿站",
+    "sec_uid": null,
+    "avatar": null,
+    "latest_post": null,
+    "total_seen": 0,
+    "new_count": 0,
+    "last_check": "2026-08-08T05:08:04.194763",
     "status": "error"
   }
 }
