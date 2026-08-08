@@ -3,13 +3,25 @@
     "platform": "douyin",
     "id": "vHan09233",
     "name": "韩冰",
-    "sec_uid": null,
-    "avatar": null,
-    "latest_post": null,
-    "total_seen": 0,
+    "sec_uid": "MS4wLjABAAAAUXBNFnWLvl9T8ylgAbD1auR_o5FL3dF7ic0KMYN9_88",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
+    "latest_post": {
+      "id": "7671242630693278702",
+      "platform": "douyin",
+      "name": "韩冰",
+      "title": "喜欢这个斜刘海",
+      "views": 0,
+      "likes": 93988,
+      "cover": "https://p11-sign.douyinpic.com/tos-cn-i-0813c001/o0BjIBjiavZPABGmAh6odAI319nAEQWmAuiUg~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1786204800&x-signature=pdkdq2wkA%2FU4h27kWMyLGf0sGVQ%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=202608081825262A77DDB337C5E2C2552E",
+      "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
+      "url": "https://www.douyin.com/video/7671242630693278702",
+      "time": "2026-08-08T10:27:36.857223",
+      "sort_key": 7671242630693278702
+    },
+    "total_seen": 38,
     "new_count": 0,
-    "last_check": "2026-08-08T12:19:27.891327",
-    "status": "error"
+    "last_check": "2026-08-08T10:27:36.858144",
+    "status": "ok"
   },
   "douyin_FengBro": {
     "platform": "douyin",
@@ -20,7 +32,7 @@
     "latest_post": null,
     "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-08T12:19:27.891327",
+    "last_check": "2026-08-08T05:08:04.194763",
     "status": "error"
   },
   "douyin_83134194400": {
@@ -32,7 +44,7 @@
     "latest_post": null,
     "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-08T12:19:27.891327",
+    "last_check": "2026-08-08T05:08:04.194763",
     "status": "error"
   },
   "douyin_33716689672": {
@@ -44,7 +56,7 @@
     "latest_post": null,
     "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-08T12:19:27.891327",
+    "last_check": "2026-08-08T05:08:04.194763",
     "status": "error"
   },
   "douyin_32062056217": {
@@ -56,7 +68,7 @@
     "latest_post": null,
     "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-08T12:19:27.891327",
+    "last_check": "2026-08-08T05:08:04.194763",
     "status": "error"
   },
   "kuaishou_pineapple2005": {
@@ -68,7 +80,7 @@
     "latest_post": null,
     "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-08T12:19:27.891327",
+    "last_check": "2026-08-08T05:08:04.194763",
     "status": "error"
   }
 }

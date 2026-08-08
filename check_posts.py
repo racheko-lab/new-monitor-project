@@ -1821,6 +1821,9 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
         room_id = room.get("id", "")
         name = room.get("name", room_id)
         key = get_status_key(platform, room_id)
+        # 保留上次状态：本次检测失败/无新数据时，不擦除已知的 latest_post 等字段，
+        # 避免前端因 CI 偶发失败而显示"暂无作品"。
+        prev = posts_status.get(key, {}) or {}
 
         try:
             if platform == "douyin":
@@ -1838,14 +1841,14 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
             posts_status[key] = {
                 "platform": platform,
                 "id": room_id,
-                "name": name,
-                "sec_uid": None,
-                "avatar": None,
-                "latest_post": None,
-                "total_seen": 0,
+                "name": prev.get("name") or name,
+                "sec_uid": prev.get("sec_uid"),
+                "avatar": prev.get("avatar"),
+                "latest_post": prev.get("latest_post"),
+                "total_seen": prev.get("total_seen", 0),
                 "new_count": 0,
                 "last_check": now,
-                "status": "error",
+                "status": "stale" if prev.get("latest_post") else "error",
             }
             continue
 
@@ -1853,9 +1856,24 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
         if display_name and display_name != name:
             room["name"] = display_name
 
-        # 判断状态
-        if latest_post:
+        # 本次未取到新数据时，沿用上次的 latest_post / sec_uid / avatar / 昵称，
+        # 避免一次抓取失败就清空前端已展示的作品。
+        used_preserved = False
+        if not latest_post and prev.get("latest_post"):
+            latest_post = prev.get("latest_post")
+            used_preserved = True
+        if not sec_uid:
+            sec_uid = prev.get("sec_uid")
+        if not avatar:
+            avatar = prev.get("avatar")
+        if not display_name:
+            display_name = prev.get("name") or name
+
+        # 判断状态：有本次新鲜数据=ok；仅沿用上次数据=stale；有sec_uid无作品=no_data；其余=error
+        if latest_post and not used_preserved:
             status_flag = "ok"
+        elif latest_post and used_preserved:
+            status_flag = "stale"
         elif sec_uid:
             status_flag = "no_data"
         else:
