@@ -33,11 +33,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          # key 含 headless-shell 标记：headless=True 需要 chromium-headless-shell，
+          # 旧缓存只装了完整 chromium，会导致 launch 报 Executable doesn't exist。
+          key: playwright-headless-shell-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
 
       - name: Install Playwright
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: python -m playwright install --with-deps chromium
+        # 同时安装 chromium 和 chromium-headless-shell：headless=True 用 headless-shell，
+        # headless=False（monitor.py 直播检测）用完整 chromium。
+        run: python -m playwright install --with-deps chromium chromium-headless-shell
 
       - name: Check live status
         id: check_live
