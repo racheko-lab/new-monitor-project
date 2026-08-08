@@ -1721,15 +1721,31 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
         name = room.get("name", room_id)
         key = get_status_key(platform, room_id)
 
-        if platform == "douyin":
-            print(f"检测账号: {room_id} ({name})")
-            sec_uid, display_name, avatar, latest_post, new_posts, notifications = check_douyin_posts(room_id, name)
-            seen_key = f"douyin_posts_{room_id}"
-        elif platform == "kuaishou":
-            print(f"检测账号: {room_id} ({name}) [快手]")
-            sec_uid, display_name, avatar, latest_post, new_posts, notifications = check_kuaishou_posts(room_id, name)
-            seen_key = f"kuaishou_posts_{room_id}"
-        else:
+        try:
+            if platform == "douyin":
+                print(f"检测账号: {room_id} ({name})")
+                sec_uid, display_name, avatar, latest_post, new_posts, notifications = check_douyin_posts(room_id, name)
+                seen_key = f"douyin_posts_{room_id}"
+            elif platform == "kuaishou":
+                print(f"检测账号: {room_id} ({name}) [快手]")
+                sec_uid, display_name, avatar, latest_post, new_posts, notifications = check_kuaishou_posts(room_id, name)
+                seen_key = f"kuaishou_posts_{room_id}"
+            else:
+                continue
+        except Exception as e:
+            print(f"检测异常 {platform}_{room_id}: {e}")
+            posts_status[key] = {
+                "platform": platform,
+                "id": room_id,
+                "name": name,
+                "sec_uid": None,
+                "avatar": None,
+                "latest_post": None,
+                "total_seen": 0,
+                "new_count": 0,
+                "last_check": now,
+                "status": "error",
+            }
             continue
 
         # 自动补全昵称
