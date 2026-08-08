@@ -1,5 +1,5 @@
 {
-  "time": "2026-08-08T13:07:12.199605",
+  "time": "2026-08-08T13:09:42.623544",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
@@ -7,37 +7,37 @@
       "status": "stale",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-08T13:07:12.199918"
+      "last_check": "2026-08-08T13:09:42.623799"
     },
     "douyin_FengBro": {
       "status": "error",
       "has_latest_post": false,
       "sec_uid": "",
-      "last_check": "2026-08-08T13:07:12.199918"
+      "last_check": "2026-08-08T13:09:42.623799"
     },
     "douyin_83134194400": {
       "status": "error",
       "has_latest_post": false,
       "sec_uid": "",
-      "last_check": "2026-08-08T13:07:12.199918"
+      "last_check": "2026-08-08T13:09:42.623799"
     },
     "douyin_33716689672": {
       "status": "error",
       "has_latest_post": false,
       "sec_uid": "",
-      "last_check": "2026-08-08T13:07:12.199918"
+      "last_check": "2026-08-08T13:09:42.623799"
     },
     "douyin_32062056217": {
       "status": "error",
       "has_latest_post": false,
       "sec_uid": "",
-      "last_check": "2026-08-08T13:07:12.199918"
+      "last_check": "2026-08-08T13:09:42.623799"
     },
     "kuaishou_pineapple2005": {
       "status": "error",
       "has_latest_post": false,
       "sec_uid": "",
-      "last_check": "2026-08-08T13:07:12.199918"
+      "last_check": "2026-08-08T13:09:42.623799"
     }
   },
   "fetch_diag": []
