@@ -1,5 +1,5 @@
 {
-  "time": "2026-08-08T19:40:13.528077",
+  "time": "2026-08-08T19:45:26.561891",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
@@ -7,49 +7,49 @@
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-08T19:40:13.528425"
+      "last_check": "2026-08-08T19:45:26.569432"
     },
     "douyin_FengBro": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-08T19:40:13.528425"
+      "last_check": "2026-08-08T19:45:26.569432"
     },
     "douyin_83134194400": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-08T19:40:13.528425"
+      "last_check": "2026-08-08T19:45:26.569432"
     },
     "douyin_33716689672": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-08T19:40:13.528425"
+      "last_check": "2026-08-08T19:45:26.569432"
     },
     "douyin_32062056217": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-08T19:40:13.528425"
+      "last_check": "2026-08-08T19:45:26.569432"
     },
     "kuaishou_pineapple2005": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-08-08T19:40:13.528425"
+      "last_check": "2026-08-08T19:45:26.569432"
     },
     "kuaishou_HUizi-G-H": {
       "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-08-08T19:40:13.528425"
+      "last_check": "2026-08-08T19:45:26.569432"
     },
     "kuaishou_Sandy88888": {
       "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2117550",
-      "last_check": "2026-08-08T19:40:13.528425"
+      "last_check": "2026-08-08T19:45:26.569432"
     }
   },
   "fetch_diag": [
