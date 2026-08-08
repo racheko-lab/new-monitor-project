@@ -3,13 +3,25 @@
     "platform": "douyin",
     "id": "vHan09233",
     "name": "韩冰",
-    "sec_uid": null,
-    "avatar": null,
-    "latest_post": null,
-    "total_seen": 0,
-    "new_count": 0,
-    "last_check": "2026-08-08T05:08:04.194763",
-    "status": "error"
+    "sec_uid": "MS4wLjABAAAAUXBNFnWLvl9T8ylgAbD1auR_o5FL3dF7ic0KMYN9_88",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
+    "latest_post": {
+      "id": "7671242630693278702",
+      "platform": "douyin",
+      "name": "韩冰",
+      "title": "喜欢这个斜刘海",
+      "views": 0,
+      "likes": 92673,
+      "cover": "https://p3-sign.douyinpic.com/tos-cn-i-0813c001/o0BjIBjiavZPABGmAh6odAI319nAEQWmAuiUg~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1786201200&x-signature=JW7ubKl2SlmWLklSKIoB2%2Fc%2FtGg%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=202608081732598CD07EF240EDD21BB31A",
+      "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
+      "url": "https://www.douyin.com/video/7671242630693278702",
+      "time": "2026-08-08T09:34:41.639688",
+      "sort_key": 7671242630693278702
+    },
+    "total_seen": 38,
+    "new_count": 4,
+    "last_check": "2026-08-08T09:34:41.645710",
+    "status": "ok"
   },
   "douyin_FengBro": {
     "platform": "douyin",
