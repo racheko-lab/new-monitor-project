@@ -15,6 +15,8 @@ HISTORY_MAX = 200
 
 BILIBILI_API = "https://api.live.bilibili.com/xlive/web-room/v1/index/getRoomBaseInfo"
 DOUYIN_URL = "https://live.douyin.com/{}"
+KUAISHOU_GRAPHQL = "https://live.kuaishou.com/graphql"
+KUAISHOU_HOME = "https://live.kuaishou.com/"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -240,11 +242,107 @@ def check_douyin(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optio
         return "error", None, None, None, None
 
 
+def check_kuaishou(room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str], Optional[str]]:
+    """检测快手直播状态。
+
+    快手直播间 URL: https://live.kuaishou.com/u/{eid}
+    room_id 即用户的 eid 或 kwaiId。
+
+    策略：用 requests 先访问首页拿 did cookie，再 POST /graphql 调
+    publicFeedsQuery，返回的 live 字段含 liveStreamId 即直播中。
+    字段映射：live.title/caption、live.watchingCount、live.user.name、live.user.avatar
+    """
+    try:
+        sess = requests.Session()
+        sess.headers.update({
+            "User-Agent": HEADERS["User-Agent"],
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        })
+        # 1. 访问首页拿 did cookie（快手 graphql 需要）
+        try:
+            sess.get(KUAISHOU_HOME, timeout=10)
+        except Exception:
+            pass
+
+        # 2. 调 graphql 查直播+用户信息
+        query = (
+            "query publicFeedsQuery($principalId: String, $pcursor: String, $count: Int) {"
+            " publicFeeds(principalId: $principalId, pcursor: $pcursor, count: $count) {"
+            " pcursor live { liveStreamId title watchingCount src"
+            " user { id eid kwaiId name avatar living } } } }"
+        )
+        payload = {
+            "operationName": "publicFeedsQuery",
+            "variables": {"principalId": room_id, "pcursor": "", "count": 1},
+            "query": query,
+        }
+        resp = sess.post(
+            KUAISHOU_GRAPHQL,
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Referer": f"https://live.kuaishou.com/profile/{room_id}",
+                "Origin": "https://live.kuaishou.com",
+            },
+            timeout=15,
+        )
+        data = resp.json()
+        if data.get("result") not in (1, None) and data.get("result") != 0:
+            # 限流等错误
+            print(f"快手graphql返回异常 {room_id}: {data.get('error_msg') or data}")
+            return "error", None, None, None, None
+
+        feeds = (data.get("data") or {}).get("publicFeeds") or {}
+        live = feeds.get("live") or {}
+        user = live.get("user") or {}
+
+        uname = user.get("name")
+        avatar = user.get("avatar")
+        title = live.get("title") or live.get("caption")
+        watching = live.get("watchingCount")
+        # watchingCount 是字符串如 "1.1万"，转成数字
+        viewers = None
+        if watching:
+            try:
+                if isinstance(watching, str):
+                    w = watching.replace("+", "")
+                    if "万" in w:
+                        viewers = int(float(w.replace("万", "")) * 10000)
+                    elif "亿" in w:
+                        viewers = int(float(w.replace("亿", "")) * 100000000)
+                    else:
+                        viewers = int(float(w))
+                else:
+                    viewers = int(watching)
+            except Exception:
+                viewers = None
+
+        # 判断直播状态：有 liveStreamId 即直播中
+        if live.get("liveStreamId"):
+            status = "live"
+        elif user.get("living"):
+            status = "live"
+        elif uname or user.get("id"):
+            # 有用户信息但无 liveStreamId → 未直播
+            status = "offline"
+        else:
+            # 既无直播也无用户信息 → 可能房间无效
+            return "error", None, None, None, None
+
+        return status, title, viewers, uname, avatar
+    except Exception as e:
+        print(f"快手检测异常 {room_id}: {e}")
+        return "error", None, None, None, None
+
+
 def get_status(platform: str, room_id: str) -> Tuple[str, Optional[str], Optional[int], Optional[str], Optional[str]]:
     if platform == "bilibili":
         return check_bilibili(room_id)
     elif platform == "douyin":
         return check_douyin(room_id)
+    elif platform == "kuaishou":
+        return check_kuaishou(room_id)
     return "error", None, None, None, None
 
 
@@ -324,6 +422,8 @@ def check_all() -> Tuple[List[Dict], List[str]]:
                     live_url = f"https://live.bilibili.com/{room_id}"
                 elif platform == "douyin":
                     live_url = f"https://live.douyin.com/{room_id}"
+                elif platform == "kuaishou":
+                    live_url = f"https://live.kuaishou.com/u/{room_id}"
                 else:
                     live_url = ""
                 msg = f"🎉 {name} 开播了！"

@@ -1008,6 +1008,7 @@
                 <select id="add-plat">
                     <option value="bilibili">哔哩哔哩</option>
                     <option value="douyin">抖音</option>
+                    <option value="kuaishou">快手</option>
                 </select>
             </div>
             <div class="field">
@@ -1168,7 +1169,8 @@
             return d.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
         }
         function fmtNum(n) { return n>=10000?(n/10000).toFixed(1)+'w':(n||'0').toLocaleString(); }
-        function pUrl(p,id) { return p==='bilibili'?`https://live.bilibili.com/${id}`:(p==='douyin'?`https://live.douyin.com/${id}`:'#'); }
+        function pUrl(p,id) { return p==='bilibili'?`https://live.bilibili.com/${id}`:(p==='douyin'?`https://live.douyin.com/${id}`:(p==='kuaishou'?`https://live.kuaishou.com/u/${id}`:'#')); }
+        function pTag(p) { return p==='bilibili'?'BILI':(p==='douyin'?'DY':(p==='kuaishou'?'KS':'?')); }
         function esc(s){return(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
         function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);requestAnimationFrame(()=>t.classList.add('show'));setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},2200);}
 
@@ -1200,7 +1202,7 @@
                 <div class="row-body">
                     <div class="row-head">
                         <span class="row-name">${nm}</span>
-                        <span class="tag">${r.platform==='bilibili'?'BILI':'DY'}</span>
+                        <span class="tag">${pTag(r.platform)}</span>
                         <span class="status ${r.status}"><span class="sd ${r.status}"></span>${st}</span>
                     </div>
                     <div class="row-sub">${ttl}</div>
@@ -1272,7 +1274,7 @@
                     <div class="row-body">
                         <div class="row-head">
                             <span class="row-name">${nm}</span>
-                            <span class="tag">${r.platform==='bilibili'?'BILI':'DY'}</span>
+                            <span class="tag">${pTag(r.platform)}</span>
                         </div>
                         <div class="row-sub">${ttl}</div>
                         ${ts ? `<div class="row-meta"><span>${ts}</span></div>` : ''}
@@ -1344,8 +1346,21 @@
         function onCtxChange() {
             addCtx = document.getElementById('add-ctx').value;
             const p = document.getElementById('add-plat'), pf = document.getElementById('plat-field');
-            if (addCtx === 'posts') { p.value = 'douyin'; p.disabled = true; pf.style.opacity = '0.4'; }
-            else { p.disabled = false; pf.style.opacity = '1'; p.value = 'bilibili'; }
+            if (addCtx === 'posts') {
+                // 作品监控支持抖音和快手，B站暂不支持
+                p.value = 'douyin';
+                p.disabled = false;
+                pf.style.opacity = '1';
+                // 隐藏B站选项
+                Array.from(p.options).forEach(o => {
+                    o.style.display = o.value === 'bilibili' ? 'none' : '';
+                });
+            } else {
+                p.disabled = false;
+                pf.style.opacity = '1';
+                p.value = 'bilibili';
+                Array.from(p.options).forEach(o => { o.style.display = ''; });
+            }
         }
         function closeAdd() { document.getElementById('add-modal').classList.remove('show'); }
 

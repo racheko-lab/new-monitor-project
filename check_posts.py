@@ -1379,6 +1379,183 @@ def get_status_key(platform: str, room_id: str) -> str:
     return f"{platform}_{room_id}"
 
 
+def parse_ks_feed(item: Dict, room_name: str) -> Optional[Dict]:
+    """将快手 graphql publicFeeds 返回的 list 项转换为前端可用的 post 结构。"""
+    try:
+        photo_id = item.get("photoId")
+        if not photo_id:
+            return None
+        caption = item.get("caption", "") or "无标题"
+        view_count = item.get("viewCount") or 0
+        like_count = item.get("likeCount") or 0
+        timestamp = item.get("timestamp")
+        time_str = None
+        sort_key = 0
+        if timestamp:
+            try:
+                # 快手 timestamp 是毫秒
+                ts_sec = int(timestamp) / 1000
+                time_str = datetime.fromtimestamp(ts_sec).isoformat()
+                sort_key = int(timestamp)
+            except Exception:
+                sort_key = int(timestamp)
+        cover = item.get("thumbnailUrl") or item.get("poster") or item.get("coverUrl")
+        # 作者信息
+        user = item.get("user") or {}
+        author_avatar = user.get("profile") or user.get("avatar")
+        post_url = f"https://www.kuaishou.com/short-video/{photo_id}"
+        return {
+            "id": str(photo_id),
+            "platform": "kuaishou",
+            "name": room_name,
+            "title": caption[:100],
+            "views": int(view_count) if view_count else 0,
+            "likes": int(like_count) if like_count else 0,
+            "cover": cover,
+            "avatar": author_avatar,
+            "url": post_url,
+            "time": time_str or datetime.now().isoformat(),
+            "sort_key": sort_key,
+        }
+    except Exception:
+        return None
+
+
+def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[Dict], List[Dict], List[str]]:
+    """检测一个快手账号的新作品，返回 (user_id, display_name, avatar, latest_post, new_posts, notifications)。
+
+    用 requests 调 live.kuaishou.com/graphql 的 publicFeedsQuery，
+    返回 list 字段含 photoId/caption/viewCount/likeCount/timestamp。
+    不需要 Playwright。
+    """
+    notifications = []
+    new_posts_data = []
+    latest_post = None
+    display_name = name
+    avatar = None
+    user_id = None
+
+    sess = requests.Session()
+    sess.headers.update({
+        "User-Agent": HEADERS["User-Agent"],
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    })
+    # 访问首页拿 did cookie
+    try:
+        sess.get("https://live.kuaishou.com/", timeout=10)
+    except Exception:
+        pass
+
+    query = (
+        "query publicFeedsQuery($principalId: String, $pcursor: String, $count: Int) {"
+        " publicFeeds(principalId: $principalId, pcursor: $pcursor, count: $count) {"
+        " pcursor live { liveStreamId user { id eid kwaiId name avatar } }"
+        " list { photoId caption thumbnailUrl poster viewCount likeCount commentCount timestamp"
+        " user { id name profile } } } }"
+    )
+    payload = {
+        "operationName": "publicFeedsQuery",
+        "variables": {"principalId": room_id, "pcursor": "", "count": 30},
+        "query": query,
+    }
+    try:
+        resp = sess.post(
+            "https://live.kuaishou.com/graphql",
+            json=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Referer": f"https://live.kuaishou.com/profile/{room_id}",
+                "Origin": "https://live.kuaishou.com",
+            },
+            timeout=15,
+        )
+        data = resp.json()
+    except Exception as e:
+        print(f"快手作品检测异常 {room_id}: {e}")
+        return None, display_name, None, None, [], []
+
+    if data.get("result") not in (1, None, 0):
+        print(f"快手作品graphql异常 {room_id}: {data.get('error_msg') or data}")
+        return None, display_name, None, None, [], []
+
+    feeds = (data.get("data") or {}).get("publicFeeds") or {}
+    raw_list = feeds.get("list") or []
+    live = feeds.get("live") or {}
+    live_user = live.get("user") or {}
+
+    # 用户信息
+    user_id = live_user.get("id") or live_user.get("eid") or live_user.get("kwaiId")
+    nick = live_user.get("name")
+    if nick:
+        display_name = nick
+    avatar = live_user.get("avatar")
+
+    # 解析作品
+    parsed_posts = []
+    for item in raw_list:
+        p = parse_ks_feed(item, display_name)
+        if p:
+            if not p.get("avatar") and avatar:
+                p["avatar"] = avatar
+            parsed_posts.append(p)
+
+    if not parsed_posts:
+        return user_id, display_name, avatar, None, [], []
+
+    # 按 sort_key 倒序（最新在前）
+    parsed_posts.sort(key=lambda x: x.get("sort_key", 0), reverse=True)
+    latest_post = parsed_posts[0]
+
+    # 新作品检测（复用抖音的 seen_posts 机制）
+    state = load_state()
+    key = f"kuaishou_posts_{room_id}"
+    seen_posts = state.get(key, {}).get("seen_posts", [])
+    is_first_check = not seen_posts
+
+    for p in parsed_posts:
+        if p.get("id") and p["id"] not in seen_posts:
+            seen_posts.append(p["id"])
+            if is_first_check:
+                continue
+            new_posts_data.append(p)
+            title = p.get("title", "")[:50] or "新作品"
+            post_url = p.get("url", "")
+            views = p.get("views")
+            likes = p.get("likes")
+            time_str = ""
+            try:
+                t = datetime.fromisoformat(p["time"])
+                time_str = t.strftime("%H:%M")
+            except Exception:
+                pass
+            msg = f"🎵 {display_name} 发布了新作品"
+            msg += f"\n标题: {title}"
+            if time_str:
+                msg += f" ({time_str})"
+            stats_parts = []
+            if views is not None:
+                stats_parts.append(f"播放 {views}")
+            if likes is not None:
+                stats_parts.append(f"点赞 {likes}")
+            if stats_parts:
+                msg += f"\n{' · '.join(stats_parts)}"
+            if post_url:
+                msg += f"\n🔗 {post_url}"
+            notifications.append(msg)
+            add_history(msg, "new_post")
+
+    seen_posts = seen_posts[-50:]
+    state[key] = {
+        "seen_posts": seen_posts,
+        "last_check": datetime.now().isoformat(),
+    }
+    save_state(state)
+
+    return user_id, display_name, avatar, latest_post, new_posts_data, notifications
+
+
+
 def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[Dict], List[Dict], List[str]]:
     """检测一个抖音账号，返回 (sec_uid, display_name, avatar, latest_post, new_posts, notifications)。
 
@@ -1479,11 +1656,16 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
         name = room.get("name", room_id)
         key = get_status_key(platform, room_id)
 
-        if platform != "douyin":
+        if platform == "douyin":
+            print(f"检测账号: {room_id} ({name})")
+            sec_uid, display_name, avatar, latest_post, new_posts, notifications = check_douyin_posts(room_id, name)
+            seen_key = f"douyin_posts_{room_id}"
+        elif platform == "kuaishou":
+            print(f"检测账号: {room_id} ({name}) [快手]")
+            sec_uid, display_name, avatar, latest_post, new_posts, notifications = check_kuaishou_posts(room_id, name)
+            seen_key = f"kuaishou_posts_{room_id}"
+        else:
             continue
-
-        print(f"检测账号: {room_id} ({name})")
-        sec_uid, display_name, avatar, latest_post, new_posts, notifications = check_douyin_posts(room_id, name)
 
         # 自动补全昵称
         if display_name and display_name != name:
@@ -1497,7 +1679,7 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
         else:
             status_flag = "error"
 
-        seen_count = len(load_state().get(f"douyin_posts_{room_id}", {}).get("seen_posts", []))
+        seen_count = len(load_state().get(seen_key, {}).get("seen_posts", []))
         posts_status[key] = {
             "platform": platform,
             "id": room_id,
