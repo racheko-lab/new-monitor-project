@@ -1,20 +1,5 @@
 [
   {
-    "time": "2026-07-20T15:24:18.049341",
-    "type": "live_end",
-    "message": "🏁 Sayonal_ 下播了"
-  },
-  {
-    "time": "2026-07-20T15:24:22.227585",
-    "type": "live_end",
-    "message": "🏁 什么都知道 下播了"
-  },
-  {
-    "time": "2026-07-20T23:47:17.128855",
-    "type": "live_end",
-    "message": "🏁 sad 下播了"
-  },
-  {
     "time": "2026-07-21T13:53:41.419302",
     "type": "live_start",
     "message": "🎉 峰哥亡命天涯 开播了！\n标题: be一下\n观看人数: 312288\n🔗 https://live.bilibili.com/22230707"
@@ -998,5 +983,20 @@
     "time": "2026-08-08T13:04:13.059382",
     "type": "live_start",
     "message": "🎉 峰哥亡命天涯 开播了！\n标题: be一下\n观看人数: 188403\n🔗 https://live.bilibili.com/22230707"
+  },
+  {
+    "time": "2026-08-08T13:09:17.533726",
+    "type": "new_post",
+    "message": "🎵 峰哥亡命天涯 发布了新作品\n标题: 峰哥尝试穿搭  (13:09)\n播放 0 · 点赞 17376\n🔗 https://www.douyin.com/video/7671187769208753459"
+  },
+  {
+    "time": "2026-08-08T13:09:23.132206",
+    "type": "new_post",
+    "message": "🎵 27～ 发布了新作品\n标题: 天天开心～ #库存视频 (13:09)\n播放 0 · 点赞 330\n🔗 https://www.douyin.com/video/7671312198745174201"
+  },
+  {
+    "time": "2026-08-08T13:09:23.133929",
+    "type": "new_post",
+    "message": "🎵 27～ 发布了新作品\n标题: 温柔懒懒的的海风 (13:09)\n播放 0 · 点赞 1628\n🔗 https://www.douyin.com/note/7670910283225232506"
   }
 ]

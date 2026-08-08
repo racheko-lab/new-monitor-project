@@ -1,44 +1,5 @@
 {
-  "time": "2026-08-08T13:04:37.388541",
-  "machine": "runnervmvrwv9",
-  "playwright": true,
-  "results": {
-    "douyin_vHan09233": {
-      "status": "stale",
-      "has_latest_post": true,
-      "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-08T13:04:37.388829"
-    },
-    "douyin_FengBro": {
-      "status": "error",
-      "has_latest_post": false,
-      "sec_uid": "",
-      "last_check": "2026-08-08T13:04:37.388829"
-    },
-    "douyin_83134194400": {
-      "status": "error",
-      "has_latest_post": false,
-      "sec_uid": "",
-      "last_check": "2026-08-08T13:04:37.388829"
-    },
-    "douyin_33716689672": {
-      "status": "error",
-      "has_latest_post": false,
-      "sec_uid": "",
-      "last_check": "2026-08-08T13:04:37.388829"
-    },
-    "douyin_32062056217": {
-      "status": "error",
-      "has_latest_post": false,
-      "sec_uid": "",
-      "last_check": "2026-08-08T13:04:37.388829"
-    },
-    "kuaishou_pineapple2005": {
-      "status": "error",
-      "has_latest_post": false,
-      "sec_uid": "",
-      "last_check": "2026-08-08T13:04:37.388829"
-    }
-  },
-  "fetch_diag": []
+  "time": "2026-08-08T13:06:32.142957",
+  "machine": "all-in-one-61-khwbl",
+  "playwright": true
 }

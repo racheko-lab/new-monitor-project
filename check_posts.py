@@ -1751,7 +1751,8 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
     """检测一个抖音账号，返回 (sec_uid, display_name, avatar, latest_post, new_posts, notifications)。
 
     流程：
-    1. 用 requests 从 live.douyin.com 拿 sec_uid、昵称、头像
+    1. 用 requests 从 live.douyin.com 拿 sec_uid、昵称、头像；失败则用 state 缓存
+       的 sec_uid 兜底（CI 环境 live.douyin.com 常被 IP 限制）
     2. 用 Playwright 访问 iesdouyin.com + m.douyin.com 分享页拦截作品 API
     3. 解析作品，过滤非目标用户作品，对比 state 中的 seen_posts 找出新作品
     """
@@ -1765,6 +1766,34 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
 
     # Step 1: 获取 sec_uid、昵称、头像
     sec_uid, nickname, live_avatar = fetch_sec_uid_from_live(room_id)
+    diag["live_sec_uid_ok"] = bool(sec_uid)
+    # live.douyin.com 被 IP 限制时，用 state 中缓存的 sec_uid 兜底
+    if not sec_uid:
+        state = load_state()
+        cached = state.get(f"douyin_secuid_{room_id}")
+        if cached:
+            sec_uid = cached
+            diag["used_cached_sec_uid"] = True
+            print(f"  live.douyin.com 取 sec_uid 失败，用缓存 sec_uid={sec_uid[:20]}...")
+    else:
+        # 成功取到 sec_uid 时缓存到 state，供后续 CI run 在 IP 被限时兜底
+        try:
+            state = load_state()
+            state[f"douyin_secuid_{room_id}"] = sec_uid
+            if nickname:
+                state[f"douyin_nick_{room_id}"] = nickname
+            if live_avatar:
+                state[f"douyin_avatar_{room_id}"] = live_avatar
+            save_state(state)
+        except Exception:
+            pass
+    # 用缓存的昵称/头像兜底（live 失败时）
+    if not nickname or not live_avatar:
+        state = load_state()
+        if not nickname:
+            nickname = state.get(f"douyin_nick_{room_id}")
+        if not live_avatar:
+            live_avatar = state.get(f"douyin_avatar_{room_id}")
     diag["sec_uid_ok"] = bool(sec_uid)
     diag["sec_uid"] = (sec_uid or "")[:25]
     if not sec_uid:
