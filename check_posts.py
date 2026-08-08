@@ -1447,6 +1447,9 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
         if '/graphql' not in url and 'graphql' not in url:
             return
         try:
+            # 只处理已完成的响应
+            if not resp.ok:
+                return
             data = resp.json()
             # 快手 graphql 响应格式：{"data":{"publicFeeds":{...}}}
             feeds_data = (data.get("data") or {}).get("publicFeeds") or {}
@@ -1479,21 +1482,53 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
             page = ctx.new_page()
             page.on("response", on_response)
 
-            # 访问用户主页
+            # 访问用户主页（快手 PC 端）
             print(f"  [快手] 访问 profile/{room_id}...")
             try:
                 page.goto(f"https://www.kuaishou.com/profile/{room_id}",
-                          wait_until="domcontentloaded", timeout=20000)
+                          wait_until="domcontentloaded", timeout=25000)
             except PlaywrightTimeoutError:
                 print(f"  [快手] 页面加载超时，尝试继续")
             except Exception as e:
                 print(f"  [快手] 页面加载异常: {e}")
 
-            # 等待 graphql 响应
+            # 等待 graphql 响应（快手页面 JS 发出 graphql 请求需要时间）
             try:
-                page.wait_for_timeout(5000)
+                page.wait_for_timeout(8000)
             except Exception:
                 pass
+
+            # 如果还没拦截到数据，尝试用 JS 主动触发 fetch
+            if not captured_feeds:
+                print(f"  [快手] 未拦截到数据，尝试主动 fetch graphql...")
+                try:
+                    result = page.evaluate("""
+                        async (principalId) => {
+                            try {
+                                const resp = await fetch('https://www.kuaishou.com/graphql', {
+                                    method: 'POST',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify({
+                                        operationName: 'publicFeedsQuery',
+                                        variables: {principalId: principalId, pcursor: '', count: 30},
+                                        query: 'query publicFeedsQuery($principalId:String,$pcursor:String,$count:Int){publicFeeds(principalId:$principalId,pcursor:$pcursor,count:$count){pcursor list{photoId caption thumbnailUrl viewCount likeCount timestamp}}}'
+                                    })
+                                });
+                                return await resp.json();
+                            } catch(e) { return {error: e.message}; }
+                        }
+                    """, room_id)
+                    if result and isinstance(result, dict):
+                        feeds_data = (result.get("data") or {}).get("publicFeeds") or {}
+                        feed_list = feeds_data.get("list") or []
+                        for item in feed_list:
+                            if isinstance(item, dict) and item.get("photoId"):
+                                captured_feeds.append(item)
+                        print(f"  [快手] 主动 fetch 得到 {len(feed_list)} 条")
+                    elif result and result.get("error"):
+                        print(f"  [快手] 主动 fetch 失败: {result['error']}")
+                except Exception as e:
+                    print(f"  [快手] 主动 fetch 异常: {e}")
 
             # 滚动加载更多
             for _ in range(2):
