@@ -1402,20 +1402,24 @@ def get_status_key(platform: str, room_id: str) -> str:
 
 
 def parse_ks_feed(item: Dict, room_name: str) -> Optional[Dict]:
-    """将快手 graphql 作品项转换为前端可用的 post 结构。
+    """将快手作品项转换为前端可用的 post 结构。
 
-    兼容两种结构：
+    兼容三种结构：
     - PC visionProfilePhotoList：item = {"photo": {"id","caption","viewCount",...}, ...}
     - 移动端 publicFeeds：item 平铺 {"photoId","caption","viewCount",...}
+    - live_api/profile/public（RSSHub 方案）：item 平铺 {"id","poster","playUrl","caption",...}
     """
     try:
         photo = item.get("photo") if isinstance(item.get("photo"), dict) else None
-        photo_id = (photo.get("id") if photo else None) or item.get("photoId")
+        photo_id = ((photo.get("id") if photo else None) or item.get("photoId")
+                    or item.get("id"))
         if not photo_id:
             return None
         caption = (photo.get("caption") if photo else None) or item.get("caption", "") or "无标题"
-        view_count = (photo.get("viewCount") if photo else None) or item.get("viewCount") or 0
-        like_count = (photo.get("likeCount") if photo else None) or item.get("likeCount") or 0
+        # live_api 格式的统计数据在 counts 对象里
+        counts = item.get("counts") if isinstance(item.get("counts"), dict) else {}
+        view_count = (photo.get("viewCount") if photo else None) or item.get("viewCount") or counts.get("viewCount") or 0
+        like_count = (photo.get("likeCount") if photo else None) or item.get("likeCount") or counts.get("likeCount") or 0
         timestamp = (photo.get("timestamp") if photo else None) or item.get("timestamp")
         time_str = None
         sort_key = 0
@@ -1427,6 +1431,17 @@ def parse_ks_feed(item: Dict, room_name: str) -> Optional[Dict]:
                 sort_key = int(timestamp)
             except Exception:
                 sort_key = int(timestamp)
+        else:
+            # 无 timestamp 时，从 poster URL 提取日期作为 sort_key（poster 含 /upic/YYYY/MM/DD/ 路径）
+            poster = item.get("poster") or ""
+            m = re.search(r'/upic/(\d{4})/(\d{2})/(\d{2})/', poster)
+            if m:
+                try:
+                    from datetime import datetime as dt
+                    sort_key = int(dt(int(m.group(1)), int(m.group(2)), int(m.group(3))).timestamp() * 1000)
+                    time_str = dt(int(m.group(1)), int(m.group(2)), int(m.group(3))).isoformat()
+                except Exception:
+                    pass
         cover = ((photo.get("coverUrl") if photo else None) or item.get("coverUrl")
                  or item.get("thumbnailUrl") or item.get("poster"))
         if cover:
@@ -1435,8 +1450,8 @@ def parse_ks_feed(item: Dict, room_name: str) -> Optional[Dict]:
             except Exception:
                 pass
         # 作者信息
-        user = (photo.get("user") if photo else None) or item.get("user") or {}
-        author_avatar = user.get("profile") or user.get("avatar") or user.get("headurl")
+        user = (photo.get("user") if photo else None) or item.get("user") or item.get("author") or {}
+        author_avatar = user.get("profile") or user.get("avatar") or user.get("headurl") or user.get("headUrl")
         post_url = f"https://www.kuaishou.com/short-video/{photo_id}"
         return {
             "id": str(photo_id),
@@ -1523,51 +1538,67 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
         user_id = live_uid
     print(f"  [快手] live 信息: uid={live_uid} name={live_name} cookie={bool(live_cookies)}")
 
-    captured_feeds = []  # 拦截到的 raw feed items
-    captured_user = {}   # 拦截到的用户信息
+    # RSSHub 方案（参考 https://github.com/DIYgod/RSSHub PR#17792）：
+    # 1. 先访问 www.kuaishou.com 建立 session（获取 did cookie）
+    # 2. 访问 live.kuaishou.com/profile/{id}（直播站 profile 页，非 PC 站）
+    # 3. 拦截 /live_api/profile/public 响应获取作品列表
+    # 4. list 为空时 reload 重试（最多3次）
+    # 该 API 免登录，PC 端 graphql 需登录态不可用。
+    captured_feeds = []
+    captured_user = {}
 
-    def on_response(resp):
+    def on_api_response(resp):
         url = resp.url
-        if '/graphql' not in url and 'graphql' not in url:
-            return
-        try:
-            # 只处理已完成的响应
-            if not resp.ok:
-                return
-            data = resp.json()
-            d = data.get("data") or {}
-            # PC profile 页：visionProfilePhotoList（作品列表）
-            vpl = d.get("visionProfilePhotoList") or {}
-            if isinstance(vpl, dict):
-                feed_list = vpl.get("feeds") or []
-                for item in feed_list:
-                    if isinstance(item, dict) and (item.get("photo") or item.get("photoId")):
-                        captured_feeds.append(item)
-            # userInfo（含真正的 3x 格式 userId）
-            ui = d.get("userInfo") or {}
-            if isinstance(ui, dict) and (ui.get("userId") or ui.get("name")):
-                captured_user.update(ui)
-            # 兼容旧 publicFeeds（移动端）
-            pf = d.get("publicFeeds") or {}
-            if isinstance(pf, dict):
-                fl = pf.get("list") or []
-                for item in fl:
-                    if isinstance(item, dict) and (item.get("photo") or item.get("photoId")):
-                        captured_feeds.append(item)
-        except Exception:
-            pass
+        if '/live_api/profile/public' in url:
+            try:
+                data = resp.json()
+                d = data.get("data") or {}
+                lst = d.get("list")
+                if isinstance(lst, list) and len(lst) > 0:
+                    for item in lst:
+                        if isinstance(item, dict) and item.get("id"):
+                            captured_feeds.append(item)
+                    live = d.get("live") or {}
+                    author = live.get("author") or {}
+                    if author.get("name"):
+                        captured_user.update({
+                            "name": author.get("name"),
+                            "userId": author.get("eid"),
+                            "kwaiId": author.get("kwaiId"),
+                            "originUserId": str(author.get("originUserId") or ""),
+                        })
+            except Exception:
+                pass
+        elif '/live_api/baseuser/userinfo/byid' in url:
+            try:
+                data = resp.json()
+                ui = data.get("data", {}).get("userInfo")
+                if isinstance(ui, dict) and ui.get("name"):
+                    captured_user.update({
+                        "name": ui.get("name"),
+                        "userId": ui.get("eid"),
+                        "kwaiId": ui.get("kwaiId"),
+                        "originUserId": str(ui.get("originUserId") or ""),
+                        "avatar": ui.get("headUrl") or ui.get("avatar"),
+                    })
+            except Exception:
+                pass
 
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+            browser = p.chromium.launch(headless=True, args=[
+                '--disable-blink-features=AutomationControlled',
+                '--no-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+            ])
             ctx = browser.new_context(
                 user_agent=('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                            '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'),
+                            '(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'),
                 viewport={'width': 1280, 'height': 800},
                 locale='zh-CN', timezone_id='Asia/Shanghai',
             )
             ctx.add_init_script("Object.defineProperty(navigator,'webdriver',{get:()=>undefined});")
-            # 注入 live 页拿到的 cookie（did），降低风控触发验证码概率
             if live_cookies:
                 try:
                     ck_list = []
@@ -1577,85 +1608,39 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                 except Exception:
                     pass
             page = ctx.new_page()
-            page.on("response", on_response)
+            page.on("response", on_api_response)
 
-            # 访问用户主页（快手 PC 端）
-            print(f"  [快手] 访问 profile/{room_id}...")
+            # 1. 先访问 www.kuaishou.com 建立 session
+            print(f"  [快手] 访问 www.kuaishou.com 建立 session...")
             try:
-                page.goto(f"https://www.kuaishou.com/profile/{room_id}",
-                          wait_until="domcontentloaded", timeout=25000)
+                page.goto("https://www.kuaishou.com", wait_until="domcontentloaded", timeout=10000)
+                page.wait_for_timeout(2000)
+            except Exception:
+                pass
+
+            # 2. 访问 live.kuaishou.com/profile/{room_id}
+            print(f"  [快手] 访问 live.kuaishou.com/profile/{room_id}...")
+            try:
+                page.goto(f"https://live.kuaishou.com/profile/{room_id}",
+                          wait_until="domcontentloaded", timeout=15000)
             except PlaywrightTimeoutError:
                 print(f"  [快手] 页面加载超时，尝试继续")
             except Exception as e:
                 print(f"  [快手] 页面加载异常: {e}")
 
-            # 等待 graphql 响应（快手页面 JS 发出 graphql 请求需要时间）
-            try:
-                page.wait_for_timeout(8000)
-            except Exception:
-                pass
+            page.wait_for_timeout(5000)
 
-            # 如果还没拦截到数据，尝试用 JS 主动 fetch visionProfilePhotoList
+            # 3. list 为空时 reload 重试（最多3次）
             if not captured_feeds:
-                # userId 候选：拦截到的 userInfo.userId > live 页 originUserId > kwaiId
-                cand_uids = []
-                if captured_user.get("userId"):
-                    cand_uids.append(captured_user["userId"])
-                if live_uid:
-                    cand_uids.append(live_uid)
-                cand_uids.append(room_id)
-                seen = set()
-                cand_uids = [u for u in cand_uids if u and u not in seen and not seen.add(u)]
-                for cand in cand_uids:
-                    if not cand or captured_feeds:
+                for i in range(3):
+                    if captured_feeds:
                         break
-                    print(f"  [快手] 未拦截到数据，主动 fetch visionProfilePhotoList userId={cand}...")
+                    print(f"  [快手] 未拦截到数据，reload 重试 ({i+1}/3)...")
                     try:
-                        result = page.evaluate("""
-                            async (userId) => {
-                                try {
-                                    const resp = await fetch('https://www.kuaishou.com/graphql', {
-                                        method: 'POST',
-                                        headers: {'Content-Type': 'application/json'},
-                                        body: JSON.stringify({
-                                            operationName: 'visionProfilePhotoList',
-                                            variables: {userId: userId, pcursor: '', page: 'profile', webPageArea: ''},
-                                            query: 'query visionProfilePhotoList($pcursor:String,$userId:String,$page:String,$webPageArea:String){visionProfilePhotoList(pcursor:$pcursor,userId:$userId,page:$page,webPageArea:$webPageArea){result feeds{photo{...on PhotoEntity{id caption viewCount likeCount timestamp coverUrl}} pcursor}}'
-                                        })
-                                    });
-                                    const text = await resp.text();
-                                    return {status: resp.status, body: text.substring(0, 800)};
-                                } catch(e) { return {error: e.message}; }
-                            }
-                        """, cand)
-                        if result and isinstance(result, dict):
-                            if result.get("error"):
-                                print(f"  [快手] 主动 fetch 失败: {result['error']}")
-                            else:
-                                try:
-                                    body = result.get("body", "{}")
-                                    data = json.loads(body) if isinstance(body, str) else result
-                                    vpl = (data.get("data") or {}).get("visionProfilePhotoList") or {}
-                                    feed_list = vpl.get("feeds") or []
-                                    for item in feed_list:
-                                        if isinstance(item, dict) and (item.get("photo") or item.get("photoId")):
-                                            captured_feeds.append(item)
-                                    if feed_list:
-                                        print(f"  [快手] 主动 fetch 得到 {len(feed_list)} 条")
-                                    elif vpl.get("result"):
-                                        print(f"  [快手] 主动 fetch result={vpl.get('result')}（可能触发验证码）")
-                                except Exception as pe:
-                                    print(f"  [快手] 解析 fetch 结果异常: {pe}")
-                    except Exception as e:
-                        print(f"  [快手] 主动 fetch 异常: {e}")
-
-            # 滚动加载更多
-            for _ in range(2):
-                try:
-                    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                    page.wait_for_timeout(2000)
-                except Exception:
-                    break
+                        page.reload(wait_until="domcontentloaded")
+                    except Exception:
+                        pass
+                    page.wait_for_timeout(3000)
 
             browser.close()
     except Exception as e:
@@ -1682,7 +1667,7 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
     seen_ids = set()
     for item in captured_feeds:
         photo = item.get("photo") if isinstance(item.get("photo"), dict) else None
-        pid = (photo.get("id") if photo else None) or item.get("photoId")
+        pid = (photo.get("id") if photo else None) or item.get("photoId") or item.get("id")
         if pid and pid not in seen_ids:
             seen_ids.add(pid)
             p = parse_ks_feed(item, display_name)
