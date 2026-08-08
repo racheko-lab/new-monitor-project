@@ -17,6 +17,7 @@ BILIBILI_API = "https://api.live.bilibili.com/xlive/web-room/v1/index/getRoomBas
 DOUYIN_URL = "https://live.douyin.com/{}"
 KUAISHOU_GRAPHQL = "https://live.kuaishou.com/graphql"
 KUAISHOU_HOME = "https://live.kuaishou.com/"
+KUAISHOU_LIVE_URL = "https://live.kuaishou.com/u/{}"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -248,87 +249,62 @@ def check_kuaishou(room_id: str) -> Tuple[str, Optional[str], Optional[int], Opt
     快手直播间 URL: https://live.kuaishou.com/u/{eid}
     room_id 即用户的 eid 或 kwaiId。
 
-    策略：用 requests 先访问首页拿 did cookie，再 POST /graphql 调
-    publicFeedsQuery，返回的 live 字段含 liveStreamId 即直播中。
-    字段映射：live.title/caption、live.watchingCount、live.user.name、live.user.avatar
+    策略：用 requests 访问直播间页面，解析 __INITIAL_STATE__ 里的
+    liveroom.playList[0]，从 liveStream.id / isLiving / author 提取数据。
+    SSR 页面比 graphql 稳定（graphql 易被限流返回 400010）。
     """
     try:
-        sess = requests.Session()
-        sess.headers.update({
-            "User-Agent": HEADERS["User-Agent"],
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-        })
-        # 1. 访问首页拿 did cookie（快手 graphql 需要）
-        try:
-            sess.get(KUAISHOU_HOME, timeout=10)
-        except Exception:
-            pass
+        headers = {**HEADERS, "Referer": "https://live.kuaishou.com/"}
+        resp = requests.get(KUAISHOU_LIVE_URL.format(room_id), headers=headers, timeout=15)
+        html = resp.text
 
-        # 2. 调 graphql 查直播+用户信息
-        query = (
-            "query publicFeedsQuery($principalId: String, $pcursor: String, $count: Int) {"
-            " publicFeeds(principalId: $principalId, pcursor: $pcursor, count: $count) {"
-            " pcursor live { liveStreamId title watchingCount src"
-            " user { id eid kwaiId name avatar living } } } }"
-        )
-        payload = {
-            "operationName": "publicFeedsQuery",
-            "variables": {"principalId": room_id, "pcursor": "", "count": 1},
-            "query": query,
-        }
-        resp = sess.post(
-            KUAISHOU_GRAPHQL,
-            json=payload,
-            headers={
-                "Content-Type": "application/json",
-                "Referer": f"https://live.kuaishou.com/profile/{room_id}",
-                "Origin": "https://live.kuaishou.com",
-            },
-            timeout=15,
-        )
-        data = resp.json()
-        if data.get("result") not in (1, None) and data.get("result") != 0:
-            # 限流等错误
-            print(f"快手graphql返回异常 {room_id}: {data.get('error_msg') or data}")
-            return "error", None, None, None, None
+        # 解析 isLiving
+        is_living_m = re.search(r'"isLiving":(true|false)', html)
+        # 解析 liveStream.id（有值=直播中）
+        ls_id_m = re.search(r'"liveStream":\{"id":"([^"]+)"', html)
+        # 解析 author（在 playList 里）
+        au_m = re.search(r'"author":\{"id":"([^"]*)","name":"([^"]*)"[^}]*?"avatar":"([^"]*)"', html, re.DOTALL)
+        # 解析 caption（直播标题，可能不存在）
+        cap_m = re.search(r'"liveStream":\{[^}]*?"caption":"([^"]+)"', html, re.DOTALL)
+        # 解析 watchingCount / roomCount
+        wc_m = re.search(r'"watchingCount":"?(\d+)"?', html)
+        if not wc_m:
+            wc_m = re.search(r'"roomCount":"?(\d+)"?', html)
 
-        feeds = (data.get("data") or {}).get("publicFeeds") or {}
-        live = feeds.get("live") or {}
-        user = live.get("user") or {}
+        # 判断状态
+        live_stream_id = ls_id_m.group(1) if ls_id_m else None
+        is_living = is_living_m.group(1) == "true" if is_living_m else False
 
-        uname = user.get("name")
-        avatar = user.get("avatar")
-        title = live.get("title") or live.get("caption")
-        watching = live.get("watchingCount")
-        # watchingCount 是字符串如 "1.1万"，转成数字
-        viewers = None
-        if watching:
+        uname = au_m.group(2) if au_m else None
+        # 头像 URL 修复 \u002F 转义
+        avatar = None
+        if au_m and au_m.group(3):
             try:
-                if isinstance(watching, str):
-                    w = watching.replace("+", "")
-                    if "万" in w:
-                        viewers = int(float(w.replace("万", "")) * 10000)
-                    elif "亿" in w:
-                        viewers = int(float(w.replace("亿", "")) * 100000000)
-                    else:
-                        viewers = int(float(w))
-                else:
-                    viewers = int(watching)
+                avatar = au_m.group(3).replace("\\u002F", "/").replace("\\/", "/")
             except Exception:
-                viewers = None
+                avatar = au_m.group(3)
 
-        # 判断直播状态：有 liveStreamId 即直播中
-        if live.get("liveStreamId"):
+        if live_stream_id or is_living:
             status = "live"
-        elif user.get("living"):
-            status = "live"
-        elif uname or user.get("id"):
-            # 有用户信息但无 liveStreamId → 未直播
+        elif uname or (au_m and au_m.group(1)):
             status = "offline"
         else:
-            # 既无直播也无用户信息 → 可能房间无效
             return "error", None, None, None, None
+
+        title = cap_m.group(1) if cap_m else None
+        # 标题转义修复
+        if title:
+            try:
+                title = title.replace("\\u002F", "/").replace("\\/", "/")
+            except Exception:
+                pass
+
+        viewers = None
+        if wc_m:
+            try:
+                viewers = int(wc_m.group(1))
+            except Exception:
+                viewers = None
 
         return status, title, viewers, uname, avatar
     except Exception as e:
