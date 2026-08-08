@@ -1,10 +1,5 @@
 [
   {
-    "time": "2026-07-19T23:49:37.827408",
-    "type": "error",
-    "message": "⚠️ D.my 检测失败"
-  },
-  {
     "time": "2026-07-19T23:49:53.041605",
     "type": "error",
     "message": "⚠️ 12X 检测失败"
@@ -998,5 +993,10 @@
     "time": "2026-08-08T04:23:58.320499",
     "type": "live_end",
     "message": "🏁 郑少雯子 下播了"
+  },
+  {
+    "time": "2026-08-08T04:34:55.949764",
+    "type": "live_start",
+    "message": "🎉 魅力驿站 开播了！\n🔗 https://live.kuaishou.com/u/pineapple2005"
   }
 ]
