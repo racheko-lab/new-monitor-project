@@ -1901,6 +1901,10 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
                 continue
         except Exception as e:
             print(f"检测异常 {platform}_{room_id}: {e}")
+            import traceback as _tb
+            _tb.print_exc()
+            LAST_FETCH_DIAG.append({"room_id": room_id, "platform": platform,
+                                    "error": str(e)[:200], "error_type": type(e).__name__})
             posts_status[key] = {
                 "platform": platform,
                 "id": room_id,
