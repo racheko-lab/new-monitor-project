@@ -1,5 +1,5 @@
 {
-  "time": "2026-08-08T16:40:13.762263",
+  "time": "2026-08-08T16:44:26.691908",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
@@ -7,43 +7,43 @@
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-08T16:40:13.762636"
+      "last_check": "2026-08-08T16:44:26.692184"
     },
     "douyin_FengBro": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-08T16:40:13.762636"
+      "last_check": "2026-08-08T16:44:26.692184"
     },
     "douyin_83134194400": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-08T16:40:13.762636"
+      "last_check": "2026-08-08T16:44:26.692184"
     },
     "douyin_33716689672": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-08T16:40:13.762636"
+      "last_check": "2026-08-08T16:44:26.692184"
     },
     "douyin_32062056217": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-08T16:40:13.762636"
+      "last_check": "2026-08-08T16:44:26.692184"
     },
     "kuaishou_pineapple2005": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-08-08T16:40:13.762636"
+      "last_check": "2026-08-08T16:44:26.692184"
     },
     "kuaishou_HUizi-G-H": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-08-08T16:40:13.762636"
+      "last_check": "2026-08-08T16:44:26.692184"
     }
   },
   "fetch_diag": [
