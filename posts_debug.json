@@ -1,75 +1,95 @@
 {
-  "time": "2026-08-08T13:29:22.731079",
+  "time": "2026-08-08T13:32:07.339038",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
     "douyin_vHan09233": {
-      "status": "stale",
+      "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-08T13:29:22.731279"
+      "last_check": "2026-08-08T13:32:07.339375"
     },
     "douyin_FengBro": {
-      "status": "error",
-      "has_latest_post": false,
-      "sec_uid": "",
-      "last_check": "2026-08-08T13:29:22.731279"
+      "status": "ok",
+      "has_latest_post": true,
+      "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
+      "last_check": "2026-08-08T13:32:07.339375"
     },
     "douyin_83134194400": {
-      "status": "error",
-      "has_latest_post": false,
-      "sec_uid": "",
-      "last_check": "2026-08-08T13:29:22.731279"
+      "status": "ok",
+      "has_latest_post": true,
+      "sec_uid": "MS4wLjABAAAAPzcJluI9",
+      "last_check": "2026-08-08T13:32:07.339375"
     },
     "douyin_33716689672": {
-      "status": "error",
-      "has_latest_post": false,
-      "sec_uid": "",
-      "last_check": "2026-08-08T13:29:22.731279"
+      "status": "ok",
+      "has_latest_post": true,
+      "sec_uid": "MS4wLjABAAAAF4OnGjjF",
+      "last_check": "2026-08-08T13:32:07.339375"
     },
     "douyin_32062056217": {
-      "status": "error",
-      "has_latest_post": false,
-      "sec_uid": "",
-      "last_check": "2026-08-08T13:29:22.731279"
+      "status": "ok",
+      "has_latest_post": true,
+      "sec_uid": "MS4wLjABAAAASbtZpohJ",
+      "last_check": "2026-08-08T13:32:07.339375"
     },
     "kuaishou_pineapple2005": {
-      "status": "error",
+      "status": "no_data",
       "has_latest_post": false,
-      "sec_uid": "",
-      "last_check": "2026-08-08T13:29:22.731279"
+      "sec_uid": "180534002",
+      "last_check": "2026-08-08T13:32:07.339375"
     }
   },
   "fetch_diag": [
     {
       "room_id": "vHan09233",
       "platform": "douyin",
-      "error": "BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════",
-      "error_type": "Error"
+      "live_sec_uid_ok": true,
+      "sec_uid_ok": true,
+      "sec_uid": "MS4wLjABAAAAUXBNFnWLvl9T8",
+      "pw_status": "ok",
+      "parsed_count": 15,
+      "latest_post_id": "7671242630693278702"
     },
     {
       "room_id": "FengBro",
       "platform": "douyin",
-      "error": "BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════",
-      "error_type": "Error"
+      "live_sec_uid_ok": true,
+      "sec_uid_ok": true,
+      "sec_uid": "MS4wLjABAAAAXrcPvX8QchAY5",
+      "pw_status": "ok",
+      "parsed_count": 15,
+      "latest_post_id": "7671187769208753459"
     },
     {
       "room_id": "83134194400",
       "platform": "douyin",
-      "error": "BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════",
-      "error_type": "Error"
+      "live_sec_uid_ok": true,
+      "sec_uid_ok": true,
+      "sec_uid": "MS4wLjABAAAAPzcJluI9HAtkd",
+      "pw_status": "ok",
+      "parsed_count": 15,
+      "latest_post_id": "7671312198745174201"
     },
     {
       "room_id": "33716689672",
       "platform": "douyin",
-      "error": "BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════",
-      "error_type": "Error"
+      "live_sec_uid_ok": true,
+      "sec_uid_ok": true,
+      "sec_uid": "MS4wLjABAAAAF4OnGjjFY48t8",
+      "pw_status": "ok",
+      "parsed_count": 4,
+      "latest_post_id": "7666725451713246690"
     },
     {
       "room_id": "32062056217",
       "platform": "douyin",
-      "error": "BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════",
-      "error_type": "Error"
+      "live_sec_uid_ok": true,
+      "sec_uid_ok": true,
+      "sec_uid": "MS4wLjABAAAASbtZpohJd3E4C",
+      "pw_status": "ok",
+      "parsed_count": 15,
+      "latest_post_id": "7627471964336119177"
     }
   ]
 }
