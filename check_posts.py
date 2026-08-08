@@ -1415,11 +1415,41 @@ def parse_ks_feed(item: Dict, room_name: str) -> Optional[Dict]:
                     or item.get("id"))
         if not photo_id:
             return None
-        caption = (photo.get("caption") if photo else None) or item.get("caption", "") or "无标题"
-        # live_api 格式的统计数据在 counts 对象里
+        # live_api/profile/public 不返回 caption 字段：
+        # - 图文作品（workType=multiple/single）有 musicName，用它兜底
+        # - 视频作品（workType=video）无任何文本字段，用类型+poster日期生成标题
+        caption = ((photo.get("caption") if photo else None) or item.get("caption", "")
+                   or item.get("musicName", ""))
+        if not caption:
+            work_type = item.get("workType") or (photo.get("workType") if photo else "") or ""
+            type_label = {"video": "视频作品", "multiple": "图文作品",
+                          "single": "图片作品", "ksong": "K歌作品"}.get(work_type, "作品")
+            # 从 poster URL 提取日期（/upic/YYYY/MM/DD/）作为标题后缀
+            poster = item.get("poster") or ""
+            m = re.search(r'/upic/(\d{4})/(\d{2})/(\d{2})/', poster)
+            if m:
+                caption = f"{type_label} {m.group(1)}-{m.group(2)}-{m.group(3)}"
+            else:
+                caption = type_label
+        # live_api 格式的统计数据在 counts 对象里：
+        # counts = {"like": 4418, "displayView": "7.8w", "displayLike": "4418", ...}
+        # like 是数字，displayView 是 "7.8w" 字符串需解析
         counts = item.get("counts") if isinstance(item.get("counts"), dict) else {}
-        view_count = (photo.get("viewCount") if photo else None) or item.get("viewCount") or counts.get("viewCount") or 0
-        like_count = (photo.get("likeCount") if photo else None) or item.get("likeCount") or counts.get("likeCount") or 0
+        like_count = (photo.get("likeCount") if photo else None) or item.get("likeCount") or counts.get("likeCount") or counts.get("like") or 0
+        view_count = (photo.get("viewCount") if photo else None) or item.get("viewCount") or counts.get("viewCount")
+        if not view_count and counts.get("displayView"):
+            # 解析 "7.8w" -> 78000, "1234" -> 1234
+            dv = str(counts.get("displayView"))
+            try:
+                if dv.endswith("w"):
+                    view_count = int(float(dv[:-1]) * 10000)
+                elif dv.endswith("亿"):
+                    view_count = int(float(dv[:-1]) * 100000000)
+                else:
+                    view_count = int(float(dv))
+            except Exception:
+                view_count = 0
+        view_count = view_count or 0
         timestamp = (photo.get("timestamp") if photo else None) or item.get("timestamp")
         time_str = None
         sort_key = 0
