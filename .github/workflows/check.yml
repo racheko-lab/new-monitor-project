@@ -62,7 +62,7 @@ jobs:
         env:
           MONITOR_CONFIG: ${{ secrets.MONITOR_CONFIG }}
         run: |
-          xvfb-run -a python check_posts.py
+          python check_posts.py
           # 推送通知后立即 commit state.json（含 seen_posts），防止 run 被 concurrency
           # 取消时 state 丢失导致下一个 run 把同一条作品当新作品重复推送。
           git config --global user.name "GitHub Actions"

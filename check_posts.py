@@ -519,7 +519,10 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 except Exception:
                     pass
 
+            # 已拿到足够作品就不再滚动/点击标签（单页 v2 API 通常一次返回 15+ 条）
             for scroll_i in range(8):
+                if len(captured_awemes) >= 5:
+                    break
                 page.mouse.wheel(0, 2000)
                 page.wait_for_timeout(1500)
                 try:
@@ -639,7 +642,9 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 print(f"  [{tag}] 内嵌JSON提取异常: {e}")
 
             # 尝试点击"作品"标签切换到全部作品视图（如果有图文/作品分类tab）
-            try:
+            # 已拿到足够作品则跳过（点击+等待加载很耗时）
+            if len(captured_awemes) < 5:
+              try:
                 tabs_info = page.evaluate("""() => {
                     const tabs = [];
                     const allElements = document.querySelectorAll('div, span, p, a');
@@ -694,7 +699,7 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                                 except Exception:
                                     pass
                             break
-            except Exception as e:
+              except Exception as e:
                 print(f"  [{tag}] 标签点击异常: {e}")
 
             # 最终收集hook数据
@@ -1254,9 +1259,11 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
                 except Exception:
                     pass
 
+    # headless 模式：CI 和本地都能直接跑，不再依赖 xvfb。
+    # 非反爬强拦截场景下 headless 与 headless=False 抓取效果一致，且更稳定更快。
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=False,
+            headless=True,
             args=[
                 '--disable-blink-features=AutomationControlled',
                 '--no-sandbox',
@@ -1265,12 +1272,28 @@ def fetch_posts_with_playwright(sec_uid: str, display_name: str) -> Tuple[Option
             ],
         )
 
-        fetch_from_share_page(browser, 'm.douyin.com', 'm')
-        fetch_from_share_page(browser, 'www.iesdouyin.com', 'ies')
-        fetch_from_share_page(browser, 'm.douyin.com', 'm-user', path_prefix='/user/')
-        fetch_from_pc_page(browser)
+        # 分享页（iesdouyin / m.douyin.com）最轻量可靠：移动端 v2 API 直接返回
+        # aweme_list，5~15s 即可拿到 15+ 条作品。任一分享页拿到足够作品就停止，
+        # 不再继续跑耗时的 PC 端 www.douyin.com/user 页（该页反爬强、API 拦截不到
+        # 作品列表，单账号要多耗 60~90s，6 账号会导致 CI 超时被取消）。
+        share_sources = [
+            ('www.iesdouyin.com', 'ies', '/share/user/'),
+            ('m.douyin.com', 'm', '/share/user/'),
+            ('m.douyin.com', 'm-user', '/user/'),
+        ]
+        for host, tag, prefix in share_sources:
+            fetch_from_share_page(browser, host, tag, path_prefix=prefix)
+            # 拿到作品即提前结束，避免无谓的多页抓取拖慢 CI
+            if len(captured_awemes) >= 3:
+                print(f"  已从分享页获取 {len(captured_awemes)} 条，跳过后续页面抓取")
+                break
 
-        # 备用：对DOM中发现但list API未返回的ID，逐个访问独立视频/图文页获取数据（限制最多5个）
+        # 仅当分享页完全没拿到作品时，才回退到 PC 端用户页（重，但作为最后兜底）
+        if len(captured_awemes) < 3:
+            print(f"  分享页仅拿到 {len(captured_awemes)} 条，回退到 PC 端用户页...")
+            fetch_from_pc_page(browser)
+
+        # 备用：对DOM中发现但list API未返回的ID，逐个访问独立视频/图文页获取数据（限制最多2个）
         if dom_seen_ids:
             known_ids = {str(a.get('aweme_id','')) for a in captured_awemes}
             missing_ids = [did for did in dom_seen_ids if did not in known_ids]
