@@ -36,6 +36,8 @@ HISTORY_FILE = "history.json"
 POSTS_FILE = "posts.json"
 HISTORY_MAX = 200
 POSTS_MAX = 100
+# CI 诊断日志：check_douyin_posts / check_kuaishou_posts 写入，main 导出
+LAST_FETCH_DIAG = []
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -1759,18 +1761,25 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
     sec_uid = None
     display_name = name
     avatar = None
+    diag = {"room_id": room_id, "platform": "douyin"}
 
     # Step 1: 获取 sec_uid、昵称、头像
     sec_uid, nickname, live_avatar = fetch_sec_uid_from_live(room_id)
+    diag["sec_uid_ok"] = bool(sec_uid)
+    diag["sec_uid"] = (sec_uid or "")[:25]
     if not sec_uid:
+        LAST_FETCH_DIAG.append(diag)
         return None, display_name, None, None, [], []
     display_name = nickname or name
     avatar = live_avatar
 
     # Step 2: 用 Playwright 抓取作品
     parsed_posts, status = fetch_posts_with_playwright(sec_uid, display_name)
+    diag["pw_status"] = status
+    diag["parsed_count"] = len(parsed_posts) if parsed_posts else 0
 
     if not parsed_posts:
+        LAST_FETCH_DIAG.append(diag)
         return sec_uid, display_name, avatar, None, [], []
 
     # 最新作品 = 按时间倒序第一个
@@ -1828,6 +1837,8 @@ def check_douyin_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional
     }
     save_state(state)
 
+    diag["latest_post_id"] = (latest_post or {}).get("id")
+    LAST_FETCH_DIAG.append(diag)
     return sec_uid, display_name, avatar, latest_post, new_posts_data, notifications
 
 
@@ -1944,7 +1955,32 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
 if __name__ == "__main__":
     if not PLAYWRIGHT_AVAILABLE:
         print("⚠️ playwright 未安装，作品抓取将失败")
+    # CI 诊断快照：记录本次检测每账号的抓取结果与环境信息，便于排查 CI 抓取失败
+    import platform as _pf
+    _debug = {
+        "time": datetime.now().isoformat(),
+        "machine": _pf.node(),
+        "playwright": PLAYWRIGHT_AVAILABLE,
+    }
+    try:
+        with open("posts_debug.json", "w", encoding="utf-8") as _f:
+            json.dump(_debug, _f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
     notifications, new_posts = check_all_posts()
+    # 把最终状态快照追加到 debug 文件，方便不查日志也能定位 CI 抓取结果
+    try:
+        _final = load_posts_status()
+        _debug["results"] = {
+            k: {"status": v.get("status"), "has_latest_post": bool(v.get("latest_post")),
+                "sec_uid": (v.get("sec_uid") or "")[:20], "last_check": v.get("last_check")}
+            for k, v in _final.items()
+        }
+        _debug["fetch_diag"] = LAST_FETCH_DIAG
+        with open("posts_debug.json", "w", encoding="utf-8") as _f:
+            json.dump(_debug, _f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
     for msg in notifications:
         print(msg)
     print(f"检测完成，新作品 {len(new_posts)} 条")
