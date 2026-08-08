@@ -1514,19 +1514,26 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                                         query: 'query publicFeedsQuery($principalId:String,$pcursor:String,$count:Int){publicFeeds(principalId:$principalId,pcursor:$pcursor,count:$count){pcursor list{photoId caption thumbnailUrl viewCount likeCount timestamp}}}'
                                     })
                                 });
-                                return await resp.json();
+                                const text = await resp.text();
+                                return {status: resp.status, body: text.substring(0, 500)};
                             } catch(e) { return {error: e.message}; }
                         }
                     """, room_id)
+                    print(f"  [快手] fetch 结果: {str(result)[:300]}")
                     if result and isinstance(result, dict):
-                        feeds_data = (result.get("data") or {}).get("publicFeeds") or {}
-                        feed_list = feeds_data.get("list") or []
-                        for item in feed_list:
-                            if isinstance(item, dict) and item.get("photoId"):
-                                captured_feeds.append(item)
-                        print(f"  [快手] 主动 fetch 得到 {len(feed_list)} 条")
-                    elif result and result.get("error"):
-                        print(f"  [快手] 主动 fetch 失败: {result['error']}")
+                        if result.get("error"):
+                            print(f"  [快手] 主动 fetch 失败: {result['error']}")
+                        else:
+                            try:
+                                data = json.loads(result.get("body", "{}")) if isinstance(result.get("body"), str) else result
+                                feeds_data = (data.get("data") or {}).get("publicFeeds") or {}
+                                feed_list = feeds_data.get("list") or []
+                                for item in feed_list:
+                                    if isinstance(item, dict) and item.get("photoId"):
+                                        captured_feeds.append(item)
+                                print(f"  [快手] 主动 fetch 得到 {len(feed_list)} 条")
+                            except Exception as pe:
+                                print(f"  [快手] 解析 fetch 结果异常: {pe}")
                 except Exception as e:
                     print(f"  [快手] 主动 fetch 异常: {e}")
 
