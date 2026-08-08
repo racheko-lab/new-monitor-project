@@ -1,10 +1,5 @@
 [
   {
-    "time": "2026-07-23T02:03:16.655638",
-    "type": "error",
-    "message": "⚠️ piiiiikiepie 检测失败"
-  },
-  {
     "time": "2026-07-23T02:36:00.924618",
     "type": "live_end",
     "message": "🏁 piiiiikiepie 下播了"
@@ -998,5 +993,10 @@
     "time": "2026-08-08T15:09:11.941639",
     "type": "live_end",
     "message": "🏁 峰哥亡命天涯 下播了，本次直播时长: 23小时44分钟"
+  },
+  {
+    "time": "2026-08-08T15:22:32.040017",
+    "type": "error",
+    "message": "⚠️ sad 检测失败"
   }
 ]
