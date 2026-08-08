@@ -1,90 +1,44 @@
 {
-  "time": "2026-08-08T13:00:56.907158",
-  "machine": "all-in-one-61-khwbl",
+  "time": "2026-08-08T13:04:37.388541",
+  "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
     "douyin_vHan09233": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-08T13:00:56.907919"
+      "last_check": "2026-08-08T13:04:37.388829"
     },
     "douyin_FengBro": {
-      "status": "ok",
-      "has_latest_post": true,
-      "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-08T13:00:56.907919"
+      "status": "error",
+      "has_latest_post": false,
+      "sec_uid": "",
+      "last_check": "2026-08-08T13:04:37.388829"
     },
     "douyin_83134194400": {
-      "status": "ok",
-      "has_latest_post": true,
-      "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-08T13:00:56.907919"
+      "status": "error",
+      "has_latest_post": false,
+      "sec_uid": "",
+      "last_check": "2026-08-08T13:04:37.388829"
     },
     "douyin_33716689672": {
-      "status": "ok",
-      "has_latest_post": true,
-      "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-08T13:00:56.907919"
+      "status": "error",
+      "has_latest_post": false,
+      "sec_uid": "",
+      "last_check": "2026-08-08T13:04:37.388829"
     },
     "douyin_32062056217": {
-      "status": "ok",
-      "has_latest_post": true,
-      "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-08T13:00:56.907919"
+      "status": "error",
+      "has_latest_post": false,
+      "sec_uid": "",
+      "last_check": "2026-08-08T13:04:37.388829"
     },
     "kuaishou_pineapple2005": {
-      "status": "no_data",
+      "status": "error",
       "has_latest_post": false,
-      "sec_uid": "180534002",
-      "last_check": "2026-08-08T13:00:56.907919"
+      "sec_uid": "",
+      "last_check": "2026-08-08T13:04:37.388829"
     }
   },
-  "fetch_diag": [
-    {
-      "room_id": "vHan09233",
-      "platform": "douyin",
-      "sec_uid_ok": true,
-      "sec_uid": "MS4wLjABAAAAUXBNFnWLvl9T8",
-      "pw_status": "ok",
-      "parsed_count": 15,
-      "latest_post_id": "7671242630693278702"
-    },
-    {
-      "room_id": "FengBro",
-      "platform": "douyin",
-      "sec_uid_ok": true,
-      "sec_uid": "MS4wLjABAAAAXrcPvX8QchAY5",
-      "pw_status": "ok",
-      "parsed_count": 15,
-      "latest_post_id": "7671187769208753459"
-    },
-    {
-      "room_id": "83134194400",
-      "platform": "douyin",
-      "sec_uid_ok": true,
-      "sec_uid": "MS4wLjABAAAAPzcJluI9HAtkd",
-      "pw_status": "ok",
-      "parsed_count": 15,
-      "latest_post_id": "7671312198745174201"
-    },
-    {
-      "room_id": "33716689672",
-      "platform": "douyin",
-      "sec_uid_ok": true,
-      "sec_uid": "MS4wLjABAAAAF4OnGjjFY48t8",
-      "pw_status": "ok",
-      "parsed_count": 4,
-      "latest_post_id": "7666725451713246690"
-    },
-    {
-      "room_id": "32062056217",
-      "platform": "douyin",
-      "sec_uid_ok": true,
-      "sec_uid": "MS4wLjABAAAASbtZpohJd3E4C",
-      "pw_status": "ok",
-      "parsed_count": 15,
-      "latest_post_id": "7627471964336119177"
-    }
-  ]
+  "fetch_diag": []
 }
