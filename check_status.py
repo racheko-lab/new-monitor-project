@@ -289,14 +289,22 @@ def check_all() -> Tuple[List[Dict], List[str]]:
 
         status, title, viewers, uname, avatar = get_status(platform, room_id)
 
-        # 检测失败：仅记录历史，保留上次有效状态，不污染下次状态变化判断
+        # 检测失败：保留上次有效状态，不污染下次状态变化判断
         # （否则 error 会覆盖 status，下次恢复检测时误判为状态变化，重复推送下播/开播通知）
+        # 连续失败只记一次 history，避免 error 刷屏
         if status == "error":
-            msg = f"⚠️ {name} 检测失败"
-            add_history(msg, "error")
+            prev = current_status.get(key, {})
+            if prev.get("last_error") != True:
+                msg = f"⚠️ {name} 检测失败"
+                add_history(msg, "error")
             if key in current_status:
                 current_status[key]["last_check"] = datetime.now().isoformat()
+                current_status[key]["last_error"] = True
             continue
+
+        # 检测成功，清除 error 标记
+        if key in current_status:
+            current_status[key]["last_error"] = False
 
         is_live = status == "live"
 
