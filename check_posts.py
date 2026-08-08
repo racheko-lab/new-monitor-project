@@ -1619,28 +1619,64 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                 pass
 
             # 2. 访问 live.kuaishou.com/profile/{room_id}
+            # 用 expect_response 主动等待 live_api/profile/public 响应（比固定 sleep 更可靠）。
+            # 该接口现在带 __NS_hxfalcon 签名，由浏览器自动生成，requests 无法复现，
+            # 必须在浏览器上下文内触发。先访问 www.kuaishou.com 建立 session 拿 did cookie，
+            # 再访问 live profile 页，浏览器会自动发签名请求。
             print(f"  [快手] 访问 live.kuaishou.com/profile/{room_id}...")
             try:
-                page.goto(f"https://live.kuaishou.com/profile/{room_id}",
-                          wait_until="domcontentloaded", timeout=15000)
+                with page.expect_response(
+                    lambda r: '/live_api/profile/public' in r.url, timeout=12000
+                ) as resp_info:
+                    page.goto(f"https://live.kuaishou.com/profile/{room_id}",
+                              wait_until="domcontentloaded", timeout=15000)
+                # 主动等待响应（on_api_response 会同时填充 captured_feeds）
+                try:
+                    resp_info.value
+                except Exception:
+                    pass
             except PlaywrightTimeoutError:
-                print(f"  [快手] 页面加载超时，尝试继续")
+                print(f"  [快手] 页面加载/响应超时，尝试继续")
             except Exception as e:
                 print(f"  [快手] 页面加载异常: {e}")
 
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(2500)
 
-            # 3. list 为空时 reload 重试（最多3次）
+            # 3. 滚动触发更多请求（部分情况首屏不触发 live_api 请求，滚动后才会发）
             if not captured_feeds:
-                for i in range(3):
+                try:
+                    page.evaluate("window.scrollTo(0, 600)")
+                    page.wait_for_timeout(2000)
+                    page.evaluate("window.scrollTo(0, 1200)")
+                    page.wait_for_timeout(2000)
+                except Exception:
+                    pass
+
+            # 4. list 为空时 reload 重试（最多4次，配合 expect_response）
+            if not captured_feeds:
+                for i in range(4):
                     if captured_feeds:
                         break
-                    print(f"  [快手] 未拦截到数据，reload 重试 ({i+1}/3)...")
+                    print(f"  [快手] 未拦截到数据，reload 重试 ({i+1}/4)...")
                     try:
-                        page.reload(wait_until="domcontentloaded")
+                        with page.expect_response(
+                            lambda r: '/live_api/profile/public' in r.url, timeout=10000
+                        ):
+                            page.reload(wait_until="domcontentloaded", timeout=15000)
+                    except PlaywrightTimeoutError:
+                        pass
+                    except Exception:
+                        try:
+                            page.reload(wait_until="domcontentloaded")
+                        except Exception:
+                            pass
+                    # reload 后滚动触发
+                    try:
+                        page.wait_for_timeout(2000)
+                        page.evaluate("window.scrollTo(0, 800)")
+                        page.wait_for_timeout(2000)
                     except Exception:
                         pass
-                    page.wait_for_timeout(3000)
 
             browser.close()
     except Exception as e:
