@@ -1,10 +1,5 @@
 [
   {
-    "time": "2026-07-23T07:17:58.019817",
-    "type": "live_end",
-    "message": "🏁 12X 下播了"
-  },
-  {
     "time": "2026-07-23T07:17:59.202856",
     "type": "live_end",
     "message": "🏁 村口一娜 下播了"
@@ -998,5 +993,10 @@
     "time": "2026-08-09T01:08:49.483671",
     "type": "error",
     "message": "⚠️ 肥肥ssl 检测失败"
+  },
+  {
+    "time": "2026-08-09T04:31:27.571639",
+    "type": "live_start",
+    "message": "🎉 魅力驿站 开播了！\n🔗 https://live.kuaishou.com/u/pineapple2005"
   }
 ]
