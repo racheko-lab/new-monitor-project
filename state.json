@@ -304,8 +304,8 @@
     "last_live_time": null
   },
   "douyin_ZSWZ111": {
-    "last_live_start": "2026-08-08T23:28:21.654779",
-    "duration": 0,
+    "last_live_start": null,
+    "duration": 2038,
     "last_live_time": "2026-08-09T00:02:20.051075"
   },
   "kuaishou_pineapple2005": {
