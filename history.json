@@ -1,10 +1,5 @@
 [
   {
-    "time": "2026-07-24T12:28:09.700420",
-    "type": "live_start",
-    "message": "🎉 峰哥亡命天涯 开播了！\n标题: be一下\n观看人数: 276737\n🔗 https://live.bilibili.com/22230707"
-  },
-  {
     "time": "2026-07-24T14:02:11.484770",
     "type": "live_end",
     "message": "🏁 峰哥亡命天涯 下播了，本次直播时长: 9小时43分钟"
@@ -998,5 +993,10 @@
     "time": "2026-08-09T12:33:30.544362",
     "type": "error",
     "message": "⚠️ 肥肥ssl 检测失败"
+  },
+  {
+    "time": "2026-08-09T13:46:53.118587",
+    "type": "live_start",
+    "message": "🎉 魅力驿站 开播了！\n🔗 https://live.kuaishou.com/u/pineapple2005"
   }
 ]
