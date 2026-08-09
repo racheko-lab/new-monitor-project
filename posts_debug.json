@@ -1,5 +1,5 @@
 {
-  "time": "2026-08-09T07:49:59.799594",
+  "time": "2026-08-09T07:55:35.252348",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
@@ -7,49 +7,49 @@
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-09T07:49:59.799848"
+      "last_check": "2026-08-09T07:55:35.252782"
     },
     "douyin_FengBro": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-09T07:49:59.799848"
+      "last_check": "2026-08-09T07:55:35.252782"
     },
     "douyin_83134194400": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-09T07:49:59.799848"
+      "last_check": "2026-08-09T07:55:35.252782"
     },
     "douyin_33716689672": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-09T07:49:59.799848"
+      "last_check": "2026-08-09T07:55:35.252782"
     },
     "douyin_32062056217": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-09T07:49:59.799848"
+      "last_check": "2026-08-09T07:55:35.252782"
     },
     "kuaishou_pineapple2005": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-08-09T07:49:59.799848"
+      "last_check": "2026-08-09T07:55:35.252782"
     },
     "kuaishou_HUizi-G-H": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-08-09T07:49:59.799848"
+      "last_check": "2026-08-09T07:55:35.252782"
     },
     "kuaishou_Sandy88888": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2117550",
-      "last_check": "2026-08-09T07:49:59.799848"
+      "last_check": "2026-08-09T07:55:35.252782"
     }
   },
   "fetch_diag": [
