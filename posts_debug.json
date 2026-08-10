@@ -1,5 +1,5 @@
 {
-  "time": "2026-08-10T07:15:28.727897",
+  "time": "2026-08-10T07:21:14.516930",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
@@ -7,49 +7,49 @@
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-10T07:15:28.728291"
+      "last_check": "2026-08-10T07:21:14.517329"
     },
     "douyin_FengBro": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-10T07:15:28.728291"
+      "last_check": "2026-08-10T07:21:14.517329"
     },
     "douyin_83134194400": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-10T07:15:28.728291"
+      "last_check": "2026-08-10T07:21:14.517329"
     },
     "douyin_33716689672": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-10T07:15:28.728291"
+      "last_check": "2026-08-10T07:21:14.517329"
     },
     "douyin_32062056217": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-10T07:15:28.728291"
+      "last_check": "2026-08-10T07:21:14.517329"
     },
     "kuaishou_pineapple2005": {
       "status": "stale",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-08-10T07:15:28.728291"
+      "last_check": "2026-08-10T07:21:14.517329"
     },
     "kuaishou_HUizi-G-H": {
       "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-08-10T07:15:28.728291"
+      "last_check": "2026-08-10T07:21:14.517329"
     },
     "kuaishou_Sandy88888": {
       "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2117550",
-      "last_check": "2026-08-10T07:15:28.728291"
+      "last_check": "2026-08-10T07:21:14.517329"
     }
   },
   "fetch_diag": [
@@ -66,8 +66,7 @@
     {
       "room_id": "FengBro",
       "platform": "douyin",
-      "live_sec_uid_ok": false,
-      "used_cached_sec_uid": true,
+      "live_sec_uid_ok": true,
       "sec_uid_ok": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8QchAY5",
       "pw_status": "ok",
