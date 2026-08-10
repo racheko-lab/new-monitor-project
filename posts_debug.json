@@ -1,5 +1,5 @@
 {
-  "time": "2026-08-10T13:16:21.504498",
+  "time": "2026-08-10T13:20:34.704932",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
@@ -7,57 +7,56 @@
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-10T13:16:21.504901"
+      "last_check": "2026-08-10T13:20:34.705294"
     },
     "douyin_FengBro": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-10T13:16:21.504901"
+      "last_check": "2026-08-10T13:20:34.705294"
     },
     "douyin_83134194400": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-10T13:16:21.504901"
+      "last_check": "2026-08-10T13:20:34.705294"
     },
     "douyin_33716689672": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-10T13:16:21.504901"
+      "last_check": "2026-08-10T13:20:34.705294"
     },
     "douyin_32062056217": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-10T13:16:21.504901"
+      "last_check": "2026-08-10T13:20:34.705294"
     },
     "kuaishou_pineapple2005": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-08-10T13:16:21.504901"
+      "last_check": "2026-08-10T13:20:34.705294"
     },
     "kuaishou_HUizi-G-H": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-08-10T13:16:21.504901"
+      "last_check": "2026-08-10T13:20:34.705294"
     },
     "kuaishou_Sandy88888": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2117550",
-      "last_check": "2026-08-10T13:16:21.504901"
+      "last_check": "2026-08-10T13:20:34.705294"
     }
   },
   "fetch_diag": [
     {
       "room_id": "vHan09233",
       "platform": "douyin",
-      "live_sec_uid_ok": false,
-      "used_cached_sec_uid": true,
+      "live_sec_uid_ok": true,
       "sec_uid_ok": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWLvl9T8",
       "pw_status": "ok",
@@ -77,8 +76,7 @@
     {
       "room_id": "83134194400",
       "platform": "douyin",
-      "live_sec_uid_ok": false,
-      "used_cached_sec_uid": true,
+      "live_sec_uid_ok": true,
       "sec_uid_ok": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9HAtkd",
       "pw_status": "ok",
@@ -88,7 +86,8 @@
     {
       "room_id": "33716689672",
       "platform": "douyin",
-      "live_sec_uid_ok": true,
+      "live_sec_uid_ok": false,
+      "used_cached_sec_uid": true,
       "sec_uid_ok": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjFY48t8",
       "pw_status": "ok",
