@@ -1,15 +1,5 @@
 [
   {
-    "time": "2026-07-28T06:41:29.927779",
-    "type": "live_end",
-    "message": "🏁 piiiiikiepie 下播了"
-  },
-  {
-    "time": "2026-07-28T11:14:39.018938",
-    "type": "error",
-    "message": "⚠️ Sayonal_ 检测失败"
-  },
-  {
     "time": "2026-07-28T11:42:42.909952",
     "type": "live_end",
     "message": "🏁 Sayonal_ 下播了"
@@ -998,5 +988,15 @@
     "time": "2026-08-10T07:42:22.201922",
     "type": "error",
     "message": "⚠️ 郑少雯子 检测失败"
+  },
+  {
+    "time": "2026-08-10T07:48:27.736648",
+    "type": "error",
+    "message": "⚠️ 开心愛酱壹佰E 检测失败"
+  },
+  {
+    "time": "2026-08-10T07:48:36.010665",
+    "type": "error",
+    "message": "⚠️ sad 检测失败"
   }
 ]
