@@ -8,7 +8,7 @@
     "status": "offline",
     "title": "be一下",
     "viewers": 0,
-    "last_check": "2026-08-10T09:36:19.389866",
+    "last_check": "2026-08-10T09:41:53.002297",
     "duration": 85447
   },
   "douyin_64865306": {
@@ -20,19 +20,20 @@
     "status": "offline",
     "title": "无为大润发旺卤集市 来看看哦",
     "viewers": null,
-    "last_check": "2026-08-10T09:36:21.522477",
-    "duration": 0
+    "last_check": "2026-08-10T09:41:55.356513",
+    "duration": 0,
+    "last_error": true
   },
   "douyin_woshixiaoqumt": {
     "platform": "douyin",
     "id": "woshixiaoqumt",
     "name": "小曲开心",
     "uname": "这是一个可爱的用户",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_8335485847dacf48ebe6be2b4d419ea7.jpeg?from=3067671334",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_8335485847dacf48ebe6be2b4d419ea7.jpeg?from=3067671334",
     "status": "offline",
     "title": "与美萌女孩们聊天",
     "viewers": null,
-    "last_check": "2026-08-10T09:36:22.873319",
+    "last_check": "2026-08-10T09:41:56.471161",
     "duration": 0
   },
   "douyin_83134194400": {
@@ -40,11 +41,11 @@
     "id": "83134194400",
     "name": "27～",
     "uname": "27～",
-    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
     "status": "offline",
     "title": "正在直播",
     "viewers": null,
-    "last_check": "2026-08-10T09:36:23.974069",
+    "last_check": "2026-08-10T09:41:58.142859",
     "duration": 0
   },
   "douyin_hmh1020l.": {
@@ -52,11 +53,11 @@
     "id": "hmh1020l.",
     "name": "piiiiikiepie",
     "uname": "piiiiikiepie",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_22ba23ef91602c9c7ceb8ed354a35bc0.jpeg?from=3067671334",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_22ba23ef91602c9c7ceb8ed354a35bc0.jpeg?from=3067671334",
     "status": "offline",
     "title": "piiiiikiepie正在直播",
     "viewers": null,
-    "last_check": "2026-08-10T09:36:25.117051",
+    "last_check": "2026-08-10T09:41:59.842490",
     "duration": 0
   },
   "douyin_32062056217": {
@@ -64,11 +65,11 @@
     "id": "32062056217",
     "name": "Sayonal_",
     "uname": "Sayonal_",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_602c5d8ee34311549115864959f13e48.jpeg?from=3067671334",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_602c5d8ee34311549115864959f13e48.jpeg?from=3067671334",
     "status": "offline",
     "title": "TRNA",
     "viewers": null,
-    "last_check": "2026-08-10T09:36:26.504962",
+    "last_check": "2026-08-10T09:42:01.056457",
     "duration": 0
   },
   "douyin_77F88C_": {
@@ -76,24 +77,23 @@
     "id": "77F88C_",
     "name": "开心愛酱壹佰E",
     "uname": "开心愛酱壹佰E",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_bf458f5edcacd0de192f291f2ab8796a.jpeg?from=3067671334",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_bf458f5edcacd0de192f291f2ab8796a.jpeg?from=3067671334",
     "status": "offline",
     "title": "开心壹佰（愛酱）",
     "viewers": null,
-    "last_check": "2026-08-10T09:36:28.163860",
-    "duration": 0,
-    "last_error": true
+    "last_check": "2026-08-10T09:42:03.367948",
+    "duration": 0
   },
   "douyin_98078804724": {
     "platform": "douyin",
     "id": "98078804724",
     "name": "什么都知道",
     "uname": "什么都知道",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_57d8c87ed263cd7e76b551998d17deab.jpeg?from=3067671334",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_57d8c87ed263cd7e76b551998d17deab.jpeg?from=3067671334",
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-10T09:36:29.490541",
+    "last_check": "2026-08-10T09:42:04.513273",
     "duration": 0
   },
   "douyin_74597663503": {
@@ -101,11 +101,11 @@
     "id": "74597663503",
     "name": "D.my",
     "uname": "小鱼",
-    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_920e8a74b8611fbd7d59d871220b830f.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_920e8a74b8611fbd7d59d871220b830f.jpeg?from=3067671334",
     "status": "offline",
     "title": "用户2079728788653正在直播",
     "viewers": null,
-    "last_check": "2026-08-10T09:36:31.211180",
+    "last_check": "2026-08-10T09:42:05.940401",
     "duration": 1293
   },
   "douyin_81160909094": {
@@ -117,7 +117,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-10T09:36:32.384386",
+    "last_check": "2026-08-10T09:42:07.253707",
     "duration": 0
   },
   "douyin_mln4494nn": {
@@ -129,7 +129,7 @@
     "status": "offline",
     "title": "好一朵美...正在直播",
     "viewers": null,
-    "last_check": "2026-08-10T09:36:34.137028",
+    "last_check": "2026-08-10T09:42:08.535722",
     "duration": 0
   },
   "douyin_Hananbaby0401": {
@@ -141,32 +141,32 @@
     "status": "offline",
     "title": "你好啊",
     "viewers": null,
-    "last_check": "2026-08-10T09:36:35.051683",
-    "duration": 0
+    "last_check": "2026-08-10T09:42:10.664031",
+    "duration": 0,
+    "last_error": true
   },
   "douyin_SssL33": {
     "platform": "douyin",
     "id": "SssL33",
     "name": "肥肥ssl",
     "uname": "肥肥ssl",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_c211781b0beb851c7c30cb051006930d.jpeg?from=3067671334",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_c211781b0beb851c7c30cb051006930d.jpeg?from=3067671334",
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-10T09:36:37.373602",
-    "duration": 0,
-    "last_error": true
+    "last_check": "2026-08-10T09:42:11.855945",
+    "duration": 0
   },
   "douyin_57889403285": {
     "platform": "douyin",
     "id": "57889403285",
     "name": "我跟你不熟吧",
     "uname": "我跟你不熟吧",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_4617eee67cd8f14e7e07815001f07110.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_4617eee67cd8f14e7e07815001f07110.jpeg?from=3067671334",
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-10T09:36:38.652245",
+    "last_check": "2026-08-10T09:42:13.541463",
     "duration": 0
   },
   "douyin_xqhhha.": {
@@ -178,7 +178,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-10T09:36:40.319075",
+    "last_check": "2026-08-10T09:42:15.405092",
     "duration": 0,
     "last_error": true
   },
@@ -187,11 +187,11 @@
     "id": "ZSWZ111",
     "name": "郑少雯子",
     "uname": "郑少雯子",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_d68d2347000145303948e2a83d66e0aa.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_d68d2347000145303948e2a83d66e0aa.jpeg?from=3067671334",
     "status": "offline",
     "title": "你在就好了",
     "viewers": null,
-    "last_check": "2026-08-10T09:36:41.500162",
+    "last_check": "2026-08-10T09:42:16.606536",
     "duration": 2038
   },
   "kuaishou_pineapple2005": {
@@ -203,7 +203,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-10T09:36:43.496159",
+    "last_check": "2026-08-10T09:42:18.377099",
     "duration": 26327
   },
   "kuaishou_HUizi-G-H": {
@@ -215,7 +215,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-10T09:36:45.325711",
+    "last_check": "2026-08-10T09:42:20.113405",
     "duration": 0
   }
 }
