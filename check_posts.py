@@ -2289,6 +2289,14 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
 if __name__ == "__main__":
     if not PLAYWRIGHT_AVAILABLE:
         print("⚠️ playwright 未安装，作品抓取将失败")
+    # 硬超时：30分钟后强制抛出 TimeoutError，确保 CI 能正常退出并保存结果
+    # 防止 playwright 在 C 扩展中卡住忽略 SIGTERM，导致 CI timeout-minutes 强制杀进程
+    import signal as _signal
+    def _alarm_handler(signum, frame):
+        raise TimeoutError("hard timeout: 30 minutes reached")
+    _signal.signal(_signal.SIGALRM, _alarm_handler)
+    _signal.alarm(1800)  # 30 分钟 = 1800 秒
+
     # CI 诊断快照：记录本次检测每账号的抓取结果与环境信息，便于排查 CI 抓取失败
     import platform as _pf
     _debug = {
@@ -2309,7 +2317,9 @@ if __name__ == "__main__":
         LAST_FETCH_DIAG.append({"room_id": "__main__", "platform": "unknown",
                                 "error": f"check_all_posts crashed: {_e}"[:200],
                                 "error_type": type(_e).__name__})
-        notifications, new_posts = [], []
+        notifications, new_posts = []
+    # 取消硬超时
+    _signal.alarm(0)
     # 把最终状态快照追加到 debug 文件，方便不查日志也能定位 CI 抓取结果
     try:
         _final = load_posts_status()
