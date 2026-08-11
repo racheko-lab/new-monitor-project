@@ -1744,21 +1744,42 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                 _browser_channel = "chromium"
             ctx = browser.new_context(
                 user_agent=('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                            '(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'),
-                viewport={'width': 1280, 'height': 800},
+                            '(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'),
+                viewport={'width': 1920, 'height': 1080},
                 locale='zh-CN', timezone_id='Asia/Shanghai',
                 extra_http_headers={
                     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-                    'sec-ch-ua': '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+                    'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
                     'sec-ch-ua-mobile': '?0',
                     'sec-ch-ua-platform': '"Windows"',
+                    'sec-ch-ua-arch': '"x86"',
+                    'sec-ch-ua-bitness': '"64"',
+                    'sec-ch-ua-full-version': '131.0.6778.86',
+                    'sec-ch-ua-full-version-list': '"Google Chrome";v="131.0.6778.86", "Chromium";v="131.0.6778.86", "Not_A Brand";v="24.0.0.0"',
+                    'upgrade-insecure-requests': '1',
                 },
             )
-            # 反检测：覆盖 navigator.webdriver / plugins / languages / permissions
+            # 反检测：覆盖 navigator.webdriver / plugins / languages / permissions / 平台指纹
+            # 风控会检测 navigator.webdriver、plugins.length、hardwareConcurrency 等，
+            # 全部伪装成真实 Windows Chrome 环境。
             ctx.add_init_script("""
                 Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-                Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+                Object.defineProperty(navigator, 'plugins', {get: () => [
+                    {name: 'PDF Viewer', filename: 'internal-pdf-viewer', description: 'Portable Document Format'},
+                    {name: 'Chrome PDF Viewer', filename: 'internal-pdf-viewer', description: 'Portable Document Format'},
+                    {name: 'Chromium PDF Viewer', filename: 'internal-pdf-viewer', description: 'Portable Document Format'},
+                    {name: 'Microsoft Edge PDF Viewer', filename: 'internal-pdf-viewer', description: 'Portable Document Format'},
+                    {name: 'WebKit built-in PDF', filename: 'internal-pdf-viewer', description: 'Portable Document Format'}
+                ]});
                 Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN', 'zh', 'en']});
+                Object.defineProperty(navigator, 'hardwareConcurrency', {get: () => 8});
+                Object.defineProperty(navigator, 'deviceMemory', {get: () => 8});
+                Object.defineProperty(navigator, 'platform', {get: () => 'Win32'});
+                Object.defineProperty(navigator, 'maxTouchPoints', {get: () => 0});
+                Object.defineProperty(navigator, 'vendor', {get: () => 'Google Inc.'});
+                Object.defineProperty(navigator, 'connection', {get: () => ({effectiveType: '4g', rtt: 50, downlink: 10})});
+                window.chrome = window.chrome || {};
+                window.chrome.runtime = window.chrome.runtime || {};
                 const origQuery = window.navigator.permissions.query;
                 window.navigator.permissions.query = (parameters) => (
                     parameters.name === 'notifications'
@@ -1776,6 +1797,9 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                     pass
             page = ctx.new_page()
             page.on("response", on_api_response)
+            # 设置默认超时，避免某个操作 hang 住整个流程（之前 30 分钟卡死的根因）
+            page.set_default_timeout(20000)
+            page.set_default_navigation_timeout(20000)
 
             # 关键反风控：拦截无关资源（image/media/font/css/ping），
             # 只保留 XHR/fetch 请求。减少风控检测点，加速页面加载。
@@ -1839,13 +1863,25 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
 
             # 4. list 为空时 reload 重试（借鉴 RSSHub kuaishou/profile.ts）
             # 风控空响应特征：HTTP 200 + data.list=[] + data.live.author 有数据
-            # RSSHub 方案：3秒间隔 reload，最多5次。间隔等待是关键（立即 reload 风控状态持续）。
+            # 优化：3次重试 + 递增间隔（5/8/12秒），给风控状态更长的消退时间。
+            # 原5次3秒间隔太密集，风控状态在短时间内无法消退，纯属浪费时间。
+            # reload 间加入鼠标移动/滚动，模拟真人浏览行为降低风控判定。
             if not captured_feeds:
-                for i in range(5):
+                retry_intervals = [5000, 8000, 12000]
+                for i, interval in enumerate(retry_intervals):
                     if captured_feeds:
                         break
-                    print(f"  [快手] list 为空，等待3秒后 reload 重试 ({i+1}/5)...")
-                    page.wait_for_timeout(3000)
+                    print(f"  [快手] list 为空，等待{interval//1000}秒后 reload 重试 ({i+1}/3)...")
+                    page.wait_for_timeout(interval)
+                    # reload 前模拟人类行为：随机鼠标移动 + 滚动
+                    try:
+                        import random as _rnd
+                        page.mouse.move(_rnd.randint(100, 1800), _rnd.randint(100, 900))
+                        page.wait_for_timeout(300)
+                        page.evaluate("window.scrollTo(0, document.body.scrollHeight/2)")
+                        page.wait_for_timeout(500)
+                    except Exception:
+                        pass
                     try:
                         with page.expect_response(
                             lambda r: '/live_api/profile/public' in r.url, timeout=10000
