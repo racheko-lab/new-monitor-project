@@ -94,13 +94,6 @@ jobs:
       - name: Schedule next run
         if: always()
         run: |
-          # 节奏控制：sleep 600s（10分钟），
-          # cancel-in-progress: false 后 run 会排队执行，sleep 太短会堆积大量 queued run。
-          # 主要节奏由 cron（每 30 分钟）保证；self-dispatch 仅作链路兜底。
-          sleep 600
-          curl -s --max-time 30 --connect-timeout 10 -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/check.yml/dispatches \
-            -d '{"ref":"main"}' \
-            || echo "dispatch failed, will rely on schedule cron as fallback"
+          # 不再 self-dispatch：cancel-in-progress: false 后 self-dispatch 会堆积 run。
+          # 主要节奏由 cron（每 30 分钟）保证，足够及时。
+          echo "依赖 cron 定时触发，不 self-dispatch"
