@@ -67,7 +67,7 @@ jobs:
       - name: Check new posts
         id: check_posts
         continue-on-error: true
-        timeout-minutes: 15
+        timeout-minutes: 25
         env:
           MONITOR_CONFIG: ${{ secrets.MONITOR_CONFIG }}
         run: |

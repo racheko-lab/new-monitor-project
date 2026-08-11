@@ -2158,9 +2158,10 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
     all_notifications = []
     all_new_posts = []
     now = datetime.now().isoformat()
-    # 全局 deadline：12 分钟，防止单次 check_posts.py 执行过久被 CI timeout-minutes 杀掉
-    # （workflow 设置 timeout-minutes: 15，留 3 分钟给 commit/push）
-    deadline = datetime.now().timestamp() + 720
+    # 全局 deadline：20 分钟，防止单次 check_posts.py 执行过久被 CI timeout-minutes 杀掉
+    # （workflow 设置 timeout-minutes: 25，留 5 分钟给 commit/push）
+    # 9个账号（5抖音+4快手）每个约2分钟，共需约18分钟，20分钟有缓冲。
+    deadline = datetime.now().timestamp() + 1200
 
     for room in rooms:
         # 检查 deadline：超时则跳过剩余账号，避免被 CI 强制终止
