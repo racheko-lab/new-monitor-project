@@ -1777,6 +1777,18 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
             page = ctx.new_page()
             page.on("response", on_api_response)
 
+            # 关键反风控：拦截无关资源（image/media/font/css/ping），
+            # 只保留 XHR/fetch 请求。减少风控检测点，加速页面加载。
+            # 借鉴 RSSHub kuaishou/profile.ts 的 page.route 方案。
+            try:
+                page.route("**/*", lambda route: (
+                    route.abort() if route.request().resource_type() in
+                    ("image", "media", "font", "stylesheet", "ping")
+                    else route.continue_()
+                ))
+            except Exception:
+                pass
+
             # 1. 先访问 www.kuaishou.com 建立 session
             print(f"  [快手] 访问 www.kuaishou.com 建立 session...")
             try:
@@ -1825,60 +1837,15 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                 except Exception:
                     pass
 
-            # 4. list 为空时 reload 重试（最多4次，配合 expect_response）
+            # 4. list 为空时 reload 重试（借鉴 RSSHub kuaishou/profile.ts）
             # 风控空响应特征：HTTP 200 + data.list=[] + data.live.author 有数据
-            # 此时 reload 同一页面通常无效（风控状态持续），需要重新建立 session。
+            # RSSHub 方案：3秒间隔 reload，最多5次。间隔等待是关键（立即 reload 风控状态持续）。
             if not captured_feeds:
-                for i in range(4):
+                for i in range(5):
                     if captured_feeds:
                         break
-                    # 第 3 次失败后，关闭浏览器重新启动（重置风控状态）
-                    if i == 2:
-                        print(f"  [快手] reload 无效，重启浏览器重置 session ({i+1}/4)...")
-                        try:
-                            browser.close()
-                        except Exception:
-                            pass
-                        try:
-                            browser = p.chromium.launch(headless=True, args=[
-                                '--disable-blink-features=AutomationControlled',
-                                '--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
-                                '--disable-features=IsolateOrigins,site-per-process',
-                                '--disable-infobars', '--window-size=1280,800',
-                            ])
-                            ctx = browser.new_context(
-                                user_agent=('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                                            '(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'),
-                                viewport={'width': 1280, 'height': 800},
-                                locale='zh-CN', timezone_id='Asia/Shanghai',
-                                extra_http_headers={
-                                    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-                                    'sec-ch-ua': '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
-                                    'sec-ch-ua-mobile': '?0',
-                                    'sec-ch-ua-platform': '"Windows"',
-                                },
-                            )
-                            ctx.add_init_script("""
-                                Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-                                Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
-                                Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN', 'zh', 'en']});
-                            """)
-                            if live_cookies:
-                                ck_list = []
-                                for k, v in live_cookies.items():
-                                    ck_list.append({"name": k, "value": str(v), "domain": ".kuaishou.com", "path": "/"})
-                                ctx.add_cookies(ck_list)
-                            page = ctx.new_page()
-                            page.on("response", on_api_response)
-                            # 重新访问 www 首页种 cookie
-                            try:
-                                page.goto("https://www.kuaishou.com", wait_until="domcontentloaded", timeout=10000)
-                                page.wait_for_timeout(2500)
-                            except Exception:
-                                pass
-                        except Exception as e:
-                            print(f"  [快手] 浏览器重启失败: {e}")
-                    print(f"  [快手] 未拦截到数据，reload 重试 ({i+1}/4)...")
+                    print(f"  [快手] list 为空，等待3秒后 reload 重试 ({i+1}/5)...")
+                    page.wait_for_timeout(3000)
                     try:
                         with page.expect_response(
                             lambda r: '/live_api/profile/public' in r.url, timeout=10000
@@ -1891,13 +1858,8 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                             page.reload(wait_until="domcontentloaded")
                         except Exception:
                             pass
-                    # reload 后滚动触发
-                    try:
-                        page.wait_for_timeout(2000)
-                        page.evaluate("window.scrollTo(0, 800)")
-                        page.wait_for_timeout(2000)
-                    except Exception:
-                        pass
+                    # reload 后短暂等待响应被处理
+                    page.wait_for_timeout(1500)
 
             # 详情页文案抓取：live_api/profile/public 不返回 caption 字段，
             # 对最新作品访问 PC 站详情页拿真实文案（如 "#热辣一夏"），
