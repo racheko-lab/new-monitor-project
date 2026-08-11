@@ -1807,7 +1807,7 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
             # 借鉴 RSSHub kuaishou/profile.ts 的 page.route 方案。
             try:
                 page.route("**/*", lambda route: (
-                    route.abort() if route.request().resource_type() in
+                    route.abort() if route.request.resource_type in
                     ("image", "media", "font", "stylesheet", "ping")
                     else route.continue_()
                 ))
