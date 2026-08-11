@@ -1715,21 +1715,57 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
             except Exception:
                 pass
 
+    _browser_channel = "chromium"
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True, args=[
-                '--disable-blink-features=AutomationControlled',
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-            ])
+            # 优先用真实 Chrome channel（指纹比 chromium-headless-shell 更真实），
+            # 失败时回退到 chromium。CI 环境通常只装了 chromium-headless-shell。
+            try:
+                browser = p.chromium.launch(channel='chrome', headless=True, args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-features=IsolateOrigins,site-per-process',
+                    '--disable-infobars',
+                    '--window-size=1280,800',
+                ])
+                _browser_channel = "chrome"
+            except Exception:
+                browser = p.chromium.launch(headless=True, args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-features=IsolateOrigins,site-per-process',
+                    '--disable-infobars',
+                    '--window-size=1280,800',
+                ])
+                _browser_channel = "chromium"
             ctx = browser.new_context(
                 user_agent=('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
                             '(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'),
                 viewport={'width': 1280, 'height': 800},
                 locale='zh-CN', timezone_id='Asia/Shanghai',
+                extra_http_headers={
+                    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                    'sec-ch-ua': '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+                    'sec-ch-ua-mobile': '?0',
+                    'sec-ch-ua-platform': '"Windows"',
+                },
             )
-            ctx.add_init_script("Object.defineProperty(navigator,'webdriver',{get:()=>undefined});")
+            # 反检测：覆盖 navigator.webdriver / plugins / languages / permissions
+            ctx.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+                Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN', 'zh', 'en']});
+                const origQuery = window.navigator.permissions.query;
+                window.navigator.permissions.query = (parameters) => (
+                    parameters.name === 'notifications'
+                        ? Promise.resolve({state: Notification.permission})
+                        : origQuery(parameters)
+                );
+            """)
             if live_cookies:
                 try:
                     ck_list = []
@@ -1745,7 +1781,13 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
             print(f"  [快手] 访问 www.kuaishou.com 建立 session...")
             try:
                 page.goto("https://www.kuaishou.com", wait_until="domcontentloaded", timeout=10000)
-                page.wait_for_timeout(2000)
+                page.wait_for_timeout(2500)
+                # 模拟人类滚动
+                try:
+                    page.evaluate("window.scrollTo(0, 300)")
+                    page.wait_for_timeout(800)
+                except Exception:
+                    pass
             except Exception:
                 pass
 
@@ -1839,6 +1881,7 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
         print(f"快手作品检测 Playwright 异常 {room_id}: {e}")
         diag["error"] = f"playwright_exception: {e}"[:200]
         diag["api_hits"] = diag_api_hits
+        diag["browser_channel"] = _browser_channel
         LAST_FETCH_DIAG.append(diag)
         return None, display_name, None, None, [], []
 
@@ -1846,6 +1889,7 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
     diag["captured_feeds"] = len(captured_feeds)
     diag["captured_user_ok"] = bool(captured_user.get("name"))
     diag["api_hits"] = diag_api_hits
+    diag["browser_channel"] = _browser_channel
 
     # 用户信息（拦截到的 userInfo 优先，fallback 到 live 页数据）
     if captured_user.get("userId"):
