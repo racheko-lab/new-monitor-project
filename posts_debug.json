@@ -1,5 +1,5 @@
 {
-  "time": "2026-08-11T01:40:51.982383",
+  "time": "2026-08-11T01:46:56.024301",
   "machine": "runnervmvrwv9",
   "playwright": true,
   "results": {
@@ -7,55 +7,55 @@
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-11T01:40:51.982835"
+      "last_check": "2026-08-11T01:46:56.024766"
     },
     "douyin_FengBro": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-11T01:40:51.982835"
+      "last_check": "2026-08-11T01:46:56.024766"
     },
     "douyin_83134194400": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-11T01:40:51.982835"
+      "last_check": "2026-08-11T01:46:56.024766"
     },
     "douyin_33716689672": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-11T01:40:51.982835"
+      "last_check": "2026-08-11T01:46:56.024766"
     },
     "douyin_32062056217": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-11T01:40:51.982835"
+      "last_check": "2026-08-11T01:46:56.024766"
     },
     "kuaishou_pineapple2005": {
-      "status": "stale",
+      "status": "ok",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-08-11T01:40:51.982835"
+      "last_check": "2026-08-11T01:46:56.024766"
     },
     "kuaishou_HUizi-G-H": {
-      "status": "stale",
+      "status": "ok",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-08-11T01:40:51.982835"
+      "last_check": "2026-08-11T01:46:56.024766"
     },
     "kuaishou_Sandy88888": {
       "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2117550",
-      "last_check": "2026-08-11T01:40:51.982835"
+      "last_check": "2026-08-11T01:46:56.024766"
     },
     "kuaishou_Aaaaasa149": {
       "status": "no_data",
       "has_latest_post": false,
       "sec_uid": "1489673902",
-      "last_check": "2026-08-11T01:40:51.982835"
+      "last_check": "2026-08-11T01:46:56.024766"
     }
   },
   "fetch_diag": [
