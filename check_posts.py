@@ -1500,6 +1500,85 @@ def parse_ks_feed(item: Dict, room_name: str) -> Optional[Dict]:
         return None
 
 
+def fetch_ks_caption_from_detail(ctx, photo_id: str) -> Optional[str]:
+    """从 PC 站详情页拿作品真实文案。
+
+    live_api/profile/public 接口不返回 caption 字段，只能从详情页 DOM 拿。
+    访问 www.kuaishou.com/short-video/{photo_id}，JS 渲染后：
+    - DOM .video-info-title 直接是文案（如 "#热辣一夏"）
+    - <title> 变成 "{文案}-快手"（如 "#热辣一夏-快手"）
+
+    关键：必须先访问 www.kuaishou.com 首页种 cookie/初始化 JS 环境，
+    否则详情页 JS 不渲染（title 停留在"短视频-快手"）。
+    含多轮 reload 重试（最多3次）：检测到"浏览器版本过低"或文案为空时自动 reload。
+    """
+    page = ctx.new_page()
+    try:
+        # 1. 先访问 www 首页种 cookie（详情页 JS 渲染的前提条件）
+        try:
+            page.goto("https://www.kuaishou.com", wait_until="domcontentloaded", timeout=10000)
+            page.wait_for_timeout(2000)
+        except Exception:
+            pass
+        # 2. 访问详情页
+        try:
+            page.goto(f"https://www.kuaishou.com/short-video/{photo_id}",
+                      wait_until="domcontentloaded", timeout=15000)
+        except Exception as e:
+            print(f"  [快手] 详情页访问失败 {photo_id}: {e}")
+            return None
+        # 3. 多轮重试，等 JS 渲染 title
+        for attempt in range(3):
+            page.wait_for_timeout(5000 if attempt == 0 else 8000)
+            # 检测"浏览器版本过低"提示（headless 被风控时会出现）
+            try:
+                body_text = page.evaluate(
+                    "() => document.body ? document.body.innerText.slice(0, 500) : ''"
+                )
+            except Exception:
+                body_text = ""
+            if "浏览器版本过低" in body_text:
+                print(f"  [快手] 详情页被风控(浏览器版本过低), reload 重试 ({attempt+1}/3)")
+                try:
+                    page.reload(wait_until="domcontentloaded", timeout=15000)
+                except Exception:
+                    pass
+                continue
+            # 优先从 DOM .video-info-title 拿
+            try:
+                caption = page.evaluate(
+                    "() => { const e = document.querySelector('.video-info-title');"
+                    "return e ? (e.innerText || '').trim() : ''; }"
+                )
+            except Exception:
+                caption = ""
+            if caption:
+                return caption.strip()
+            # 备选从 <title> 拿，去掉 "-快手" 后缀
+            try:
+                title = page.title()
+            except Exception:
+                title = ""
+            if title and title not in ("短视频-快手", "快手"):
+                return title.replace("-快手", "").replace("_快手", "").strip()
+            # 没拿到，reload 重试
+            if attempt < 2:
+                print(f"  [快手] 详情页文案为空, reload 重试 ({attempt+1}/3)")
+                try:
+                    page.reload(wait_until="domcontentloaded", timeout=15000)
+                except Exception:
+                    pass
+        return None
+    except Exception as e:
+        print(f"  [快手] 详情页文案抓取异常 {photo_id}: {e}")
+        return None
+    finally:
+        try:
+            page.close()
+        except Exception:
+            pass
+
+
 def fetch_kuaishou_live_info(room_id: str) -> Tuple[Optional[str], Optional[str], Optional[str], Dict[str, str]]:
     """用 requests 访问 live.kuaishou.com/u/{id} 拿用户信息。
 
@@ -1554,8 +1633,12 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
     avatar = None
     user_id = None
 
+    diag = {"room_id": room_id, "platform": "kuaishou"}
+
     if not PLAYWRIGHT_AVAILABLE:
         print(f"快手作品检测需要 Playwright {room_id}")
+        diag["error"] = "playwright_not_available"
+        LAST_FETCH_DIAG.append(diag)
         return None, display_name, None, None, [], []
 
     # 1. 先用 requests 从 live 页拿用户信息 + cookie
@@ -1567,6 +1650,8 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
     if live_uid:
         user_id = live_uid
     print(f"  [快手] live 信息: uid={live_uid} name={live_name} cookie={bool(live_cookies)}")
+    diag["live_uid_ok"] = bool(live_uid)
+    diag["live_cookie_ok"] = bool(live_cookies)
 
     # RSSHub 方案（参考 https://github.com/DIYgod/RSSHub PR#17792）：
     # 1. 先访问 www.kuaishou.com 建立 session（获取 did cookie）
@@ -1708,12 +1793,41 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                     except Exception:
                         pass
 
+            # 详情页文案抓取：live_api/profile/public 不返回 caption 字段，
+            # 对最新作品访问 PC 站详情页拿真实文案（如 "#热辣一夏"），
+            # 拿到后注入到 captured_feeds 对应 item 的 caption 字段。
+            if captured_feeds:
+                best_id = None
+                best_sort = -1
+                for item in captured_feeds:
+                    p = parse_ks_feed(item, display_name)
+                    if p and p.get("sort_key", 0) > best_sort:
+                        best_sort = p.get("sort_key", 0)
+                        best_id = p.get("id")
+                if best_id:
+                    print(f"  [快手] 详情页抓取文案: {best_id}")
+                    caption = fetch_ks_caption_from_detail(ctx, best_id)
+                    if caption:
+                        print(f"  [快手] 拿到真实文案: {caption[:50]}")
+                        for item in captured_feeds:
+                            photo_i = item.get("photo") if isinstance(item.get("photo"), dict) else None
+                            pid = ((photo_i.get("id") if photo_i else None) or item.get("photoId") or item.get("id"))
+                            if str(pid) == str(best_id):
+                                item["caption"] = caption
+                                break
+                    else:
+                        print(f"  [快手] 详情页未拿到文案，保留兜底标题")
+
             browser.close()
     except Exception as e:
         print(f"快手作品检测 Playwright 异常 {room_id}: {e}")
+        diag["error"] = f"playwright_exception: {e}"[:200]
+        LAST_FETCH_DIAG.append(diag)
         return None, display_name, None, None, [], []
 
     print(f"  [快手] 拦截到 {len(captured_feeds)} 条作品, user={captured_user.get('name','?')}")
+    diag["captured_feeds"] = len(captured_feeds)
+    diag["captured_user_ok"] = bool(captured_user.get("name"))
 
     # 用户信息（拦截到的 userInfo 优先，fallback 到 live 页数据）
     if captured_user.get("userId"):
@@ -1743,6 +1857,9 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                 parsed_posts.append(p)
 
     if not parsed_posts:
+        diag["parsed_count"] = 0
+        diag["error"] = "parsed_posts_empty"
+        LAST_FETCH_DIAG.append(diag)
         return user_id, display_name, avatar, None, [], []
 
     # 按 sort_key 倒序（最新在前）
@@ -1794,6 +1911,9 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
     }
     save_state(state)
 
+    diag["parsed_count"] = len(parsed_posts)
+    diag["latest_post_id"] = (latest_post or {}).get("id")
+    LAST_FETCH_DIAG.append(diag)
     return user_id, display_name, avatar, latest_post, new_posts_data, notifications
 
 
