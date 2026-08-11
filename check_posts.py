@@ -1826,10 +1826,58 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                     pass
 
             # 4. list 为空时 reload 重试（最多4次，配合 expect_response）
+            # 风控空响应特征：HTTP 200 + data.list=[] + data.live.author 有数据
+            # 此时 reload 同一页面通常无效（风控状态持续），需要重新建立 session。
             if not captured_feeds:
                 for i in range(4):
                     if captured_feeds:
                         break
+                    # 第 3 次失败后，关闭浏览器重新启动（重置风控状态）
+                    if i == 2:
+                        print(f"  [快手] reload 无效，重启浏览器重置 session ({i+1}/4)...")
+                        try:
+                            browser.close()
+                        except Exception:
+                            pass
+                        try:
+                            browser = p.chromium.launch(headless=True, args=[
+                                '--disable-blink-features=AutomationControlled',
+                                '--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
+                                '--disable-features=IsolateOrigins,site-per-process',
+                                '--disable-infobars', '--window-size=1280,800',
+                            ])
+                            ctx = browser.new_context(
+                                user_agent=('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                                            '(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'),
+                                viewport={'width': 1280, 'height': 800},
+                                locale='zh-CN', timezone_id='Asia/Shanghai',
+                                extra_http_headers={
+                                    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                                    'sec-ch-ua': '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+                                    'sec-ch-ua-mobile': '?0',
+                                    'sec-ch-ua-platform': '"Windows"',
+                                },
+                            )
+                            ctx.add_init_script("""
+                                Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                                Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+                                Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN', 'zh', 'en']});
+                            """)
+                            if live_cookies:
+                                ck_list = []
+                                for k, v in live_cookies.items():
+                                    ck_list.append({"name": k, "value": str(v), "domain": ".kuaishou.com", "path": "/"})
+                                ctx.add_cookies(ck_list)
+                            page = ctx.new_page()
+                            page.on("response", on_api_response)
+                            # 重新访问 www 首页种 cookie
+                            try:
+                                page.goto("https://www.kuaishou.com", wait_until="domcontentloaded", timeout=10000)
+                                page.wait_for_timeout(2500)
+                            except Exception:
+                                pass
+                        except Exception as e:
+                            print(f"  [快手] 浏览器重启失败: {e}")
                     print(f"  [快手] 未拦截到数据，reload 重试 ({i+1}/4)...")
                     try:
                         with page.expect_response(
