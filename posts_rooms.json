@@ -1,5 +1,25 @@
 [
   {
+    "platform": "kuaishou",
+    "id": "Aaaaasa149",
+    "name": "1120.l"
+  },
+  {
+    "platform": "kuaishou",
+    "id": "Sandy88888",
+    "name": "肥阿肥"
+  },
+  {
+    "platform": "kuaishou",
+    "id": "pineapple2005",
+    "name": "魅力驿站"
+  },
+  {
+    "platform": "kuaishou",
+    "id": "HUizi-G-H",
+    "name": "Liiiiii-🐰"
+  },
+  {
     "platform": "douyin",
     "id": "vHan09233",
     "name": "韩冰"
@@ -23,25 +43,5 @@
     "platform": "douyin",
     "id": "32062056217",
     "name": "Sayonal_"
-  },
-  {
-    "platform": "kuaishou",
-    "id": "pineapple2005",
-    "name": "魅力驿站"
-  },
-  {
-    "platform": "kuaishou",
-    "id": "HUizi-G-H",
-    "name": "Liiiiii-🐰"
-  },
-  {
-    "platform": "kuaishou",
-    "id": "Sandy88888",
-    "name": "肥阿肥"
-  },
-  {
-    "platform": "kuaishou",
-    "id": "Aaaaasa149",
-    "name": "1120.l"
   }
 ]
