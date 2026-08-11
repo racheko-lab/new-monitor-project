@@ -11,7 +11,11 @@ permissions:
 
 concurrency:
   group: check-status
-  cancel-in-progress: true
+  # 不取消正在运行的 run：快手风控重试需要较长时间（约15-20分钟），
+  # cancel-in-progress: true 会导致正在执行的 check_posts.py 被 SIGTERM 终止，
+  # 增量保存的 posts_status.json 虽然已写入本地但来不及 commit，结果丢失。
+  # false 让 run 排队依次执行，避免结果丢失。
+  cancel-in-progress: false
 
 jobs:
   check:
@@ -89,10 +93,10 @@ jobs:
       - name: Schedule next run
         if: always()
         run: |
-          # 节奏控制：sleep 90s 避免与 self-dispatch 形成紧密循环（<1min 一次），
-          # 又不会像 sleep 600 那样长时间占用 concurrency group 阻塞 cron 触发。
+          # 节奏控制：sleep 600s（10分钟），
+          # cancel-in-progress: false 后 run 会排队执行，sleep 太短会堆积大量 queued run。
           # 主要节奏由 cron（每 30 分钟）保证；self-dispatch 仅作链路兜底。
-          sleep 90
+          sleep 600
           curl -s --max-time 30 --connect-timeout 10 -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
