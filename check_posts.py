@@ -2171,7 +2171,15 @@ if __name__ == "__main__":
             json.dump(_debug, _f, ensure_ascii=False, indent=2)
     except Exception:
         pass
-    notifications, new_posts = check_all_posts()
+    try:
+        notifications, new_posts = check_all_posts()
+    except Exception as _e:
+        import traceback as _tb
+        _tb.print_exc()
+        LAST_FETCH_DIAG.append({"room_id": "__main__", "platform": "unknown",
+                                "error": f"check_all_posts crashed: {_e}"[:200],
+                                "error_type": type(_e).__name__})
+        notifications, new_posts = [], []
     # 把最终状态快照追加到 debug 文件，方便不查日志也能定位 CI 抓取结果
     try:
         _final = load_posts_status()
