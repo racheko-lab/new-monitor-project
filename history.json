@@ -1,10 +1,5 @@
 [
   {
-    "time": "2026-08-05T13:22:04.524611",
-    "type": "live_start",
-    "message": "🎉 峰哥亡命天涯 开播了！\n标题: be一下\n观看人数: 14462\n🔗 https://live.bilibili.com/22230707"
-  },
-  {
     "time": "2026-08-05T13:22:11.891061",
     "type": "error",
     "message": "⚠️ piiiiikiepie 检测失败"
@@ -998,5 +993,10 @@
     "time": "2026-08-11T09:23:35.366427",
     "type": "error",
     "message": "⚠️ 今天不洗头 检测失败"
+  },
+  {
+    "time": "2026-08-11T10:53:27.166721",
+    "type": "error",
+    "message": "⚠️ 12X 检测失败"
   }
 ]
