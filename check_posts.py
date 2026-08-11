@@ -2196,6 +2196,11 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
                 "last_check": now,
                 "status": "stale" if prev.get("latest_post") else "error",
             }
+            # 增量保存：异常时也持久化，防止被取消时丢失已完成账号的结果
+            try:
+                save_posts_status(posts_status)
+            except Exception:
+                pass
             continue
 
         # 自动补全昵称
@@ -2241,6 +2246,14 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
 
         all_notifications.extend(notifications)
         all_new_posts.extend(new_posts)
+
+        # 增量保存：每检测完一个账号就持久化一次 posts_status，
+        # 防止 CI 被 concurrency 取消时丢失已完成账号的结果。
+        try:
+            save_posts_status(posts_status)
+            save_posts_rooms(rooms)
+        except Exception:
+            pass
 
     # 清理已删除账号的残留记录
     valid_keys = {get_status_key(r["platform"], r["id"]) for r in rooms}
