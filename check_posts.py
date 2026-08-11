@@ -1510,26 +1510,28 @@ def fetch_ks_caption_from_detail(ctx, photo_id: str) -> Optional[str]:
 
     关键：必须先访问 www.kuaishou.com 首页种 cookie/初始化 JS 环境，
     否则详情页 JS 不渲染（title 停留在"短视频-快手"）。
-    含多轮 reload 重试（最多3次）：检测到"浏览器版本过低"或文案为空时自动 reload。
+    优化：仅1次重试（原3次），文案是可选字段，不值得为它耗时60+秒。
     """
     page = ctx.new_page()
+    page.set_default_timeout(15000)
+    page.set_default_navigation_timeout(15000)
     try:
         # 1. 先访问 www 首页种 cookie（详情页 JS 渲染的前提条件）
         try:
             page.goto("https://www.kuaishou.com", wait_until="domcontentloaded", timeout=10000)
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(1500)
         except Exception:
             pass
         # 2. 访问详情页
         try:
             page.goto(f"https://www.kuaishou.com/short-video/{photo_id}",
-                      wait_until="domcontentloaded", timeout=15000)
+                      wait_until="domcontentloaded", timeout=12000)
         except Exception as e:
             print(f"  [快手] 详情页访问失败 {photo_id}: {e}")
             return None
-        # 3. 多轮重试，等 JS 渲染 title
-        for attempt in range(3):
-            page.wait_for_timeout(5000 if attempt == 0 else 8000)
+        # 3. 仅1次重试，等 JS 渲染 title
+        for attempt in range(2):
+            page.wait_for_timeout(3000 if attempt == 0 else 5000)
             # 检测"浏览器版本过低"提示（headless 被风控时会出现）
             try:
                 body_text = page.evaluate(
@@ -1538,9 +1540,9 @@ def fetch_ks_caption_from_detail(ctx, photo_id: str) -> Optional[str]:
             except Exception:
                 body_text = ""
             if "浏览器版本过低" in body_text:
-                print(f"  [快手] 详情页被风控(浏览器版本过低), reload 重试 ({attempt+1}/3)")
+                print(f"  [快手] 详情页被风控(浏览器版本过低), reload 重试 ({attempt+1}/2)")
                 try:
-                    page.reload(wait_until="domcontentloaded", timeout=15000)
+                    page.reload(wait_until="domcontentloaded", timeout=12000)
                 except Exception:
                     pass
                 continue
@@ -1561,11 +1563,10 @@ def fetch_ks_caption_from_detail(ctx, photo_id: str) -> Optional[str]:
                 title = ""
             if title and title not in ("短视频-快手", "快手"):
                 return title.replace("-快手", "").replace("_快手", "").strip()
-            # 没拿到，reload 重试
-            if attempt < 2:
-                print(f"  [快手] 详情页文案为空, reload 重试 ({attempt+1}/3)")
+            # 没拿到，reload 重试1次
+            if attempt < 1:
                 try:
-                    page.reload(wait_until="domcontentloaded", timeout=15000)
+                    page.reload(wait_until="domcontentloaded", timeout=12000)
                 except Exception:
                     pass
         return None
@@ -1817,11 +1818,11 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
             print(f"  [快手] 访问 www.kuaishou.com 建立 session...")
             try:
                 page.goto("https://www.kuaishou.com", wait_until="domcontentloaded", timeout=10000)
-                page.wait_for_timeout(2500)
+                page.wait_for_timeout(1500)
                 # 模拟人类滚动
                 try:
                     page.evaluate("window.scrollTo(0, 300)")
-                    page.wait_for_timeout(800)
+                    page.wait_for_timeout(500)
                 except Exception:
                     pass
             except Exception:
@@ -1849,29 +1850,29 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
             except Exception as e:
                 print(f"  [快手] 页面加载异常: {e}")
 
-            page.wait_for_timeout(2500)
+            page.wait_for_timeout(1500)
 
             # 3. 滚动触发更多请求（部分情况首屏不触发 live_api 请求，滚动后才会发）
             if not captured_feeds:
                 try:
                     page.evaluate("window.scrollTo(0, 600)")
-                    page.wait_for_timeout(2000)
+                    page.wait_for_timeout(1500)
                     page.evaluate("window.scrollTo(0, 1200)")
-                    page.wait_for_timeout(2000)
+                    page.wait_for_timeout(1500)
                 except Exception:
                     pass
 
             # 4. list 为空时 reload 重试（借鉴 RSSHub kuaishou/profile.ts）
             # 风控空响应特征：HTTP 200 + data.list=[] + data.live.author 有数据
-            # 优化：3次重试 + 递增间隔（5/8/12秒），给风控状态更长的消退时间。
-            # 原5次3秒间隔太密集，风控状态在短时间内无法消退，纯属浪费时间。
+            # 优化：2次重试 + 递增间隔（6/10秒），给风控状态消退时间。
+            # 风控状态下重试再多也没用，减少重试节省时间避免 CI 超时。
             # reload 间加入鼠标移动/滚动，模拟真人浏览行为降低风控判定。
             if not captured_feeds:
-                retry_intervals = [5000, 8000, 12000]
+                retry_intervals = [6000, 10000]
                 for i, interval in enumerate(retry_intervals):
                     if captured_feeds:
                         break
-                    print(f"  [快手] list 为空，等待{interval//1000}秒后 reload 重试 ({i+1}/3)...")
+                    print(f"  [快手] list 为空，等待{interval//1000}秒后 reload 重试 ({i+1}/2)...")
                     page.wait_for_timeout(interval)
                     # reload 前模拟人类行为：随机鼠标移动 + 滚动
                     try:
