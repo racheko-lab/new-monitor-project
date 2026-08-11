@@ -1661,14 +1661,25 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
     # 该 API 免登录，PC 端 graphql 需登录态不可用。
     captured_feeds = []
     captured_user = {}
+    # 细粒度诊断：记录 on_api_response 被触发的次数、URL、list 长度
+    diag_api_hits = {"profile_public": 0, "userinfo": 0, "profile_list_empty": 0,
+                     "profile_parse_fail": 0, "last_url": "", "last_list_len": -1,
+                     "last_status": -1, "last_body_snippet": ""}
 
     def on_api_response(resp):
         url = resp.url
         if '/live_api/profile/public' in url:
+            diag_api_hits["profile_public"] += 1
+            diag_api_hits["last_url"] = url[:200]
+            try:
+                diag_api_hits["last_status"] = resp.status
+            except Exception:
+                pass
             try:
                 data = resp.json()
                 d = data.get("data") or {}
                 lst = d.get("list")
+                diag_api_hits["last_list_len"] = len(lst) if isinstance(lst, list) else -1
                 if isinstance(lst, list) and len(lst) > 0:
                     for item in lst:
                         if isinstance(item, dict) and item.get("id"):
@@ -1682,9 +1693,14 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                             "kwaiId": author.get("kwaiId"),
                             "originUserId": str(author.get("originUserId") or ""),
                         })
-            except Exception:
-                pass
+                else:
+                    diag_api_hits["profile_list_empty"] += 1
+                    diag_api_hits["last_body_snippet"] = json.dumps(data, ensure_ascii=False)[:300]
+            except Exception as e:
+                diag_api_hits["profile_parse_fail"] += 1
+                diag_api_hits["last_body_snippet"] = f"parse_err: {e}"[:200]
         elif '/live_api/baseuser/userinfo/byid' in url:
+            diag_api_hits["userinfo"] += 1
             try:
                 data = resp.json()
                 ui = data.get("data", {}).get("userInfo")
@@ -1822,12 +1838,14 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
     except Exception as e:
         print(f"快手作品检测 Playwright 异常 {room_id}: {e}")
         diag["error"] = f"playwright_exception: {e}"[:200]
+        diag["api_hits"] = diag_api_hits
         LAST_FETCH_DIAG.append(diag)
         return None, display_name, None, None, [], []
 
     print(f"  [快手] 拦截到 {len(captured_feeds)} 条作品, user={captured_user.get('name','?')}")
     diag["captured_feeds"] = len(captured_feeds)
     diag["captured_user_ok"] = bool(captured_user.get("name"))
+    diag["api_hits"] = diag_api_hits
 
     # 用户信息（拦截到的 userInfo 优先，fallback 到 live 页数据）
     if captured_user.get("userId"):
