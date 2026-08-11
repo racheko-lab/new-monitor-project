@@ -2158,8 +2158,15 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
     all_notifications = []
     all_new_posts = []
     now = datetime.now().isoformat()
+    # 全局 deadline：12 分钟，防止单次 check_posts.py 执行过久被 CI timeout-minutes 杀掉
+    # （workflow 设置 timeout-minutes: 15，留 3 分钟给 commit/push）
+    deadline = datetime.now().timestamp() + 720
 
     for room in rooms:
+        # 检查 deadline：超时则跳过剩余账号，避免被 CI 强制终止
+        if datetime.now().timestamp() > deadline:
+            print(f"⚠️ 全局 deadline（12分钟）已到，跳过剩余账号: {room.get('id','')}")
+            break
         platform = room.get("platform", "douyin")
         room_id = room.get("id", "")
         name = room.get("name", room_id)
