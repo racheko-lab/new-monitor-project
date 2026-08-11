@@ -71,7 +71,9 @@ jobs:
         env:
           MONITOR_CONFIG: ${{ secrets.MONITOR_CONFIG }}
         run: |
-          python check_posts.py
+          # timeout 25m 强制25分钟后SIGTERM，--kill-after=60 表示60秒后SIGKILL
+          # 增量保存确保已完成的账号结果已写入，"Commit posts"步骤会commit这些文件
+          timeout --kill-after=60 25m python check_posts.py || true
           # 推送通知后立即 commit state.json（含 seen_posts），防止 run 被 concurrency
           # 取消时 state 丢失导致下一个 run 把同一条作品当新作品重复推送。
           git config --global user.name "GitHub Actions"
