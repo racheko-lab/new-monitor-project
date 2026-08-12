@@ -1617,7 +1617,7 @@ def fetch_kuaishou_live_info(room_id: str) -> Tuple[Optional[str], Optional[str]
         return None, None, None, {}
 
 
-def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[Dict], List[Dict], List[str]]:
+def check_kuaishou_posts(room_id: str, name: str, prev_latest_post: Optional[Dict] = None) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[Dict], List[Dict], List[str]]:
     """检测一个快手账号的新作品，返回 (user_id, display_name, avatar, latest_post, new_posts, notifications)。
 
     策略：
@@ -1626,6 +1626,9 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
     3. 拦截 graphql visionProfilePhotoList 响应（PC profile 页作品列表接口）
     4. 拦截不到则主动 fetch visionProfilePhotoList（userId 用 originUserId）
     5. 解析 feeds，复用抖音 seen_posts 机制检测新作品
+
+    prev_latest_post: 上次的 latest_post，风控无数据时用于：
+    - 对其 id 调用详情页抓取真实文案，更新 title 后返回
     """
     notifications = []
     new_posts_data = []
@@ -1928,6 +1931,21 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                     else:
                         print(f"  [快手] 详情页未拿到文案，使用通用标题")
 
+            # 风控补救：本次列表抓取失败（captured_feeds 为空）但有上次 latest_post 时，
+            # 对上次的 latest_post.id 调用详情页抓取真实文案，更新 title 后返回。
+            # 解决用户反馈的"BGM 被当成文案"问题：历史数据 title 可能是 BGM 名，
+            # 即使风控也要趁机用详情页真实文案覆盖掉。
+            if not captured_feeds and prev_latest_post and prev_latest_post.get("id"):
+                prev_id = str(prev_latest_post.get("id"))
+                print(f"  [快手] 列表风控，对历史作品抓取真实文案: {prev_id}")
+                real_caption = fetch_ks_caption_from_detail(ctx, prev_id)
+                if real_caption:
+                    print(f"  [快手] 历史作品拿到真实文案: {real_caption[:50]}")
+                    prev_latest_post = dict(prev_latest_post)
+                    prev_latest_post["title"] = real_caption[:100]
+                else:
+                    print(f"  [快手] 历史作品详情页也未拿到文案，保留原 title")
+
             browser.close()
     except Exception as e:
         print(f"快手作品检测 Playwright 异常 {room_id}: {e}")
@@ -1974,7 +1992,8 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
         diag["parsed_count"] = 0
         diag["error"] = "parsed_posts_empty"
         LAST_FETCH_DIAG.append(diag)
-        return user_id, display_name, avatar, None, [], []
+        # 风控补救：返回已更新真实文案的 prev_latest_post（若有），避免前端显示空
+        return user_id, display_name, avatar, prev_latest_post, [], []
 
     # 按 sort_key 倒序（最新在前）
     parsed_posts.sort(key=lambda x: x.get("sort_key", 0), reverse=True)
@@ -2188,7 +2207,7 @@ def check_all_posts() -> Tuple[List[str], List[Dict]]:
                 seen_key = f"douyin_posts_{room_id}"
             elif platform == "kuaishou":
                 print(f"检测账号: {room_id} ({name}) [快手]")
-                sec_uid, display_name, avatar, latest_post, new_posts, notifications = check_kuaishou_posts(room_id, name)
+                sec_uid, display_name, avatar, latest_post, new_posts, notifications = check_kuaishou_posts(room_id, name, prev.get("latest_post"))
                 seen_key = f"kuaishou_posts_{room_id}"
             else:
                 continue
