@@ -1,15 +1,5 @@
 [
   {
-    "time": "2026-08-08T10:29:45.768445",
-    "type": "live_end",
-    "message": "🏁 魅力驿站 下播了，本次直播时长: 0小时33分钟"
-  },
-  {
-    "time": "2026-08-08T12:57:35.961704",
-    "type": "live_start",
-    "message": "🎉 峰哥亡命天涯 开播了！\n标题: be一下\n观看人数: 31523\n🔗 https://live.bilibili.com/22230707"
-  },
-  {
     "time": "2026-08-08T13:04:13.059382",
     "type": "live_start",
     "message": "🎉 峰哥亡命天涯 开播了！\n标题: be一下\n观看人数: 188403\n🔗 https://live.bilibili.com/22230707"
@@ -998,5 +988,15 @@
     "time": "2026-08-12T05:26:26.498769",
     "type": "live_start",
     "message": "🎉 峰哥亡命天涯 开播了！\n标题: be一下\n观看人数: 393566\n🔗 https://live.bilibili.com/22230707"
+  },
+  {
+    "time": "2026-08-12T06:53:07.831953",
+    "type": "live_end",
+    "message": "🏁 峰哥亡命天涯 下播了，本次直播时长: 23小时44分钟"
+  },
+  {
+    "time": "2026-08-12T06:53:33.197691",
+    "type": "live_start",
+    "message": "🎉 魅力驿站 开播了！\n🔗 https://live.kuaishou.com/u/pineapple2005"
   }
 ]
