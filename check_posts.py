@@ -1416,10 +1416,10 @@ def parse_ks_feed(item: Dict, room_name: str) -> Optional[Dict]:
         if not photo_id:
             return None
         # live_api/profile/public 不返回 caption 字段：
-        # - 图文作品（workType=multiple/single）有 musicName，用它兜底
-        # - 视频作品（workType=video）无任何文本字段，用类型+poster日期生成标题
-        caption = ((photo.get("caption") if photo else None) or item.get("caption", "")
-                   or item.get("musicName", ""))
+        # - 不要用 musicName 兜底（会把 BGM 当成视频文案，用户反馈过此问题）
+        # - 没有真实 caption 时用类型+poster日期生成标题，避免误导
+        # 真实文案由 fetch_ks_caption_from_detail 从 PC 详情页 DOM 拿到后注入 item["caption"]
+        caption = ((photo.get("caption") if photo else None) or item.get("caption", ""))
         if not caption:
             work_type = item.get("workType") or (photo.get("workType") if photo else "") or ""
             type_label = {"video": "视频作品", "multiple": "图文作品",
@@ -1899,18 +1899,23 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                     page.wait_for_timeout(1500)
 
             # 详情页文案抓取：live_api/profile/public 不返回 caption 字段，
-            # 对最新作品访问 PC 站详情页拿真实文案（如 "#热辣一夏"），
+            # 对最新 N 个作品访问 PC 站详情页拿真实文案（如 "#热辣一夏"），
             # 拿到后注入到 captured_feeds 对应 item 的 caption 字段。
+            # 抓 top N 而非 top 1：用户反馈过 BGM 被当成文案，原因是非最新作品
+            # 走了 musicName 兜底，现已移除兜底但仍需为最近作品拿真实文案。
             if captured_feeds:
-                best_id = None
-                best_sort = -1
+                # 按 sort_key 降序取前 N 个
+                TOP_N = 3
+                scored = []
                 for item in captured_feeds:
                     p = parse_ks_feed(item, display_name)
-                    if p and p.get("sort_key", 0) > best_sort:
-                        best_sort = p.get("sort_key", 0)
-                        best_id = p.get("id")
-                if best_id:
-                    print(f"  [快手] 详情页抓取文案: {best_id}")
+                    if p:
+                        scored.append((p.get("sort_key", 0), p.get("id"), item))
+                scored.sort(key=lambda x: x[0], reverse=True)
+                for idx, (_, best_id, _) in enumerate(scored[:TOP_N]):
+                    if not best_id:
+                        continue
+                    print(f"  [快手] 详情页抓取文案 ({idx+1}/{TOP_N}): {best_id}")
                     caption = fetch_ks_caption_from_detail(ctx, best_id)
                     if caption:
                         print(f"  [快手] 拿到真实文案: {caption[:50]}")
@@ -1921,7 +1926,7 @@ def check_kuaishou_posts(room_id: str, name: str) -> Tuple[Optional[str], Option
                                 item["caption"] = caption
                                 break
                     else:
-                        print(f"  [快手] 详情页未拿到文案，保留兜底标题")
+                        print(f"  [快手] 详情页未拿到文案，使用通用标题")
 
             browser.close()
     except Exception as e:
