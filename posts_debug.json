@@ -1,61 +1,61 @@
 {
-  "time": "2026-08-12T01:20:22.420417",
-  "machine": "runnervmvrwv9",
+  "time": "2026-08-12T02:17:07.535242",
+  "machine": "runnervmzvulz",
   "playwright": true,
   "results": {
     "douyin_vHan09233": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-08-12T01:20:22.420866"
+      "last_check": "2026-08-12T02:17:07.535604"
     },
     "douyin_FengBro": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-08-12T01:20:22.420866"
+      "last_check": "2026-08-12T02:17:07.535604"
     },
     "douyin_83134194400": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-08-12T01:20:22.420866"
+      "last_check": "2026-08-12T02:17:07.535604"
     },
     "douyin_33716689672": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-08-12T01:20:22.420866"
+      "last_check": "2026-08-12T02:17:07.535604"
     },
     "douyin_32062056217": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-08-12T01:20:22.420866"
+      "last_check": "2026-08-12T02:17:07.535604"
     },
     "kuaishou_pineapple2005": {
       "status": "stale",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-08-12T01:20:22.420866"
+      "last_check": "2026-08-12T02:17:07.535604"
     },
     "kuaishou_HUizi-G-H": {
       "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-08-12T01:20:22.420866"
+      "last_check": "2026-08-12T02:17:07.535604"
     },
     "kuaishou_Sandy88888": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "2117550",
-      "last_check": "2026-08-12T01:20:22.420866"
+      "last_check": "2026-08-12T02:17:07.535604"
     },
     "kuaishou_Aaaaasa149": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "1489673902",
-      "last_check": "2026-08-12T01:20:22.420866"
+      "last_check": "2026-08-12T02:17:07.535604"
     }
   },
   "fetch_diag": [
@@ -64,42 +64,42 @@
       "platform": "kuaishou",
       "live_uid_ok": true,
       "live_cookie_ok": true,
-      "captured_feeds": 4,
-      "captured_user_ok": true,
+      "captured_feeds": 0,
+      "captured_user_ok": false,
       "api_hits": {
-        "profile_public": 2,
-        "userinfo": 2,
-        "profile_list_empty": 1,
+        "profile_public": 3,
+        "userinfo": 3,
+        "profile_list_empty": 3,
         "profile_parse_fail": 0,
         "last_url": "https://live.kuaishou.com/live_api/profile/public?__NS_hxfalcon=HUDR_sFnX-DtsB0FXsbDPT3TMP-sk0is9B7dAtQleg__VsxK3cJBScjfyoZuJDKCd0dFhpVOXKHFtTrFSOUNZnJTTlJFc98xCkEx5ZgnSHUamh8T1mQj2KahjLn5pzNspAzJVQrR",
-        "last_list_len": 4,
+        "last_list_len": 0,
         "last_status": 200,
-        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1786497634819, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
+        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1786501073442, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
       },
       "browser_channel": "chrome",
-      "parsed_count": 4,
-      "latest_post_id": "3x5azx8t3y2frg6"
+      "parsed_count": 0,
+      "error": "parsed_posts_empty"
     },
     {
       "room_id": "Sandy88888",
       "platform": "kuaishou",
       "live_uid_ok": true,
       "live_cookie_ok": true,
-      "captured_feeds": 1,
-      "captured_user_ok": true,
+      "captured_feeds": 0,
+      "captured_user_ok": false,
       "api_hits": {
-        "profile_public": 2,
-        "userinfo": 2,
-        "profile_list_empty": 1,
+        "profile_public": 3,
+        "userinfo": 3,
+        "profile_list_empty": 3,
         "profile_parse_fail": 0,
         "last_url": "https://live.kuaishou.com/live_api/profile/public?__NS_hxfalcon=HUDR_sFnX-DtsB0FXsbDPT3TMP-sk0is9B7dAtQleg__VsxK3cJBScjfyoZuJDKCd0dFhpVOXKHFtTrFSOUNZnJTTlJFc98xCkEx5ZgnSHUamh8T1mQj2KahjLn5pzNspAzJVQrR",
-        "last_list_len": 1,
+        "last_list_len": 0,
         "last_status": 200,
-        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1786497805697, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
+        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1786501110985, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
       },
       "browser_channel": "chrome",
-      "parsed_count": 1,
-      "latest_post_id": "3x6zh63ab9abu9g"
+      "parsed_count": 0,
+      "error": "parsed_posts_empty"
     },
     {
       "room_id": "pineapple2005",
@@ -116,7 +116,7 @@
         "last_url": "https://live.kuaishou.com/live_api/profile/public?__NS_hxfalcon=HUDR_sFnX-DtsB0FXsbDPT3TMP-sk0is9B7dAtQleg__VsxK3cJBScjfyoZuJDKCd0dFhpVOXKHFtTrFSOUNZnJTTlJFc98xCkEx5ZgnSHUamh8T1mQj2KahjLn5pzNspAzJVQrR",
         "last_list_len": 0,
         "last_status": 200,
-        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1786497875811, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
+        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1786501149111, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
       },
       "browser_channel": "chrome",
       "parsed_count": 0,
@@ -137,7 +137,7 @@
         "last_url": "https://live.kuaishou.com/live_api/profile/public?__NS_hxfalcon=HUDR_sFnX-DtsB0FXsbDPT3TMP-sk0is9B7dAtQleg__VsxK3cJBScjfyoZuJDKCd0dFhpVOXKHFtTrFSOUNZnJTTlJFc98xCkEx5ZgnSHUamh8T1mQj2KahjLn5pzNspAzJVQrR",
         "last_list_len": 0,
         "last_status": 200,
-        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1786497914194, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
+        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1786501185222, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
       },
       "browser_channel": "chrome",
       "parsed_count": 0,
