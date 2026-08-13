@@ -1,10 +1,5 @@
 [
   {
-    "time": "2026-08-08T13:04:13.059382",
-    "type": "live_start",
-    "message": "🎉 峰哥亡命天涯 开播了！\n标题: be一下\n观看人数: 188403\n🔗 https://live.bilibili.com/22230707"
-  },
-  {
     "time": "2026-08-08T13:09:17.533726",
     "type": "new_post",
     "message": "🎵 峰哥亡命天涯 发布了新作品\n标题: 峰哥尝试穿搭  (13:09)\n播放 0 · 点赞 17376\n🔗 https://www.douyin.com/video/7671187769208753459"
@@ -998,5 +993,10 @@
     "time": "2026-08-12T06:53:33.197691",
     "type": "live_start",
     "message": "🎉 魅力驿站 开播了！\n🔗 https://live.kuaishou.com/u/pineapple2005"
+  },
+  {
+    "time": "2026-08-13T08:23:18.498172",
+    "type": "error",
+    "message": "⚠️ 今天不洗头 检测失败"
   }
 ]
