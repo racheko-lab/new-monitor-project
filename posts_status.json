@@ -20,15 +20,15 @@
     },
     "total_seen": 41,
     "new_count": 0,
-    "last_check": "2026-08-15T07:07:10.040636",
-    "status": "ok"
+    "last_check": "2026-08-15T07:51:22.325551",
+    "status": "stale"
   },
   "douyin_FengBro": {
     "platform": "douyin",
     "id": "FengBro",
     "name": "峰哥亡命天涯",
     "sec_uid": "MS4wLjABAAAAXrcPvX8QchAY5irWMAxU379DgfCBEOoztZoCcOUqi8I",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_2d6f0000113c4daec8515.jpeg?from=3067671334",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/mosaic-legacy_2d6f0000113c4daec8515.jpeg?from=3067671334",
     "latest_post": {
       "id": "7673088017934401893",
       "platform": "douyin",
@@ -44,31 +44,31 @@
     },
     "total_seen": 26,
     "new_count": 0,
-    "last_check": "2026-08-15T07:07:10.040636",
-    "status": "ok"
+    "last_check": "2026-08-15T07:51:22.325551",
+    "status": "stale"
   },
   "douyin_83134194400": {
     "platform": "douyin",
     "id": "83134194400",
     "name": "27～",
     "sec_uid": "MS4wLjABAAAAPzcJluI9HAtkdShRBONh_jw9miEsJ1d6Tvzw4BbOdMTFqivBlDEtRgAeEBHn6lNO",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
     "latest_post": {
       "id": "7673492402891464442",
       "platform": "douyin",
       "name": "27～",
       "title": "哪个女孩子喜欢我！#水瓶女",
       "views": 0,
-      "likes": 586,
-      "cover": "https://p26-sign.douyinpic.com/tos-cn-i-0813c000-ce/okf1nQeBA8BP098icuixLEAJEtASIwC8taAokA~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1786798800&x-signature=2wXFYhmXjSBTsbMsmbS5xFjH4mE%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=202608151511110F4AAFD0D7C42FF8A5A6",
-      "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
+      "likes": 591,
+      "cover": "https://p26-sign.douyinpic.com/tos-cn-i-0813c000-ce/okf1nQeBA8BP098icuixLEAJEtASIwC8taAokA~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1786802400&x-signature=8ISWbwHrsIQrS9qpSsuqx6QAfnE%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=20260815160137E0CD9E4B34A29996C6C6",
+      "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
       "url": "https://www.douyin.com/note/7673492402891464442",
-      "time": "2026-08-15T07:11:14.716099",
+      "time": "2026-08-15T08:01:40.298322",
       "sort_key": 7673492402891464442
     },
     "total_seen": 28,
     "new_count": 0,
-    "last_check": "2026-08-15T07:07:10.040636",
+    "last_check": "2026-08-15T07:51:22.325551",
     "status": "ok"
   },
   "douyin_33716689672": {
@@ -84,15 +84,15 @@
       "title": "哭包小姐 展信佳。#这一秒过火 #张凌赫 #王楚然",
       "views": 0,
       "likes": 232,
-      "cover": "https://p3-sign.douyinpic.com/tos-cn-i-0813c000-ce/o8tVfADZVrBEcF9oqmTK3AoAwEhlCepIAA7aEw~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1786798800&x-signature=EoB2hmy4q%2FbIfrK5Vr59I%2FWnxZo%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=202608151511190BC5CF4E06B187793D4F",
+      "cover": "https://p3-sign.douyinpic.com/tos-cn-i-0813c000-ce/o8tVfADZVrBEcF9oqmTK3AoAwEhlCepIAA7aEw~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1786802400&x-signature=4mgft1DdvjJ9XMvT7k%2FOTtuWvRc%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=20260815160145387C364E23442E8D1C01",
       "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1adb28e662f5b7d50b2432c10e9f3016.jpeg?from=3067671334",
       "url": "https://www.douyin.com/note/7666725451713246690",
-      "time": "2026-08-15T07:11:44.665385",
+      "time": "2026-08-15T08:02:10.670735",
       "sort_key": 7666725451713246690
     },
     "total_seen": 7,
     "new_count": 0,
-    "last_check": "2026-08-15T07:07:10.040636",
+    "last_check": "2026-08-15T07:51:22.325551",
     "status": "ok"
   },
   "douyin_32062056217": {
@@ -108,15 +108,15 @@
       "title": "#cos #火影忍者 #雏田 鸣人君的幸福由我来守护！",
       "views": 0,
       "likes": 398,
-      "cover": "https://p3-sign.douyinpic.com/tos-cn-p-0015/oQEVPdPB3aVjWA2IraWIo4QNaC6iA4JiAaOiT~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1786798800&x-signature=wevbS4ygosHprdkDnOPZGshpIzE%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=20260815151148C7B99CA0962A7BD6200B",
+      "cover": "https://p3-sign.douyinpic.com/tos-cn-p-0015/oQEVPdPB3aVjWA2IraWIo4QNaC6iA4JiAaOiT~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1786802400&x-signature=JQP5f%2B%2B8mt1nqQTDdIGFEp2z81c%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=2026081516021426BF8CB6CE4F807AD981",
       "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_602c5d8ee34311549115864959f13e48.jpeg?from=3067671334",
       "url": "https://www.douyin.com/video/7627471964336119177",
-      "time": "2026-08-15T07:11:51.624836",
+      "time": "2026-08-15T08:02:17.795206",
       "sort_key": 7627471964336119177
     },
     "total_seen": 15,
     "new_count": 0,
-    "last_check": "2026-08-15T07:07:10.040636",
+    "last_check": "2026-08-15T07:51:22.325551",
     "status": "ok"
   },
   "kuaishou_pineapple2005": {
@@ -129,10 +129,10 @@
       "id": "3x9sczzxixgi4ea",
       "platform": "kuaishou",
       "name": "魅力驿站",
-      "title": "离得好近哦",
-      "views": 141,
-      "likes": 26,
-      "cover": "https://p4.a.yximgs.com/upic/2026/08/15/13/BMjAyNjA4MTUxMzAyNDBfMTgwNTM0MDAyXzIwNTYyOTc5NzQ0N18xXzM=_B67a003cbf243a931860b2e8131b8cfab.jpg?clientCacheKey=3x9sczzxixgi4ea.jpg&di=acb8d1a2&bp=13414",
+      "title": "视频作品 2026-08-15",
+      "views": 798,
+      "likes": 92,
+      "cover": "https://p3.a.yximgs.com/upic/2026/08/15/13/BMjAyNjA4MTUxMzAyNDBfMTgwNTM0MDAyXzIwNTYyOTc5NzQ0N18xXzM=_B67a003cbf243a931860b2e8131b8cfab.jpg?clientCacheKey=3x9sczzxixgi4ea.jpg&di=14baee25&bp=13414",
       "avatar": "https://p22.a.yximgs.com/uhead/AB/2026/02/13/09/BMjAyNjAyMTMwOTAzMjBfMTgwNTM0MDAyXzFfaGQ3XzY3OQ==_s.jpg",
       "url": "https://www.kuaishou.com/short-video/3x9sczzxixgi4ea",
       "time": "2026-08-15T00:00:00",
@@ -140,7 +140,7 @@
     },
     "total_seen": 21,
     "new_count": 0,
-    "last_check": "2026-08-15T07:07:10.040636",
+    "last_check": "2026-08-15T07:51:22.325551",
     "status": "ok"
   },
   "kuaishou_HUizi-G-H": {
@@ -164,7 +164,7 @@
     },
     "total_seen": 13,
     "new_count": 0,
-    "last_check": "2026-08-15T07:07:10.040636",
+    "last_check": "2026-08-15T07:51:22.325551",
     "status": "ok"
   },
   "kuaishou_Sandy88888": {
@@ -180,7 +180,7 @@
       "title": "又一年❤️",
       "views": 76000,
       "likes": 1863,
-      "cover": "https://p23.a.yximgs.com/upic/2021/12/22/21/BMjAyMTEyMjIyMTUzNDVfMjExNzU1MF82MzMxMzA5MDY2MF8xXzM=_B32b4c89222a98e61e7da56e53c6e10e5.jpg?clientCacheKey=3x6zh63ab9abu9g.jpg&di=acb8d1a2&bp=13414",
+      "cover": "https://p23.a.yximgs.com/upic/2021/12/22/21/BMjAyMTEyMjIyMTUzNDVfMjExNzU1MF82MzMxMzA5MDY2MF8xXzM=_B32b4c89222a98e61e7da56e53c6e10e5.jpg?clientCacheKey=3x6zh63ab9abu9g.jpg&di=14baee25&bp=13414",
       "avatar": "https://p22.a.yximgs.com/uhead/AB/2019/06/09/11/BMjAxOTA2MDkxMTM3MzBfMjExNzU1MF8xX2hkODI1XzQ5Mw==_s.jpg",
       "url": "https://www.kuaishou.com/short-video/3x6zh63ab9abu9g",
       "time": "2021-12-22T00:00:00",
@@ -188,7 +188,7 @@
     },
     "total_seen": 1,
     "new_count": 0,
-    "last_check": "2026-08-15T07:07:10.040636",
+    "last_check": "2026-08-15T07:51:22.325551",
     "status": "ok"
   },
   "kuaishou_Aaaaasa149": {
@@ -204,7 +204,7 @@
       "title": "图文作品 2025-10-16",
       "views": 4810,
       "likes": 22,
-      "cover": "https://p23.a.yximgs.com/upic/2025/10/16/22/BMjAyNTEwMTYyMjMyMzZfMTQ4OTY3MzkwMl8xNzc1NTkxMDQ0MDJfMV82_B78a9e29561c47f7deec753ee216a9d0a.jpg?clientCacheKey=3x5azx8t3y2frg6.jpg&di=14a13c13&bp=13414",
+      "cover": "https://p23.a.yximgs.com/upic/2025/10/16/22/BMjAyNTEwMTYyMjMyMzZfMTQ4OTY3MzkwMl8xNzc1NTkxMDQ0MDJfMV82_B78a9e29561c47f7deec753ee216a9d0a.jpg?clientCacheKey=3x5azx8t3y2frg6.jpg&di=14baee25&bp=13414",
       "avatar": "https://p22.a.yximgs.com/uhead/AB/2025/10/16/22/BMjAyNTEwMTYyMjMzMDdfMTQ4OTY3MzkwMl8xX2hkOTBfOTIx_s.jpg",
       "url": "https://www.kuaishou.com/short-video/3x5azx8t3y2frg6",
       "time": "2025-10-16T00:00:00",
@@ -212,7 +212,7 @@
     },
     "total_seen": 4,
     "new_count": 0,
-    "last_check": "2026-08-15T07:07:10.040636",
+    "last_check": "2026-08-15T07:51:22.325551",
     "status": "ok"
   },
   "kuaishou_Nizi981116": {
@@ -224,7 +224,7 @@
     "latest_post": null,
     "total_seen": 0,
     "new_count": 0,
-    "last_check": "2026-08-15T07:07:10.040636",
+    "last_check": "2026-08-15T07:51:22.325551",
     "status": "no_data"
   }
 }
