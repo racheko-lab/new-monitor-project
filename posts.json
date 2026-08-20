@@ -1,5 +1,18 @@
 [
   {
+    "id": "7676095775453777849",
+    "platform": "douyin",
+    "name": "27～",
+    "title": "我手一杯 品尝你的美。#星巴克 #周杰伦",
+    "views": 0,
+    "likes": 25,
+    "cover": "https://p26-sign.douyinpic.com/tos-cn-i-0813c000-ce/ooHhIeoguDAGehA5AvFkE9qAEAEwGEChQHfnNE~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1787252400&x-signature=BX8XRyCJ36eRAAgsi2W%2F2QoPAUw%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=20260820214500A05F7C6EB713F2AC5526",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
+    "url": "https://www.douyin.com/note/7676095775453777849",
+    "time": "2026-08-20T13:45:02.980497",
+    "sort_key": 7676095775453777849
+  },
+  {
     "id": "7675705360180094437",
     "platform": "douyin",
     "name": "27～",
@@ -1278,18 +1291,5 @@
     "url": "https://www.douyin.com/video/7654870846732841971",
     "time": "2026-07-13T02:59:22.640848",
     "sort_key": 7654870846732841971
-  },
-  {
-    "id": "7654571119693888750",
-    "platform": "douyin",
-    "name": "栗子鸡",
-    "title": "什么都要交给时间吗",
-    "views": 0,
-    "likes": 416,
-    "cover": "https://p5-ex-gddgtc-sign.douyinpic.com/tos-cn-i-0813c001/oAN0tfeuRIQAHAE8fQ0LzBeIQcGAE2Av7AeT9d~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1783926000&x-signature=wOks5IfF%2FnMIN0KILfpSiD7NLrk%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=20260713093740F11835F34FDECC348D94",
-    "avatar": null,
-    "url": "https://www.douyin.com/video/7654571119693888750",
-    "time": "2026-07-13T01:37:40.935593",
-    "sort_key": 7654571119693888750
   }
 ]
