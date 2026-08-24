@@ -1,5 +1,18 @@
 [
   {
+    "id": "7677269445421964250",
+    "platform": "douyin",
+    "name": "韩冰",
+    "title": "@所有人 刚刚想给你们点秋天第一杯奶茶 但是我没有你们的地址 我就填了我的地址 等下你们把钱还给我一下#秋天一起做燕麦系女孩#燕麦系 #燕麦格雷 #秋上新",
+    "views": 0,
+    "likes": 5368,
+    "cover": "https://p3-sign.douyinpic.com/tos-cn-i-0813/oAECfeMJWA0FLRWuA2H6AIfDVeFIQ0A8AqIcPQ~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1787558400&x-signature=Kk3OaACHbxgdY6PQPGILKHYMb2s%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=202608241023453D92235E632E1C4AE121",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
+    "url": "https://www.douyin.com/video/7677269445421964250",
+    "time": "2026-08-24T02:23:48.690414",
+    "sort_key": 7677269445421964250
+  },
+  {
     "id": "7676095775453777849",
     "platform": "douyin",
     "name": "27～",
@@ -1278,18 +1291,5 @@
     "url": "https://www.douyin.com/video/7655242547190624166",
     "time": "2026-07-13T01:37:40.935588",
     "sort_key": 7655242547190624166
-  },
-  {
-    "id": "7654870846732841971",
-    "platform": "douyin",
-    "name": "韩冰",
-    "title": "原来你这么帅啊 之前怎么不发朋友圈？上次忘记回你了 不好意思 还能聊吗",
-    "views": 0,
-    "likes": 185801,
-    "cover": "https://p5-ex-gddgtc-sign.douyinpic.com/tos-cn-i-0813c001/ok7r6iCeNB1AH1AgkgA5AMHCEfk8wmAioXIAcA~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1783929600&x-signature=eNpK7E0FAseRpx%2FH85rbmWp1ij0%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=202607131059113ECBA6091D809431C50F",
-    "avatar": null,
-    "url": "https://www.douyin.com/video/7654870846732841971",
-    "time": "2026-07-13T02:59:22.640848",
-    "sort_key": 7654870846732841971
   }
 ]
