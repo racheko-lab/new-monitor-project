@@ -5,23 +5,23 @@
     "name": "峰哥亡命天涯",
     "uname": "峰哥亡命天涯",
     "avatar": "https://i2.hdslb.com/bfs/face/ae439693d6fd79a55b1b5f935ed6474ae6fba35b.jpg",
-    "status": "live",
+    "status": "offline",
     "title": "峰哥狂虐徐静雨",
-    "viewers": 179507,
-    "last_check": "2026-08-26T16:12:56.320195",
-    "duration": 127622
+    "viewers": 0,
+    "last_check": "2026-08-26T18:13:25.652688",
+    "duration": 136250
   },
   "douyin_64865306": {
     "platform": "douyin",
     "id": "64865306",
     "name": "x ..",
     "uname": "x ..",
-    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1b375fec74a3b08a31ba9af84decd1d5.jpeg?from=3067671334",
-    "status": "live",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_1b375fec74a3b08a31ba9af84decd1d5.jpeg?from=3067671334",
+    "status": "offline",
     "title": "好久不见",
     "viewers": null,
-    "last_check": "2026-08-26T16:12:58.345746",
-    "duration": 3143
+    "last_check": "2026-08-26T18:13:27.769447",
+    "duration": 8851
   },
   "douyin_woshixiaoqumt": {
     "platform": "douyin",
@@ -32,7 +32,7 @@
     "status": "offline",
     "title": "与美萌女孩们聊天",
     "viewers": null,
-    "last_check": "2026-08-26T16:13:00.147815",
+    "last_check": "2026-08-26T18:13:30.137746",
     "duration": 0
   },
   "douyin_83134194400": {
@@ -40,11 +40,11 @@
     "id": "83134194400",
     "name": "27～",
     "uname": "27～",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_7dc1ff2e4510f2f81984a83693591b0f.jpeg?from=3067671334",
     "status": "offline",
     "title": "正在直播",
     "viewers": null,
-    "last_check": "2026-08-26T16:13:01.363067",
+    "last_check": "2026-08-26T18:13:31.809839",
     "duration": 0
   },
   "douyin_hmh1020l.": {
@@ -52,11 +52,11 @@
     "id": "hmh1020l.",
     "name": "piiiiikiepie",
     "uname": "piiiiikiepie",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_22ba23ef91602c9c7ceb8ed354a35bc0.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_22ba23ef91602c9c7ceb8ed354a35bc0.jpeg?from=3067671334",
     "status": "offline",
     "title": "piiiiikiepie正在直播",
     "viewers": null,
-    "last_check": "2026-08-26T16:13:03.257596",
+    "last_check": "2026-08-26T18:13:33.530576",
     "duration": 0
   },
   "douyin_32062056217": {
@@ -64,11 +64,11 @@
     "id": "32062056217",
     "name": "Sayonal_",
     "uname": "Sayonal_",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_602c5d8ee34311549115864959f13e48.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_602c5d8ee34311549115864959f13e48.jpeg?from=3067671334",
     "status": "offline",
     "title": "TRNA",
     "viewers": null,
-    "last_check": "2026-08-26T16:13:05.341299",
+    "last_check": "2026-08-26T18:13:35.525982",
     "duration": 0
   },
   "douyin_77F88C_": {
@@ -80,8 +80,9 @@
     "status": "offline",
     "title": "开心壹佰（愛酱）",
     "viewers": null,
-    "last_check": "2026-08-26T16:13:06.569240",
-    "duration": 0
+    "last_check": "2026-08-26T18:13:50.748242",
+    "duration": 0,
+    "last_error": true
   },
   "douyin_98078804724": {
     "platform": "douyin",
@@ -92,7 +93,7 @@
     "status": "offline",
     "title": "什么都知道正在直播",
     "viewers": null,
-    "last_check": "2026-08-26T16:13:07.742358",
+    "last_check": "2026-08-26T18:13:52.908645",
     "duration": 0
   },
   "douyin_74597663503": {
@@ -104,7 +105,7 @@
     "status": "offline",
     "title": "用户2079728788653正在直播",
     "viewers": null,
-    "last_check": "2026-08-26T16:13:08.893206",
+    "last_check": "2026-08-26T18:13:55.089732",
     "duration": 1293
   },
   "douyin_81160909094": {
@@ -112,11 +113,11 @@
     "id": "81160909094",
     "name": "12X",
     "uname": "12X",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_3873ff6fc810751c0e64cafb4ab25a82.jpeg?from=3067671334",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_3873ff6fc810751c0e64cafb4ab25a82.jpeg?from=3067671334",
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-26T16:13:10.014321",
+    "last_check": "2026-08-26T18:13:57.185136",
     "duration": 0
   },
   "douyin_mln4494nn": {
@@ -124,11 +125,11 @@
     "id": "mln4494nn",
     "name": "村口一娜",
     "uname": "村口一娜",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_843c3886f31f2a848055ce0f772cd55e.jpeg?from=3067671334",
+    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_843c3886f31f2a848055ce0f772cd55e.jpeg?from=3067671334",
     "status": "offline",
     "title": "好一朵美...正在直播",
     "viewers": null,
-    "last_check": "2026-08-26T16:13:11.273803",
+    "last_check": "2026-08-26T18:13:59.289206",
     "duration": 0
   },
   "douyin_Hananbaby0401": {
@@ -136,11 +137,11 @@
     "id": "Hananbaby0401",
     "name": "sad",
     "uname": "sad",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_631d38a6c6da0f1da887f87c14ddf523.jpeg?from=3067671334",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_631d38a6c6da0f1da887f87c14ddf523.jpeg?from=3067671334",
     "status": "offline",
     "title": "你好啊",
     "viewers": null,
-    "last_check": "2026-08-26T16:13:12.639510",
+    "last_check": "2026-08-26T18:14:01.380020",
     "duration": 0
   },
   "douyin_SssL33": {
@@ -148,11 +149,11 @@
     "id": "SssL33",
     "name": "肥肥ssl",
     "uname": "肥肥ssl",
-    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_c211781b0beb851c7c30cb051006930d.jpeg?from=3067671334",
+    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_c211781b0beb851c7c30cb051006930d.jpeg?from=3067671334",
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-26T16:13:13.702925",
+    "last_check": "2026-08-26T18:14:03.102551",
     "duration": 0
   },
   "douyin_57889403285": {
@@ -160,11 +161,11 @@
     "id": "57889403285",
     "name": "我跟你不熟吧",
     "uname": "我跟你不熟吧",
-    "avatar": "https://p26.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_4617eee67cd8f14e7e07815001f07110.jpeg?from=3067671334",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_4617eee67cd8f14e7e07815001f07110.jpeg?from=3067671334",
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-26T16:13:14.644538",
+    "last_check": "2026-08-26T18:14:04.804014",
     "duration": 0
   },
   "douyin_xqhhha.": {
@@ -172,11 +173,11 @@
     "id": "xqhhha.",
     "name": "今天不洗头",
     "uname": "今天不洗头",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c001_d60537cead5741a591125c8641c45a7a.jpeg?from=3067671334",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-i-0813c001_d60537cead5741a591125c8641c45a7a.jpeg?from=3067671334",
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-26T16:13:15.507171",
+    "last_check": "2026-08-26T18:14:07.188566",
     "duration": 0
   },
   "douyin_ZSWZ111": {
@@ -184,11 +185,11 @@
     "id": "ZSWZ111",
     "name": "郑少雯子",
     "uname": "郑少雯子",
-    "avatar": "https://p3.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_d68d2347000145303948e2a83d66e0aa.jpeg?from=3067671334",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_d68d2347000145303948e2a83d66e0aa.jpeg?from=3067671334",
     "status": "offline",
     "title": "你在就好了",
     "viewers": null,
-    "last_check": "2026-08-26T16:13:16.619089",
+    "last_check": "2026-08-26T18:14:08.872951",
     "duration": 4308
   },
   "kuaishou_HUizi-G-H": {
@@ -200,7 +201,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-26T16:13:18.428874",
+    "last_check": "2026-08-26T18:14:10.383728",
     "duration": 0
   },
   "kuaishou_Aaaaasa149": {
@@ -212,7 +213,7 @@
     "status": "offline",
     "title": null,
     "viewers": null,
-    "last_check": "2026-08-26T16:13:20.045054",
+    "last_check": "2026-08-26T18:14:11.740178",
     "duration": 0
   }
 }

@@ -20,8 +20,8 @@
     "last_live_time": null
   },
   "bilibili_22230707": {
-    "last_live_start": "2026-08-26T13:49:08.067459",
-    "duration": 127622,
+    "last_live_start": null,
+    "duration": 136250,
     "last_live_time": "2026-08-26T16:12:56.320182"
   },
   "bilibili_3381141": {
@@ -220,8 +220,8 @@
     "last_live_time": null
   },
   "douyin_64865306": {
-    "last_live_start": "2026-08-26T14:37:49.696976",
-    "duration": 3143,
+    "last_live_start": null,
+    "duration": 8851,
     "last_live_time": "2026-08-26T16:12:58.345732"
   },
   "douyin_woshixiaoqumt": {
