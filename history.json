@@ -1,10 +1,5 @@
 [
   {
-    "time": "2026-08-18T05:53:09.947061",
-    "type": "error",
-    "message": "⚠️ x .. 检测失败"
-  },
-  {
     "time": "2026-08-18T06:31:36.628151",
     "type": "live_start",
     "message": "🎉 峰哥亡命天涯 开播了！\n标题: be一下\n观看人数: 177868\n🔗 https://live.bilibili.com/22230707"
@@ -998,5 +993,10 @@
     "time": "2026-08-26T13:49:30.215261",
     "type": "error",
     "message": "⚠️ 我跟你不熟吧 检测失败"
+  },
+  {
+    "time": "2026-08-26T14:37:49.697304",
+    "type": "live_start",
+    "message": "🎉 x .. 开播了！\n标题: 好久不见\n🔗 https://live.douyin.com/64865306"
   }
 ]
