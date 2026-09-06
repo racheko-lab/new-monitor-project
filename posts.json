@@ -1,5 +1,18 @@
 [
   {
+    "id": "7682376564924074121",
+    "platform": "douyin",
+    "name": "韩冰",
+    "title": "谁有雷霆文案麻烦发我评论区最近没文案了",
+    "views": 0,
+    "likes": 2668,
+    "cover": "https://p5-ex-gddgtc-sign.douyinpic.com/tos-cn-i-0813c001/o8AGSqc2BICMOd2RATiANLejrCfA1AAEiqg1AT~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1788714000&x-signature=ps1TYBRFkYjzJuvPeEYY3jPu3U8%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=2026090619140852FB8CAE00DCD92D01A9",
+    "avatar": "https://p11.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_e6bc88d850b3dd8b33830f8a7ecfeab4.jpeg?from=3067671334",
+    "url": "https://www.douyin.com/video/7682376564924074121",
+    "time": "2026-09-06T11:14:11.092209",
+    "sort_key": 7682376564924074121
+  },
+  {
     "id": "7682017029141869945",
     "platform": "douyin",
     "name": "27～",
@@ -1279,18 +1292,5 @@
     "url": "https://www.douyin.com/video/7659373293488667557",
     "time": "2026-07-14T04:54:12.292625",
     "sort_key": 7659373293488667557
-  },
-  {
-    "id": "7658943221436015214",
-    "platform": "douyin",
-    "name": "韩冰",
-    "title": "全世界都在指責你的話 你只能依賴我了吧",
-    "views": 0,
-    "likes": 310249,
-    "cover": "https://p3-sign.douyinpic.com/tos-cn-i-0813/oYAANCCAQiIEBYvKRaBoIjvISPwkAoDMAinEw~tplv-dy-cropcenter:300:400.png?lk3s=2aa63f9f&x-expires=1783929600&x-signature=KnRIk7gV%2FEzEpmjI67A0Bq1nyLA%3D&from=715538335&s=PackSourceEnum_DOUYIN_REFLOW&se=true&sh=300_400&sc=cover&biz_tag=aweme_video&l=202607131056563252EBECEFBDF836F243",
-    "avatar": null,
-    "url": "https://www.douyin.com/video/7658943221436015214",
-    "time": "2026-07-13T02:57:07.449308",
-    "sort_key": 7658943221436015214
   }
 ]
