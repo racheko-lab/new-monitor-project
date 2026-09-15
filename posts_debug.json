@@ -1,67 +1,67 @@
 {
-  "time": "2026-09-15T13:44:50.242520",
+  "time": "2026-09-15T17:52:34.880481",
   "machine": "runnervmlun5p",
   "playwright": true,
   "results": {
     "douyin_vHan09233": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAUXBNFnWL",
-      "last_check": "2026-09-15T13:44:50.242930"
+      "last_check": "2026-09-15T17:52:34.881104"
     },
     "douyin_FengBro": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAXrcPvX8Q",
-      "last_check": "2026-09-15T13:44:50.242930"
+      "last_check": "2026-09-15T17:52:34.881104"
     },
     "douyin_83134194400": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAPzcJluI9",
-      "last_check": "2026-09-15T13:44:50.242930"
+      "last_check": "2026-09-15T17:52:34.881104"
     },
     "douyin_33716689672": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAAF4OnGjjF",
-      "last_check": "2026-09-15T13:44:50.242930"
+      "last_check": "2026-09-15T17:52:34.881104"
     },
     "douyin_32062056217": {
-      "status": "ok",
+      "status": "stale",
       "has_latest_post": true,
       "sec_uid": "MS4wLjABAAAASbtZpohJ",
-      "last_check": "2026-09-15T13:44:50.242930"
+      "last_check": "2026-09-15T17:52:34.881104"
     },
     "kuaishou_pineapple2005": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "180534002",
-      "last_check": "2026-09-15T13:44:50.242930"
+      "last_check": "2026-09-15T17:52:34.881104"
     },
     "kuaishou_HUizi-G-H": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "2672593",
-      "last_check": "2026-09-15T13:44:50.242930"
+      "last_check": "2026-09-15T17:52:34.881104"
     },
     "kuaishou_Sandy88888": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "2117550",
-      "last_check": "2026-09-15T13:44:50.242930"
+      "last_check": "2026-09-15T17:52:34.881104"
     },
     "kuaishou_Aaaaasa149": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "1489673902",
-      "last_check": "2026-09-15T13:44:50.242930"
+      "last_check": "2026-09-15T17:52:34.881104"
     },
     "kuaishou_Nizi981116": {
       "status": "ok",
       "has_latest_post": true,
       "sec_uid": "2859412",
-      "last_check": "2026-09-15T13:44:50.242930"
+      "last_check": "2026-09-15T17:52:34.881104"
     }
   },
   "fetch_diag": [
@@ -92,7 +92,7 @@
       "live_uid_ok": true,
       "live_cookie_ok": true,
       "captured_feeds": 1,
-      "captured_user_ok": false,
+      "captured_user_ok": true,
       "api_hits": {
         "profile_public": 1,
         "userinfo": 1,
@@ -143,7 +143,7 @@
         "last_url": "https://live.kuaishou.com/live_api/profile/public?__NS_hxfalcon=HUDR_sFnX-DtsB0FXsbDPT3TMP-sk0is9B7dAtQleg__VsxK3cJBScjfyoZuJDKCd0dFhpVOXKHFtTrFSOUNZnJTTlJFc98xCkEx5ZgnSHUamh8T1mQj2KahjLi44ntwsDjxQQrJ",
         "last_list_len": 0,
         "last_status": 200,
-        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1789480059626, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
+        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1789494918677, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
       },
       "browser_channel": "chrome",
       "parsed_count": 0,
@@ -152,52 +152,32 @@
     {
       "room_id": "vHan09233",
       "platform": "douyin",
-      "live_sec_uid_ok": true,
-      "sec_uid_ok": true,
-      "sec_uid": "MS4wLjABAAAAUXBNFnWLvl9T8",
-      "pw_status": "ok",
-      "parsed_count": 15,
-      "latest_post_id": "7685359855087912282"
+      "error": "BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════",
+      "error_type": "Error"
     },
     {
       "room_id": "FengBro",
       "platform": "douyin",
-      "live_sec_uid_ok": true,
-      "sec_uid_ok": true,
-      "sec_uid": "MS4wLjABAAAAXrcPvX8QchAY5",
-      "pw_status": "ok",
-      "parsed_count": 15,
-      "latest_post_id": "7681516288954533873"
+      "error": "BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════",
+      "error_type": "Error"
     },
     {
       "room_id": "83134194400",
       "platform": "douyin",
-      "live_sec_uid_ok": true,
-      "sec_uid_ok": true,
-      "sec_uid": "MS4wLjABAAAAPzcJluI9HAtkd",
-      "pw_status": "ok",
-      "parsed_count": 15,
-      "latest_post_id": "7679831970252632933"
+      "error": "BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════",
+      "error_type": "Error"
     },
     {
       "room_id": "33716689672",
       "platform": "douyin",
-      "live_sec_uid_ok": true,
-      "sec_uid_ok": true,
-      "sec_uid": "MS4wLjABAAAAF4OnGjjFY48t8",
-      "pw_status": "ok",
-      "parsed_count": 4,
-      "latest_post_id": "7666725451713246690"
+      "error": "BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════",
+      "error_type": "Error"
     },
     {
       "room_id": "32062056217",
       "platform": "douyin",
-      "live_sec_uid_ok": true,
-      "sec_uid_ok": true,
-      "sec_uid": "MS4wLjABAAAASbtZpohJd3E4C",
-      "pw_status": "ok",
-      "parsed_count": 15,
-      "latest_post_id": "7627471964336119177"
+      "error": "BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell\n╔════════════════════════════════════",
+      "error_type": "Error"
     },
     {
       "room_id": "Nizi981116",
@@ -214,7 +194,7 @@
         "last_url": "https://live.kuaishou.com/live_api/profile/public?__NS_hxfalcon=HUDR_sFnX-DtsB0FXsbDPT3TMP-sk0is9B7dAtQleg__VsxK3cJBScjfyoZuJDKCd0dFhpVOXKHFtTrFSOUNZnJTTlJFc98xCkEx5ZgnSHUamh8T1mQj2KahjLi44ntwsDjxQQrJ",
         "last_list_len": 0,
         "last_status": 200,
-        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1789480217264, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
+        "last_body_snippet": "{\"data\": {\"live\": {\"playUrls\": [], \"author\": {\"living\": false, \"followStatus\": \"UN_FOLLOWED\", \"constellation\": \"\", \"cityName\": \"\", \"privacy\": false, \"isNew\": false, \"timestamp\": 1789494979574, \"verifiedStatus\": {\"description\": \"\", \"type\": 0, \"new\": false, \"iconUrl\": \"\"}, \"bannedStatus\": {\"banned\": f"
       },
       "browser_channel": "chrome",
       "parsed_count": 0,
