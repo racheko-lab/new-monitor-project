@@ -1,10 +1,5 @@
 [
   {
-    "time": "2026-08-25T13:44:03.745085",
-    "type": "error",
-    "message": "⚠️ 郑少雯子 检测失败"
-  },
-  {
     "time": "2026-08-25T15:36:28.528769",
     "type": "live_start",
     "message": "🎉 峰哥亡命天涯 开播了！\n标题: be一会儿\n观看人数: 220155\n🔗 https://live.bilibili.com/22230707"
@@ -998,5 +993,10 @@
     "time": "2026-11-12T03:12:18.851931",
     "type": "error",
     "message": "⚠️ Sayonal_ 检测失败"
+  },
+  {
+    "time": "2026-11-15T12:08:06.080394",
+    "type": "error",
+    "message": "⚠️ Liiiiii-🐰 检测失败"
   }
 ]
