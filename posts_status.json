@@ -20,7 +20,7 @@
     },
     "total_seen": 50,
     "new_count": 0,
-    "last_check": "2026-11-17T03:21:32.250655",
+    "last_check": "2026-11-17T12:14:42.696836",
     "status": "stale"
   },
   "douyin_FengBro": {
@@ -44,7 +44,7 @@
     },
     "total_seen": 31,
     "new_count": 0,
-    "last_check": "2026-11-17T03:21:32.250655",
+    "last_check": "2026-11-17T12:14:42.696836",
     "status": "stale"
   },
   "douyin_83134194400": {
@@ -68,7 +68,7 @@
     },
     "total_seen": 36,
     "new_count": 0,
-    "last_check": "2026-11-17T03:21:32.250655",
+    "last_check": "2026-11-17T12:14:42.696836",
     "status": "stale"
   },
   "douyin_33716689672": {
@@ -92,7 +92,7 @@
     },
     "total_seen": 7,
     "new_count": 0,
-    "last_check": "2026-11-17T03:21:32.250655",
+    "last_check": "2026-11-17T12:14:42.696836",
     "status": "stale"
   },
   "douyin_32062056217": {
@@ -116,7 +116,7 @@
     },
     "total_seen": 15,
     "new_count": 0,
-    "last_check": "2026-11-17T03:21:32.250655",
+    "last_check": "2026-11-17T12:14:42.696836",
     "status": "stale"
   },
   "kuaishou_pineapple2005": {
@@ -126,21 +126,21 @@
     "sec_uid": "180534002",
     "avatar": "https://p22.a.yximgs.com/uhead/AB/2026/10/01/14/BMjAyNjEwMDExNDE4MzBfMTgwNTM0MDAyXzFfaGQ0NTdfMTgw_s.jpg",
     "latest_post": {
-      "id": "3xa4grfu4cq8y5w",
+      "id": "3xwecxnq7d6b7qk",
       "platform": "kuaishou",
       "name": "魅力驿站",
-      "title": "图片作品 2026-11-04",
-      "views": 5722,
-      "likes": 166,
-      "cover": "https://p4.a.yximgs.com/upic/2026/11/04/19/BMjAyNjExMDQxOTU2NTNfMTgwNTM0MDAyXzIxNDU3MTM3NTUwOF8xXzY=_B0fd79e8d3b487e538a81def3bcd16cea.jpg?clientCacheKey=3xa4grfu4cq8y5w.jpg&di=14a33ff0&bp=13414",
+      "title": "图片作品 2026-11-17",
+      "views": 2244,
+      "likes": 94,
+      "cover": "https://p2.a.yximgs.com/upic/2026/11/17/15/BMjAyNjExMTcxNTA0MjFfMTgwNTM0MDAyXzIxNjA0MDcxNzUyN18xXzY=_Bb6cbe27253c44a3ed05412ea9e1f663e.jpg?clientCacheKey=3xwecxnq7d6b7qk.jpg&di=329d24b&bp=13414",
       "avatar": "https://p22.a.yximgs.com/uhead/AB/2026/10/01/14/BMjAyNjEwMDExNDE4MzBfMTgwNTM0MDAyXzFfaGQ0NTdfMTgw_s.jpg",
-      "url": "https://www.kuaishou.com/short-video/3xa4grfu4cq8y5w",
-      "time": "2026-11-04T00:00:00",
-      "sort_key": 1793750400000
+      "url": "https://www.kuaishou.com/short-video/3xwecxnq7d6b7qk",
+      "time": "2026-11-17T00:00:00",
+      "sort_key": 1794873600000
     },
-    "total_seen": 41,
-    "new_count": 0,
-    "last_check": "2026-11-17T03:21:32.250655",
+    "total_seen": 42,
+    "new_count": 1,
+    "last_check": "2026-11-17T12:14:42.696836",
     "status": "ok"
   },
   "kuaishou_HUizi-G-H": {
@@ -154,9 +154,9 @@
       "platform": "kuaishou",
       "name": "Liiiiii-🐰",
       "title": "图片作品 2026-10-11",
-      "views": 5127,
+      "views": 5189,
       "likes": 178,
-      "cover": "https://p2.a.yximgs.com/upic/2026/10/11/18/BMjAyNjEwMTExODA2MTNfMjY3MjU5M18yMTE4NzQxNDY2MTlfMV82_B5f5d3e2d771cefcd57b23c7cdcf92885.jpg?clientCacheKey=3xf6t88krct6uk4.jpg&di=14a33ff0&bp=13414",
+      "cover": "https://p2.a.yximgs.com/upic/2026/10/11/18/BMjAyNjEwMTExODA2MTNfMjY3MjU5M18yMTE4NzQxNDY2MTlfMV82_B5f5d3e2d771cefcd57b23c7cdcf92885.jpg?clientCacheKey=3xf6t88krct6uk4.jpg&di=329d24b&bp=13414",
       "avatar": "https://p22.a.yximgs.com/uhead/AB/2026/07/06/22/BMjAyNjA3MDYyMjI1MjVfMjY3MjU5M18xX2hkODc3Xzg4Mw==_s.jpg",
       "url": "https://www.kuaishou.com/short-video/3xf6t88krct6uk4",
       "time": "2026-10-11T00:00:00",
@@ -164,7 +164,7 @@
     },
     "total_seen": 14,
     "new_count": 0,
-    "last_check": "2026-11-17T03:21:32.250655",
+    "last_check": "2026-11-17T12:14:42.696836",
     "status": "ok"
   },
   "kuaishou_Sandy88888": {
@@ -180,7 +180,7 @@
       "title": "又一年❤️",
       "views": 77000,
       "likes": 1863,
-      "cover": "https://p4.a.yximgs.com/upic/2021/12/22/21/BMjAyMTEyMjIyMTUzNDVfMjExNzU1MF82MzMxMzA5MDY2MF8xXzM=_B32b4c89222a98e61e7da56e53c6e10e5.jpg?clientCacheKey=3x6zh63ab9abu9g.jpg&di=14a33ff0&bp=13414",
+      "cover": "https://p2.a.yximgs.com/upic/2021/12/22/21/BMjAyMTEyMjIyMTUzNDVfMjExNzU1MF82MzMxMzA5MDY2MF8xXzM=_B32b4c89222a98e61e7da56e53c6e10e5.jpg?clientCacheKey=3x6zh63ab9abu9g.jpg&di=329d24b&bp=13414",
       "avatar": "https://p22.a.yximgs.com/uhead/AB/2019/06/09/11/BMjAxOTA2MDkxMTM3MzBfMjExNzU1MF8xX2hkODI1XzQ5Mw==_s.jpg",
       "url": "https://www.kuaishou.com/short-video/3x6zh63ab9abu9g",
       "time": "2021-12-22T00:00:00",
@@ -188,7 +188,7 @@
     },
     "total_seen": 1,
     "new_count": 0,
-    "last_check": "2026-11-17T03:21:32.250655",
+    "last_check": "2026-11-17T12:14:42.696836",
     "status": "ok"
   },
   "kuaishou_Aaaaasa149": {
@@ -212,7 +212,7 @@
     },
     "total_seen": 4,
     "new_count": 0,
-    "last_check": "2026-11-17T03:21:32.250655",
+    "last_check": "2026-11-17T12:14:42.696836",
     "status": "ok"
   },
   "kuaishou_Nizi981116": {
@@ -236,7 +236,7 @@
     },
     "total_seen": 4,
     "new_count": 0,
-    "last_check": "2026-11-17T03:21:32.250655",
+    "last_check": "2026-11-17T12:14:42.696836",
     "status": "ok"
   }
 }
